@@ -31,6 +31,12 @@
           "image": "./assets/splash-icon.png"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "77edda39-70e8-4f55-8645-814051b491a3"
+      }
+    },
+    "owner": "cadetlinks"
   }
 }
