@@ -4,3 +4,5 @@ We are building a multiplatform app for ROTC so they can refer to one applicatio
 for all their use cases.
 
 Link to our Planning Documentation: https://www.notion.so/2ee67a2fd977807cac7ef704f7a68dd3?v=2ee67a2fd97780c6a438000c1ffbd88b
+
+Link to our Expo Development Build for Android: https://expo.dev/accounts/cadetlinks/projects/CadetLinks/builds/984d37de-a511-4020-bcdb-cc833b60f5e5
