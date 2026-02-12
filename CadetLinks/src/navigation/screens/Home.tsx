@@ -48,7 +48,7 @@ export function Home({ navigation }) {
             <Text key={event.id} style={{ marginVertical: 5 }}>
               • {event.title}
             </Text>
-          ))}a
+          ))}
         </View>
       )}
       
