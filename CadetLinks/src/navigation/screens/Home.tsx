@@ -5,6 +5,12 @@ import { Calendar } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
 
 export function Home({ navigation }) {
+  //Announcements
+  const announcements = [
+  { id: '1', title: 'LLAB Uniform', body: 'ABUs required this Thursday.' },
+  { id: '2', title: 'PT Location Change', body: 'Meet at track instead of gym.' },
+  ];
+
   //Calendar Stuff
   const [selectedDate, setSelectedDate] = useState('');
 
@@ -26,10 +32,18 @@ export function Home({ navigation }) {
   return acc;
 }, {});
 
-
-
   return (
-    <View style={styles.container}>
+    <ScrollView style={{ flex: 1 }}>
+      <View style={styles.announcementContainer}>
+      <Text style={styles.sectionTitle}>Announcements</Text>
+
+      {announcements.map(item => (
+        <View key={item.id} style={styles.announcementCard}>
+          <Text style={styles.announcementTitle}>{item.title}</Text>
+          <Text>{item.body}</Text>
+        </View>
+      ))}
+    </View>
       <Calendar
         onDayPress={(day) => setSelectedDate(day.dateString)}
         markedDates={{
@@ -52,7 +66,7 @@ export function Home({ navigation }) {
         </View>
       )}
       
-    </View>
+    </ScrollView>
   );
 }
 
@@ -62,5 +76,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 10,
+  },
+  announcementContainer: {
+    padding: 15,
+    backgroundColor: '#eb8d0e'
+  },
+  announcementCard: {
+    backgroundColor: '#f2f2f2',
+    padding: 10,
+    borderRadius: 8,
+    marginVertical: 5,
+  },
+  announcementTitle: {
+    fontWeight: 'bold',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
 });
