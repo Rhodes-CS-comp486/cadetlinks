@@ -1,10 +1,28 @@
 import { Button } from '@react-navigation/elements';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import React, { useState, useLayoutEffect } from 'react';
+import { useNavigation } from '@react-navigation/native';
 import { Calendar } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
 
-export function Home({ navigation }) {
+export function Home(props) {
+  //Settings Button
+  const navigation = useNavigation();
+
+  useLayoutEffect(() => {
+    if (!navigation || typeof navigation.setOptions !== 'function') return;
+
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity 
+          onPress={() => navigation.navigate('Settings')}
+          style={{ marginRight: 15 }}>
+          <Ionicons name="settings-outline" size={24} color="black" />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
+
   //Announcements
   const announcements = [
   { id: '1', title: 'LLAB Uniform', body: 'ABUs required this Thursday.' },
