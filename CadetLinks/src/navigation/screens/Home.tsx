@@ -18,26 +18,40 @@ export function Home({ navigation }) {
     ],
   };
 
+  const markedDates = Object.keys(events).reduce((acc, date) => {
+    acc[date] = {
+      marked: true,
+      dotColor: 'blue',
+    };
+  return acc;
+}, {});
+
+
 
   return (
     <View style={styles.container}>
       <Calendar
-        onDayPress={(day) => {
-          setSelectedDate(day.dateString);
-          console.log('Selected:', day.dateString);
-        }}
+        onDayPress={(day) => setSelectedDate(day.dateString)}
         markedDates={{
+          ...markedDates,
           [selectedDate]: {
             selected: true,
-            selectedColor: '#007bff',
+            selectedColor: '#1e90ff',
           },
         }}
       />
-      <Button screen="Profile" params={{ user: 'jane' }}>
-        Go to Profile
-      </Button>
-      <Button screen="Settings">Go to Settings</Button>
-      <Button screen="Settings"> Also Go Settings</Button>
+
+      {selectedDate && events[selectedDate] && (
+        <View style={{ padding: 15 }}>
+          <Text style={styles.sectionTitle}>Events</Text>
+          {events[selectedDate].map(event => (
+            <Text key={event.id} style={{ marginVertical: 5 }}>
+              • {event.title}
+            </Text>
+          ))}a
+        </View>
+      )}
+      
     </View>
   );
 }
