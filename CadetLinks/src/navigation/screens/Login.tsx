@@ -27,13 +27,13 @@ export function Login() {
     const enteredUsername = email.trim().toLowerCase();
     const enteredPassword = password.trim();
 
-    // require something typed
+    // require something to be typed
     if (!enteredUsername || !enteredPassword) {
       setError("Please enter both username and password.");
       return;
     }
 
-    // fake credentials
+    // fake credentials for now
     if (enteredUsername === "cadet" && enteredPassword === "cadet") {
       setError("");
       navigation.replace("HomeTabs");
