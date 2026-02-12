@@ -55,6 +55,7 @@ const HomeTabs = createBottomTabNavigator({
       screen: Profile,
       options: {
         title: 'Profile',
+        headerShown:false,
         tabBarIcon: ({ color, size }) => (
           <Image
             source={profile}
