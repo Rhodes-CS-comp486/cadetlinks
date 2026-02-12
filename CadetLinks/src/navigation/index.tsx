@@ -6,8 +6,9 @@ import {
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Image } from 'react-native';
-import bell from '../assets/bell.png';
+import calendar from '../assets/calendar.png';
 import newspaper from '../assets/newspaper.png';
+import profile from '../assets/profile.png';
 import { Login } from "./screens/Login";
 import { Home } from './screens/Home';
 import { Profile } from './screens/Profile';
@@ -21,7 +22,7 @@ const HomeTabs = createBottomTabNavigator({
     Home: {
       screen: Home,
       options: {
-        title: 'Feed',
+        title: 'Home',
         tabBarIcon: ({ color, size }) => (
           <Image
             source={newspaper}
@@ -34,12 +35,29 @@ const HomeTabs = createBottomTabNavigator({
         ),
       },
     },
-    Updates: {
+    Calendar: {
       screen: Updates,
       options: {
+        title: 'Calendar',
         tabBarIcon: ({ color, size }) => (
           <Image
-            source={bell}
+            source={calendar}
+            tintColor={color}
+            style={{
+              width: size,
+              height: size,
+            }}
+          />
+        ),
+      },
+    },
+    Profile: {
+      screen: Profile,
+      options: {
+        title: 'Profile',
+        tabBarIcon: ({ color, size }) => (
+          <Image
+            source={profile}
             tintColor={color}
             style={{
               width: size,
