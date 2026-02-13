@@ -9,11 +9,13 @@ import { Image } from 'react-native';
 import calendar from '../assets/calendar.png';
 import newspaper from '../assets/newspaper.png';
 import profile from '../assets/profile.png';
+import { Login } from "./screens/Login";
 import { Home } from './screens/Home';
 import { Profile } from './screens/Profile';
 import { Settings } from './screens/Settings';
 import { Updates } from './screens/Updates';
 import { NotFound } from './screens/NotFound';
+
 
 const HomeTabs = createBottomTabNavigator({
   screens: {
@@ -70,6 +72,12 @@ const HomeTabs = createBottomTabNavigator({
 
 const RootStack = createNativeStackNavigator({
   screens: {
+    Login: {
+      screen: Login,
+      options: { 
+        headerShown: false 
+      },
+    },
     HomeTabs: {
       screen: HomeTabs,
       options: {
@@ -114,7 +122,7 @@ const RootStack = createNativeStackNavigator({
 
 export const Navigation = createStaticNavigation(RootStack);
 
-type RootStackParamList = StaticParamList<typeof RootStack>;
+export type RootStackParamList = StaticParamList<typeof RootStack>;
 
 declare global {
   namespace ReactNavigation {
