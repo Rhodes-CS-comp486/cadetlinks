@@ -13,7 +13,7 @@ import { Login } from "./screens/Login";
 import { Home } from './screens/Home';
 import { Profile } from './screens/Profile';
 import { Settings } from './screens/Settings';
-import { Updates } from './screens/Updates';
+import { Events } from './screens/Events';
 import { NotFound } from './screens/NotFound';
 
 
@@ -35,10 +35,10 @@ const HomeTabs = createBottomTabNavigator({
         ),
       },
     },
-    Calendar: {
-      screen: Updates,
+    Events: {
+      screen: Events,
       options: {
-        title: 'Calendar',
+        title: 'Events',
         tabBarIcon: ({ color, size }) => (
           <Image
             source={calendar}
