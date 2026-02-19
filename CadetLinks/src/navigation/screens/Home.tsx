@@ -1,5 +1,5 @@
 import { Button } from '@react-navigation/elements';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, FlatList } from 'react-native';
 import React, { useState, useLayoutEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { Calendar } from 'react-native-calendars';
@@ -27,21 +27,26 @@ export function Home() {
   const announcements = [
   { id: '1', title: 'LLAB Uniform', body: 'ABUs required this Thursday.' },
   { id: '2', title: 'PT Location Change', body: 'Meet at track instead of gym.' },
+  { id: '3', title: 'LLAB Uniform', body: 'Dress Blues required next Thursday.' },
+  { id: '4', title: 'PT Cancellation', body: 'PT on 23 Feb has been cancelled.' },
+  { id: '5', title: 'Upcoming PFD', body: 'The next PFD is scheduled for 28 Feb.' },
   ];
 
   return (
-    <ScrollView style={{ flex: 1 }}>
+    <View style={{ flex: 1 }}>
       <View style={styles.announcementContainer}>
-      <Text style={styles.sectionTitle}>Announcements</Text>
+        <Text style={styles.sectionTitle}>Announcements</Text>
 
-      {announcements.map(item => (
-        <View key={item.id} style={styles.announcementCard}>
-          <Text style={styles.announcementTitle}>{item.title}</Text>
-          <Text>{item.body}</Text>
-        </View>
-      ))}
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 10 }}>
+          {announcements.map(item => (
+            <View key={item.id} style={styles.announcementCard}>
+              <Text style={styles.announcementTitle}>{item.title}</Text>
+              <Text>{item.body}</Text>
+            </View>
+          ))}
+        </ScrollView>
+      </View>
     </View>
-    </ScrollView>
   );
 }
 
@@ -54,7 +59,8 @@ const styles = StyleSheet.create({
   },
   announcementContainer: {
     padding: 15,
-    backgroundColor: '#eb8d0e'
+    backgroundColor: '#eb8d0e',
+    height: '35%',
   },
   announcementCard: {
     backgroundColor: '#f2f2f2',
