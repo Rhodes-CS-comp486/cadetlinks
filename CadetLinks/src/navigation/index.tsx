@@ -9,8 +9,8 @@ import { Image } from 'react-native';
 import calendar from '../assets/calendar.png';
 import newspaper from '../assets/newspaper.png';
 import profile from '../assets/profile.png';
-import { Login } from "./screens/Login";
 import { Home } from './screens/Home';
+import { Login } from "./screens/Login";
 import { Profile } from './screens/Profile';
 import { Settings } from './screens/Settings';
 import { Events } from './screens/Events';
@@ -73,17 +73,18 @@ const HomeTabs = createBottomTabNavigator({
 
 const RootStack = createNativeStackNavigator({
   screens: {
-    Login: {
-      screen: Login,
-      options: { 
-        headerShown: false 
-      },
-    },
     HomeTabs: {
       screen: HomeTabs,
       options: {
         title: 'Home',
         headerShown: false,
+      },
+    },
+    // move this so login is first. this is just for dev for now
+    Login: {
+      screen: Login,
+      options: { 
+        headerShown: false 
       },
     },
     Profile: {

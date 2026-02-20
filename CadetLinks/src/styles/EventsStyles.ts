@@ -1,0 +1,158 @@
+import { StyleSheet } from 'react-native';
+
+export const eventsStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  eventsContainer: {
+    maxHeight: 300,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#f9f9f9',
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: '#333',
+  },
+  eventRow: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    padding: 12,
+    marginBottom: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderLeftWidth: 4,
+    borderLeftColor: '#1e90ff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  eventContent: {
+    flex: 1,
+  },
+  eventTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  eventTime: {
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 4,
+  },
+  eventLocation: {
+    fontSize: 12,
+    color: '#999',
+  },
+  eventTypeContainer: {
+    marginLeft: 12,
+  },
+  eventTypeLabel: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  rsvpLabel: {
+    color: '#fff',
+    backgroundColor: '#2196F3',
+  },
+  mandatoryLabel: {
+    color: '#fff',
+    backgroundColor: '#FF9800',
+  },
+  noEventsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  noEventsText: {
+    fontSize: 14,
+    color: '#999',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 20,
+    maxHeight: '85%',
+  },
+  closeButton: {
+    alignSelf: 'flex-end',
+    padding: 8,
+    marginBottom: 12,
+  },
+  closeButtonText: {
+    fontSize: 24,
+    color: '#333',
+    fontWeight: 'bold',
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 16,
+  },
+  modalLabel: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#1e90ff',
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  modalText: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+  },
+  rsvpButton: {
+    backgroundColor: '#2196F3',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  rsvpButtonConfirm: {
+    backgroundColor: '#4CAF50',
+  },
+  rsvpButtonDecline: {
+    backgroundColor: '#ff3a3a',
+  },
+  rsvpButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  mandatoryContainer: {
+    backgroundColor: '#FFF3CD',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 20,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FFC107',
+  },
+  mandatoryText: {
+    color: '#856404',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+});
