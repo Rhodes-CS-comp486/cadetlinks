@@ -10,7 +10,7 @@ interface Event {
   time: string;
   description: string;
   location: string;
-  type: 'RSVP' | 'mandatory';
+  type: 'RSVP' | 'Mandatory';
 }
 
 export function Events(): React.ReactElement {
@@ -18,6 +18,7 @@ export function Events(): React.ReactElement {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [rsvpStatus, setRsvpStatus] = useState<{ [eventId: string]: boolean }>({});
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   {/* sample event data. remove later */}
   const allEvents: Event[] = [
@@ -37,7 +38,7 @@ export function Events(): React.ReactElement {
       time: '03:00 PM',
       description: 'Leadership Lab',
       location: ' Room 201',
-      type: 'mandatory',
+      type: 'Mandatory',
     },
     {
       id: '3',
@@ -71,21 +72,12 @@ export function Events(): React.ReactElement {
     setModalVisible(true);
   };
 
-  const handleRSVP = () => {
-    if (selectedEvent) {
-      setRsvpStatus((prev) => ({
-        ...prev,
-        [selectedEvent.id]: !prev[selectedEvent.id],
-      }));
-      const newStatus = !rsvpStatus[selectedEvent.id];
-      Alert.alert(
-        'RSVP Confirmed',
-        newStatus
-          ? `You have RSVP'd to ${selectedEvent.title}`
-          : `You have cancelled RSVP for ${selectedEvent.title}`
-      );
-      setModalVisible(false);
-    }
+  const handleRSVP = (eventId: string, confirming: boolean) => {
+    setRsvpStatus((prev) => ({ ...prev, [eventId]: confirming }));
+    setModalVisible(false);
+    setSelectedEvent(null);
+    setToastMessage(confirming ? 'RSVP Confirmed' : 'RSVP Declined');
+    setTimeout(() => setToastMessage(null), 2000);
   };
 
   const handleCloseModal = () => {
@@ -93,15 +85,15 @@ export function Events(): React.ReactElement {
     setSelectedEvent(null);
   };
 
-  const getLabelStyle = (event:{type: string; rsvpStatus?: boolean; id:string}): [any, string] => {
-    if(event.type === 'mandatory') {
-        return [styles.mandatoryLabel, 'mandatory'];
+  const getLabelTextAndStyle = (event:{type: string; rsvpStatus?: boolean; id:string}): [any, string] => {
+    if(event.type === 'Mandatory') {
+        return [styles.mandatoryLabel, 'Mandatory'];
     } 
     const status = rsvpStatus[event.id];
     if(status === undefined) {
-        return [styles.rsvpLabel, 'rsvp'];    
+        return [styles.rsvpLabel, 'RSVP'];    
     }else{
-        return status ? [styles.rsvpButtonConfirm, 'confirmed'] : [styles.rsvpButtonDecline, 'declined'];
+        return status ? [styles.rsvpButtonConfirm, 'Confirmed'] : [styles.rsvpButtonDecline, 'Declined'];
     }
   }
 
@@ -122,11 +114,11 @@ export function Events(): React.ReactElement {
       {/* Events List for Selected Date*/}
       {selectedDate && eventsForSelectedDate.length > 0 && (
         <View style={styles.eventsContainer}>
-          <Text style={styles.sectionTitle}>Events for {selectedDate}</Text>
+          <Text style={styles.sectionTitle}> Events for {selectedDate}</Text>
           <ScrollView>
             {eventsForSelectedDate.map((event) => {
 
-            const [labelStyle, labelText] = getLabelStyle(event);
+            const [labelStyle, labelText] = getLabelTextAndStyle(event);
     
             return(
               <TouchableOpacity
@@ -141,7 +133,7 @@ export function Events(): React.ReactElement {
                 </View>
                 <View style={styles.eventTypeContainer}>
 
-                  <Text style={labelStyle}>
+                  <Text style={[styles.rsvpButton, labelStyle]}>
                     {labelText}
                   </Text>
                 </View>
@@ -152,14 +144,14 @@ export function Events(): React.ReactElement {
         </View>
       )}
 
-      {/* No Events Message */}
+      {/* no events message */}
       {selectedDate && eventsForSelectedDate.length === 0 && (
         <View style={styles.noEventsContainer}>
           <Text style={styles.noEventsText}>No events scheduled for this date</Text>
         </View>
       )}
 
-      {/* Event Details Modal */}
+      {/* event details pop up */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -190,26 +182,24 @@ export function Events(): React.ReactElement {
 
                 <Text style={styles.modalLabel}>Description:</Text>
                 <Text style={styles.modalText}>{selectedEvent.description}</Text>
-
-                {selectedEvent.type === 'RSVP' ? (
-                  <TouchableOpacity
-                    style={[
-                      styles.rsvpButton,
-                      rsvpStatus[selectedEvent.id] && styles.rsvpButtonConfirm,
-                    ]}
-                    onPress={handleRSVP}
-                  >
-                    <Text style={styles.rsvpButtonText}>
-                      {rsvpStatus[selectedEvent.id] ? '✓ Coming' : 'RSVP'}
-                    </Text>
-                  </TouchableOpacity>
-                ) : (
-                  <View style={styles.mandatoryContainer}>
-                    <Text style={styles.mandatoryText}>
-                      This is a mandatory event
-                    </Text>
+                {/* only show RSVP button if it's an RSVP event and user hasn't responded yet */}
+                {selectedEvent.type === 'RSVP' && !rsvpStatus[selectedEvent.id] && (
+                  <View style = {{flexDirection: 'row', justifyContent: 'space-between', marginTop: 20}}>
+                    <TouchableOpacity
+                      onPress= {() => handleRSVP(selectedEvent.id, true)}
+                      style={[styles.rsvpButton, styles.rsvpButtonConfirm]}
+                    >
+                      <Text style={styles.rsvpButtonConfirm}>Confirm</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress= {() => handleRSVP(selectedEvent.id, false)}
+                      style={[styles.rsvpButton, styles.rsvpButtonDecline]}
+                    >
+                      <Text style={styles.rsvpButtonDecline}>Decline</Text>
+                    </TouchableOpacity>
                   </View>
                 )}
+               
               </ScrollView>
             )}
           </View>

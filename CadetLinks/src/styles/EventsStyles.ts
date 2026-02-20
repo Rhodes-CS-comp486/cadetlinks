@@ -132,9 +132,21 @@ export const eventsStyles = StyleSheet.create({
   },
   rsvpButtonConfirm: {
     backgroundColor: '#4CAF50',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 20,
   },
   rsvpButtonDecline: {
     backgroundColor: '#ff3a3a',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 20,
   },
   rsvpButtonText: {
     color: '#fff',
