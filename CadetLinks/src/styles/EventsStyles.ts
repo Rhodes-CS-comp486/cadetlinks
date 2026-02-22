@@ -130,6 +130,16 @@ export const eventsStyles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 20,
   },
+  mandatoryButton: {
+    backgroundColor: '#FF9800',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 20,
+  },
+
   rsvpButtonConfirm: {
     backgroundColor: '#4CAF50',
     paddingVertical: 12,
@@ -167,4 +177,33 @@ export const eventsStyles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 14,
   },
+  addEventButton: {
+  position: 'absolute',
+  bottom: 20,
+  right: 20,
+  width: 60,
+  height: 60,
+  borderRadius: 30,
+  backgroundColor: '#1e90ff',
+  justifyContent: 'center',
+  alignItems: 'center',
+  elevation: 5,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.25,
+  shadowRadius: 3.84,
+},
+addEventButtonText: {
+  fontSize: 40,
+  color: '#fff',
+  fontWeight: 'bold'
+},
+  textInput: {
+  borderWidth: 1,
+  borderColor: '#ccc',
+  borderRadius: 5,
+  padding: 10,
+  marginBottom: 15,
+  backgroundColor: '#f9f9f9',
+},
 });
