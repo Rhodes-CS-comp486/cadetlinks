@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Modal, Alert, TextInput, } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Modal, Alert, TextInput, Pressable } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { eventsStyles as styles } from '../../styles/EventsStyles';
 
@@ -10,7 +10,7 @@ interface Event {
   time: string;
   description: string;
   location: string;
-  type: 'RSVP' | 'Mandatory';
+  type: '' | 'RSVP' | 'Mandatory';
 }
 
 export function Events(): React.ReactElement {
@@ -19,7 +19,8 @@ export function Events(): React.ReactElement {
   const [eventInfoModalVisible, setEventInfoModalVisible] = useState(false);
   const [rsvpStatus, setRsvpStatus] = useState<{ [eventId: string]: boolean }>({});
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  // for adding new events:
+  const [isPressed,setIsPressed] = useState(false); 
+  const [isMandatoryPressed,setIsMandatoryPressed] = useState(false); 
   // - need a form and a function 
   // - handle form submission that updates the allEvents array and markedDates object
   const [addEventsModalVisible, setAddEventsModalVisible] = useState(false); //initially false since we only want to see it when we add an event 
@@ -71,7 +72,7 @@ export function Events(): React.ReactElement {
     time: '',
     description: '',
     location: '',
-    type: 'RSVP' as 'RSVP' | 'Mandatory',
+    type: '' as '' | 'RSVP' | 'Mandatory',
   })
 
   {/* create an object where keys are dates and values are booleans indicating
@@ -109,14 +110,15 @@ export function Events(): React.ReactElement {
       time: '',
       description: '',
       location: '',
-      type: 'RSVP',
+      type: '' as '' | 'RSVP' | 'Mandatory',
     });
     setAddEventsModalVisible(true);
   };
 
+
   const handleConfirmAddEvent = () => {
     //validate form inputs
-    if (!newEvent.title || !newEvent.date || !newEvent.time || !newEvent.location) {
+    if (!newEvent.title || !newEvent.date || !newEvent.time || !newEvent.location || !newEvent.type) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
@@ -125,6 +127,7 @@ export function Events(): React.ReactElement {
     const eventToAdd: Event = {
       id: Math.random().toString(36),
       ...newEvent,
+      type: newEvent.type as '',
     };
 
     // add the new event to the allEvents array and update markedDates
@@ -138,6 +141,14 @@ export function Events(): React.ReactElement {
     setAddEventsModalVisible(false);
   };
 
+  const handleButtonPressRsvp = () => {
+    setIsPressed(!isPressed);
+  }
+
+  const handleButtonPressMandatory = () => {
+    setIsMandatoryPressed(!isMandatoryPressed);
+  }
+
   {/* helper function to determine label text and style for event based on type and RSVP status */ }
   const getLabelTextAndStyle = (event: { type: string; rsvpStatus?: boolean; id: string }): [any, string] => {
     if (event.type === 'Mandatory') {
@@ -147,7 +158,7 @@ export function Events(): React.ReactElement {
     if (status === undefined) {
       return [styles.rsvpLabel, 'RSVP'];
     } else {
-      return status ? [styles.rsvpButtonConfirm, 'Confirmed'] : [styles.rsvpButtonDecline, 'Declined'];
+      return status ? [styles.confirmButton, 'Confirmed'] : [styles.declineButton, 'Declined'];
     }
   }
 
@@ -248,18 +259,18 @@ export function Events(): React.ReactElement {
 
                 {/* only show RSVP button if it's an RSVP event and user hasn't responded yet */}
                 {selectedEvent.type === 'RSVP' && !rsvpStatus[selectedEvent.id] && (
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
                     <TouchableOpacity
                       onPress={() => handleRSVP(selectedEvent.id, true)}
-                      style={[styles.rsvpButton, styles.rsvpButtonConfirm]}
+                      style={[styles.rsvpButton, styles.confirmButton]}
                     >
-                      <Text style={styles.rsvpButtonConfirm}>Confirm</Text>
+                      <Text style={styles.confirmButton}>Confirm</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => handleRSVP(selectedEvent.id, false)}
-                      style={[styles.rsvpButton, styles.rsvpButtonDecline]}
+                      style={[styles.rsvpButton, styles.declineButton]}
                     >
-                      <Text style={styles.rsvpButtonDecline}>Decline</Text>
+                      <Text style={styles.declineButton}>Decline</Text>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -322,41 +333,61 @@ export function Events(): React.ReactElement {
               />
 
               <Text style={styles.modalLabel}>Event Type:</Text>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
                 {/*rsvp or mandatory button*/}
-                <TouchableOpacity
+                <Pressable
                   style={[
                     styles.rsvpButton,
-                    newEvent.type === 'RSVP' && styles.rsvpLabel,
+                    newEvent.type === 'RSVP'  && styles.buttonPressed,
+                  ]
+                  }
+                  onPress={() => 
+                    setNewEvent({ ...newEvent, type: newEvent.type === 'RSVP' ? '' : 'RSVP' })
+                  }
+                >
+                  <Text 
+                    style ={
+                      newEvent.type === 'RSVP' ? 
+                      styles.buttonPressed : styles.generalText
+                      }>RSVP</Text> 
+                </Pressable>
+            
+                <Pressable
+                  style={[
+                    styles.mandatoryButton,
+                    newEvent.type === 'Mandatory' && styles.buttonPressed,
                   ]}
-                  onPress={() => setNewEvent({ ...newEvent, type: 'RSVP' })}
+                  onPress={() => {
+                    setNewEvent({ ...newEvent, type: newEvent.type === 'Mandatory' ? '' : 'Mandatory' });
+                    }
+                  }
                 >
-                  <Text style={styles.rsvpLabel}>RSVP</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[
-                  styles.mandatoryButton,
-                  newEvent.type === 'Mandatory' && styles.mandatoryLabel,
-                ]}
-                  onPress={() => setNewEvent({ ...newEvent, type: 'Mandatory' })}
-                >
-                  <Text style={styles.mandatoryLabel}>Mandatory</Text>
-                </TouchableOpacity>
+                  <Text 
+                    style ={
+                      newEvent.type === 'Mandatory' ?
+                       styles.buttonPressed : styles.generalText
+                       }>Mandatory</Text>
+                </Pressable>
               </View>
+
               {/* confirm add event button */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
+                
                 <TouchableOpacity
+                  style={styles.confirmButton}
                   onPress={handleConfirmAddEvent}
-                  style={[styles.rsvpButton, styles.rsvpButtonConfirm]}
                 >
-                  <Text style={styles.rsvpButtonConfirm}>Confirm</Text>
+                  <Text style={styles.generalText}>Confirm</Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity
                   onPress={handleCancelAddEvent}
-                  style={[styles.rsvpButton, styles.rsvpButtonDecline]}
+                  style={styles.declineButton}
                 >
-                  <Text style={styles.rsvpButtonDecline}>Cancel</Text>
+                  <Text style={styles.generalText}>Cancel</Text>
                 </TouchableOpacity>
               </View>
+
             </ScrollView>
 
           </View>

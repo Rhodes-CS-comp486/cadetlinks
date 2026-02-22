@@ -130,6 +130,10 @@ export const eventsStyles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 20,
   },
+  buttonPressed: {
+    backgroundColor: '#6b6b6b',
+    borderColor: '#2f3439',
+  },
   mandatoryButton: {
     backgroundColor: '#FF9800',
     paddingVertical: 12,
@@ -140,7 +144,17 @@ export const eventsStyles = StyleSheet.create({
     marginBottom: 20,
   },
 
-  rsvpButtonConfirm: {
+   mandatoryButtonPressed: {
+    backgroundColor: '#d3c392',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 20,
+  },
+
+  confirmButton: {
     backgroundColor: '#4CAF50',
     paddingVertical: 12,
     paddingHorizontal: 24,
@@ -149,7 +163,12 @@ export const eventsStyles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 20,
   },
-  rsvpButtonDecline: {
+  generalText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+
+  declineButton: {
     backgroundColor: '#ff3a3a',
     paddingVertical: 12,
     paddingHorizontal: 24,
@@ -178,32 +197,33 @@ export const eventsStyles = StyleSheet.create({
     fontSize: 14,
   },
   addEventButton: {
-  position: 'absolute',
-  bottom: 20,
-  right: 20,
-  width: 60,
-  height: 60,
-  borderRadius: 30,
-  backgroundColor: '#1e90ff',
-  justifyContent: 'center',
-  alignItems: 'center',
-  elevation: 5,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.25,
-  shadowRadius: 3.84,
-},
-addEventButtonText: {
-  fontSize: 40,
-  color: '#fff',
-  fontWeight: 'bold'
-},
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#1e90ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  addEventButtonText: {
+    fontSize: 40,
+    color: '#fff',
+    fontWeight: 'bold'
+  },
   textInput: {
-  borderWidth: 1,
-  borderColor: '#ccc',
-  borderRadius: 5,
-  padding: 10,
-  marginBottom: 15,
-  backgroundColor: '#f9f9f9',
-},
+    color:'#999',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 15,
+    backgroundColor: '#f9f9f9',
+  },
 });
