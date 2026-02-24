@@ -13,7 +13,7 @@ import { Home } from './screens/Home';
 import { Login } from "./screens/Login";
 import { Profile } from './screens/Profile';
 import { Settings } from './screens/Settings';
-import { Events } from './screens/Events';
+import { Events } from './screens/EventsPage/Events';
 import { NotFound } from './screens/NotFound';
 
 

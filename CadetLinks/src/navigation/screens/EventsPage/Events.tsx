@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Modal, Alert, TextInput, Pressable } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import { eventsStyles as styles } from '../../styles/EventsStyles';
+import { eventsStyles as styles } from '../../../styles/EventsStyles';
 
 interface Event {
   id: string;
