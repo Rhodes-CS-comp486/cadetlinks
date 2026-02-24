@@ -4,6 +4,11 @@ import { Calendar } from 'react-native-calendars';
 import { eventsStyles as styles } from '../../../styles/EventsStyles';
 import { useEvents } from './EventsLogic';
 
+/*
+main events component that contains all UI. EventLogic contains
+all state and logic for this component, 
+which is accessed through the EventLogic custom hook
+*/
 export function Events(): React.ReactElement {
   // Use the custom hook to manage all event state and logic
   const {
@@ -148,6 +153,7 @@ export function Events(): React.ReactElement {
       </Modal>
 
       {/*add event modal */}
+      {/* TODO: validate input and show error messages... maybe drop down instead of buttons for mandatory vs rsvp?*/}
       <Modal
         animationType="slide"
         transparent={true}
