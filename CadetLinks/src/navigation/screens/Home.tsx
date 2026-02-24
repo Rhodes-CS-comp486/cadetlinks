@@ -25,8 +25,8 @@ export function Home() {
 
   //Announcements
   const announcements = [
-  { id: '1', title: 'LLAB Uniform', body: 'ABUs required this Thursday.' },
-  { id: '2', title: 'PT Location Change', body: 'Meet at track instead of gym.' },
+  { id: '1', title: 'LLAB Uniform', body: 'OCPs required this Thursday.' },
+  { id: '2', title: 'PT Location Change', body: 'Meet at gym instead of track this week.' },
   { id: '3', title: 'LLAB Uniform', body: 'Dress Blues required next Thursday.' },
   { id: '4', title: 'PT Cancellation', body: 'PT on 23 Feb has been cancelled.' },
   { id: '5', title: 'Upcoming PFD', body: 'The next PFD is scheduled for 28 Feb.' },
