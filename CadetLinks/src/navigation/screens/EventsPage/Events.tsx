@@ -1,166 +1,32 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Modal, Alert, TextInput, Pressable } from 'react-native';
+import React from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Pressable } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { eventsStyles as styles } from '../../../styles/EventsStyles';
-
-interface Event {
-  id: string;
-  title: string;
-  date: string;
-  time: string;
-  description: string;
-  location: string;
-  type: '' | 'RSVP' | 'Mandatory';
-}
+import { useEvents } from './EventsLogic';
 
 export function Events(): React.ReactElement {
-  const [selectedDate, setSelectedDate] = useState<string>('');
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [eventInfoModalVisible, setEventInfoModalVisible] = useState(false);
-  const [rsvpStatus, setRsvpStatus] = useState<{ [eventId: string]: boolean }>({});
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [isPressed,setIsPressed] = useState(false); 
-  const [isMandatoryPressed,setIsMandatoryPressed] = useState(false); 
-  // - need a form and a function 
-  // - handle form submission that updates the allEvents array and markedDates object
-  const [addEventsModalVisible, setAddEventsModalVisible] = useState(false); //initially false since we only want to see it when we add an event 
-
-  {/* sample event data. remove later */ }
-  const [allEvents, setAllEvents] = useState<Event[]>([
-    {
-      id: '1',
-      title: 'PT',
-      date: '2026-02-10',
-      time: '0600',
-      description: 'Physical training session',
-      location: 'Memorial Field',
-      type: 'Mandatory',
-    },
-    {
-      id: '2',
-      title: 'LLAB',
-      date: '2026-02-10',
-      time: '0300',
-      description: 'Leadership Lab',
-      location: 'Manning Hall Room 113',
-      type: 'Mandatory',
-    },
-    {
-      id: '3',
-      title: 'PT',
-      date: '2026-02-12',
-      time: '0600',
-      description: 'Physical training session',
-      location: 'Memorial Field',
-      type: 'Mandatory',
-    },
-    {
-      id: '4',
-      title: 'Lunch & Learn',
-      date: '2026-02-12',
-      time: '1200',
-      description: 'Lunch and a presentation',
-      location: 'Air Force Classroom',
-      type: 'RSVP',
-    },
-  ]);
-
-  //new event form state
-  const [newEvent, setNewEvent] = useState({
-    title: '',
-    date: '',
-    time: '',
-    description: '',
-    location: '',
-    type: '' as '' | 'RSVP' | 'Mandatory',
-  })
-
-  {/* create an object where keys are dates and values are booleans indicating
-     if there's an event on that date */}
-  const markedDates = allEvents.reduce((acc: any, event) => {
-    acc[event.date] = { marked: true, dotColor: 'blue' };
-    return acc;
-  }, {});
-
-  const eventsForSelectedDate = allEvents.filter((ev) => ev.date === selectedDate);
-
-  {/*when user clicks on an event, set the selected event and open the modal*/ }
-  const handleEventPress = (event: Event) => {
-    setSelectedEvent(event);
-    setEventInfoModalVisible(true);
-  };
-
-  const handleRSVP = (eventId: string, confirming: boolean) => {
-    setRsvpStatus((prev) => ({ ...prev, [eventId]: confirming }));
-    setEventInfoModalVisible(false);
-    setSelectedEvent(null);
-    setToastMessage(confirming ? 'RSVP Confirmed' : 'RSVP Declined');
-    setTimeout(() => setToastMessage(null), 3000);
-  };
-
-  const handleCloseEventInfoModal = () => {
-    setEventInfoModalVisible(false);
-    setSelectedEvent(null);
-  };
-
-  const handleAddEvent = () => {
-    setNewEvent({
-      title: '',
-      date: '',
-      time: '',
-      description: '',
-      location: '',
-      type: '' as '' | 'RSVP' | 'Mandatory',
-    });
-    setAddEventsModalVisible(true);
-  };
-
-
-  const handleConfirmAddEvent = () => {
-    //validate form inputs
-    if (!newEvent.title || !newEvent.date || !newEvent.time || !newEvent.location || !newEvent.type) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
-    }
-
-    // create a new event object with a unique random id
-    const eventToAdd: Event = {
-      id: Math.random().toString(36),
-      ...newEvent,
-      type: newEvent.type as '',
-    };
-
-    // add the new event to the allEvents array and update markedDates
-    setAllEvents([...allEvents, eventToAdd]);
-    setAddEventsModalVisible(false);
-    setToastMessage('Event added successfully');
-    setTimeout(() => setToastMessage(null), 3000);
-  }
-
-  const handleCancelAddEvent = () => {
-    setAddEventsModalVisible(false);
-  };
-
-  const handleButtonPressRsvp = () => {
-    setIsPressed(!isPressed);
-  }
-
-  const handleButtonPressMandatory = () => {
-    setIsMandatoryPressed(!isMandatoryPressed);
-  }
-
-  {/* helper function to determine label text and style for event based on type and RSVP status */ }
-  const getLabelTextAndStyle = (event: { type: string; rsvpStatus?: boolean; id: string }): [any, string] => {
-    if (event.type === 'Mandatory') {
-      return [styles.mandatoryLabel, 'Mandatory'];
-    }
-    const status = rsvpStatus[event.id];
-    if (status === undefined) {
-      return [styles.rsvpLabel, 'RSVP'];
-    } else {
-      return status ? [styles.confirmButton, 'Confirmed'] : [styles.declineButton, 'Declined'];
-    }
-  }
+  // Use the custom hook to manage all event state and logic
+  const {
+    selectedDate,
+    setSelectedDate,
+    selectedEvent,
+    eventInfoModalVisible,
+    rsvpStatus,
+    toastMessage,
+    addEventsModalVisible,
+    allEvents,
+    newEvent,
+    setNewEvent,
+    markedDates,
+    eventsForSelectedDate,
+    handleEventPress,
+    handleRSVP,
+    handleCloseEventInfoModal,
+    handleAddEvent,
+    handleConfirmAddEvent,
+    handleCancelAddEvent,
+    getLabelTextAndStyle,
+  } = useEvents();
 
   return (
     <View style={styles.container}>
