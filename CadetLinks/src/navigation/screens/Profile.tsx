@@ -144,10 +144,10 @@ export function Profile({ route }: Props) {
                   {profile.firstName ?? "First"} {profile.lastName ?? "Last"}
                 </Text>
 
-                {/* Use what exists in your DB right now */}
+                {/* Use what exists in your DB right now  hello*/}
                 <Text style={styles.userinfo_sub}>
                   <Text style={styles.label_bold}>Flight: </Text>
-                  {profile.flight ?? "—"}
+                  {profile.flight ?? "—"} 
                 </Text>
 
                 <Text style={styles.userinfo_sub}>
