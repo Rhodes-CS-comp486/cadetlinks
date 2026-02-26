@@ -1,13 +1,30 @@
 import { Button } from '@react-navigation/elements';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity, FlatList } from 'react-native';
-import React, { useState, useLayoutEffect } from 'react';
+import React, { useState, useLayoutEffect, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { Calendar } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
+import { onValue, ref, get, onChildRemoved } from 'firebase/database';
+import { db } from '../../firebase/config';
 
 export function Home() {
-  //Settings Button
   const navigation = useNavigation();
+
+  useEffect(() => {
+    const profileRef = ref(db, "cadets/icdixon_memphis_edu");
+
+    get(profileRef)
+      .then((snapshot) => {
+        if (snapshot.exists()) {
+          console.log("✅ Cadet data in Home:", snapshot.val());
+        } else {
+          console.log("⚠️ No cadet data available");
+        }
+      })
+      .catch((error) => {
+        console.error("❌ Error reading cadet profile:", error);
+      });
+  }, []);
 
   useLayoutEffect(() => {
     if (!navigation || typeof navigation.setOptions !== 'function') return;

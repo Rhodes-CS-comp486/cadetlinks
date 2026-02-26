@@ -73,6 +73,7 @@ const HomeTabs = createBottomTabNavigator({
 
 const RootStack = createNativeStackNavigator({
   screens: {
+    // move this so login is first. this is just for dev for now
     Login: {
       screen: Login,
       options: { 
@@ -86,7 +87,6 @@ const RootStack = createNativeStackNavigator({
         headerShown: false,
       },
     },
-    // move this so login is first. this is just for dev for now
     Profile: {
       screen: Profile,
       linking: {
