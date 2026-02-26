@@ -1,16 +1,63 @@
-import React from "react";
-import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { StaticScreenProps, useNavigation } from "@react-navigation/native";
+
+import { ref, get } from "firebase/database";
+import { db } from "../../firebase/config";
 
 type Props = StaticScreenProps<{
   user: string;
 }>;
 
+// typed shape of what we expect from Firebase (optional fields so it won't crash if missing)
+type CadetProfile = {
+  firstName?: string;
+  lastName?: string;
+  cadetRank?: string;
+  job?: string;
+  flight?: string;
+  classYear?: number;
+  permissions?: string;
+  contact?: {
+    schoolEmail?: string;
+    personalEmail?: string;
+    cellPhone?: string;
+  };
+};
+
 export function Profile({ route }: Props) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+
+  // ---- Firebase profile state ----
+  const [profile, setProfile] = useState<CadetProfile | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [profileError, setProfileError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Load a real cadet from your database (test cadet for now)
+    const profileRef = ref(db, "cadets/icdixon_memphis_edu");
+
+    get(profileRef)
+      .then((snapshot) => {
+        if (snapshot.exists()) {
+          console.log("✅ Cadet data in Profile:", snapshot.val());
+          setProfile(snapshot.val());
+        } else {
+          console.log("⚠️ No cadet data available (Profile)");
+          setProfile(null);
+        }
+      })
+      .catch((error) => {
+        console.error("❌ Error reading cadet profile (Profile):", error);
+        setProfileError("Could not load profile.");
+      })
+      .finally(() => {
+        setLoadingProfile(false);
+      });
+  }, []);
 
   // test data for attendance -> will call from db later
   const attended = 20;
@@ -37,8 +84,8 @@ export function Profile({ route }: Props) {
   const ptInGoodStanding = ptAttendancePercent >= 90;
 
   // test data for LLAB attendance -> will call from db later
-  const llabAttended = 9;
-  const llabMissed = 1;
+  const llabAttended = 8;
+  const llabMissed = 2;
 
   // calculating LLAB attendance percentage
   const llabTotal = llabAttended + llabMissed;
@@ -78,16 +125,72 @@ export function Profile({ route }: Props) {
           <View style={styles.avatar_container}>
             <Ionicons name="person" size={28} color="white" />
           </View>
+
           {/* user info */}
           <View style={styles.userinfo_text_container}>
-            <Text style={styles.userinfo_name}>First Name Last Name</Text>
-            <Text style={styles.userinfo_sub}>Detachment</Text>
-            <Text style={styles.userinfo_sub}>Rank</Text>
-            <Text style={styles.userinfo_sub}>Job Group</Text>
-            <Text style={styles.userinfo_sub}>Direct Supervisor</Text>
-            <Text style={styles.userinfo_sub}>% Lab Attendance</Text>
-            <Text style={styles.userinfo_sub}>% PT Attendance</Text>
-            <Text style={styles.userinfo_sub}>Last PT Score</Text>
+            {/* loading/error states just for the profile block */}
+            {loadingProfile ? (
+              <View style={{ marginTop: 4 }}>
+                <ActivityIndicator />
+                <Text style={styles.userinfo_sub}>Loading profile…</Text>
+              </View>
+            ) : profileError ? (
+              <Text style={styles.userinfo_sub}>{profileError}</Text>
+            ) : !profile ? (
+              <Text style={styles.userinfo_sub}>No profile found.</Text>
+            ) : (
+              <>
+                <Text style={styles.userinfo_name}>
+                  {profile.firstName ?? "First"} {profile.lastName ?? "Last"}
+                </Text>
+
+                {/* Use what exists in your DB right now */}
+                <Text style={styles.userinfo_sub}>
+                  <Text style={styles.label_bold}>Flight: </Text>
+                  {profile.flight ?? "—"}
+                </Text>
+
+                <Text style={styles.userinfo_sub}>
+                  <Text style={styles.label_bold}>Rank: </Text>
+                  {profile.cadetRank ?? "—"}
+                </Text>
+
+                <Text style={styles.userinfo_sub}>
+                  <Text style={styles.label_bold}>Job: </Text>
+                  {profile.job ?? "—"}
+                </Text>
+                <Text style={styles.userinfo_sub}>
+                  <Text style={styles.label_bold}>Class Year: </Text>
+                  {profile.classYear ?? "—"}
+                </Text>
+                <Text style={styles.userinfo_sub}>
+                  <Text style={styles.label_bold}>School Email: </Text>
+                  {profile.contact?.schoolEmail ?? "—"}
+                </Text>
+
+                {/* These are placeholders in your UI right now (keep them until DB has them) */}
+                <Text style={styles.userinfo_sub}>
+                  <Text style={styles.label_bold}>Detachment: </Text>
+                  {profile.detachment ?? "—"}
+                </Text>
+                <Text style={styles.userinfo_sub}>
+                  <Text style={styles.label_bold}>Direct Supervisor: </Text>
+                  {profile.directSupervisor ?? "—"}
+                </Text>
+
+                {/* You can swap these to real DB attendance later */}
+                <Text style={styles.userinfo_sub}>
+                  <Text style={styles.label_bold}>Lab Attendance: </Text>{attendancePercent}%
+                </Text>
+                <Text style={styles.userinfo_sub}>
+                  <Text style={styles.label_bold}>PT Attendance: </Text>{ptAttendancePercent}%
+                </Text>
+                <Text style={styles.userinfo_sub}>
+                  <Text style={styles.label_bold}>Last PT Score: </Text>
+                  {profile.lastPTScore ?? "—"}
+                </Text>
+              </>
+            )}
           </View>
         </View>
 
@@ -108,7 +211,6 @@ export function Profile({ route }: Props) {
               <Text style={styles.attendance_percent_text}>
                 {ptAttendancePercent}%
               </Text>
-          
             </View>
 
             {/* Standing label */}
@@ -164,7 +266,7 @@ export function Profile({ route }: Props) {
         </View>
 
         {/* SECTION HEADER */}
-        <Text style={styles.section_header}>LLAB Attendance</Text>  
+        <Text style={styles.section_header}>LLAB Attendance</Text>
 
         {/* LLAB ATTENDANCE CARD */}
         <View style={styles.attendance_card}>
@@ -392,4 +494,9 @@ const styles = StyleSheet.create({
   legend_item: { flexDirection: "row", alignItems: "center", gap: 6 },
   legend_dot: { width: 10, height: 10, borderRadius: 5 },
   legend_text: { color: "#9AA3B2", fontSize: 12 },
+
+  label_bold: {
+  fontWeight: "700",
+  color: "white", // optional — remove if you want it gray like the rest
+  },
 });

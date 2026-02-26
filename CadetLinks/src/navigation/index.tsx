@@ -73,18 +73,18 @@ const HomeTabs = createBottomTabNavigator({
 
 const RootStack = createNativeStackNavigator({
   screens: {
-    HomeTabs: {
-      screen: HomeTabs,
-      options: {
-        title: 'Home',
-        headerShown: false,
-      },
-    },
     // move this so login is first. this is just for dev for now
     Login: {
       screen: Login,
       options: { 
         headerShown: false 
+      },
+    },
+    HomeTabs: {
+      screen: HomeTabs,
+      options: {
+        title: 'Home',
+        headerShown: false,
       },
     },
     Profile: {
