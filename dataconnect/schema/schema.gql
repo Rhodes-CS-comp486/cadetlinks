@@ -1,0 +1,50 @@
+type User @table {
+  username: String!
+  email: String!
+  createdAt: Timestamp!
+  displayName: String
+  profilePictureUrl: String
+}
+
+type Task @table {
+  user: User
+  title: String!
+  status: String!
+  createdAt: Timestamp!
+  description: String
+  dueDate: Date
+  priority: String
+  project: String
+}
+
+type FinancialTransaction @table {
+  user: User
+  amount: Float!
+  type: String!
+  category: String!
+  transactionDate: Date!
+  createdAt: Timestamp!
+  description: String
+}
+
+type Book @table {
+  user: User
+  title: String!
+  author: String!
+  status: String!
+  createdAt: Timestamp!
+  totalPages: Int
+  currentPage: Int
+  rating: Int
+  startDate: Date
+  finishDate: Date
+}
+
+type JournalEntry @table {
+  user: User
+  title: String!
+  content: String!
+  entryDate: Date!
+  createdAt: Timestamp!
+  tags: [String]
+}
