@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Pressable }
 import { Calendar } from 'react-native-calendars';
 import { eventsStyles as styles } from '../../../styles/EventsStyles';
 import { useEvents } from './EventsLogic';
+import TimePicker from './timePicker';
 
 /*
 main events component that contains all UI. EventLogic contains
@@ -64,7 +65,7 @@ export function Events(): React.ReactElement {
                 >
                   <View style={styles.eventContent}>
                     <Text style={styles.eventTitle}>{event.title}</Text>
-                    <Text style={styles.eventTime}>{event.time}</Text>
+                    <Text style={styles.eventTime}>{event.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                     <Text style={styles.eventLocation}>{event.location}</Text>
                   </View>
                   <View style={styles.eventTypeContainer}>
@@ -117,10 +118,10 @@ export function Events(): React.ReactElement {
                 <Text style={styles.modalTitle}>{selectedEvent.title}</Text>
 
                 <Text style={styles.modalLabel}>Date:</Text>
-                <Text style={styles.modalText}>{selectedEvent.date}</Text>
+                <Text style={styles.modalText}>{selectedEvent.date.toLocaleDateString()}</Text>
 
                 <Text style={styles.modalLabel}>Time:</Text>
-                <Text style={styles.modalText}>{selectedEvent.time}</Text>
+                <Text style={styles.modalText}>{selectedEvent.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
 
                 <Text style={styles.modalLabel}>Location:</Text>
                 <Text style={styles.modalText}>{selectedEvent.location}</Text>
@@ -181,15 +182,18 @@ export function Events(): React.ReactElement {
               <TextInput
                 style={styles.textInput}
                 placeholder='Enter Event Date (YYYY-MM-DD)'
-                value={newEvent.date}
-                onChangeText={(text) => setNewEvent({ ...newEvent, date: text })}
+                value={newEvent.date.toLocaleDateString()}
+                onChangeText={(text) => setNewEvent({ ...newEvent, date: new Date(text) })}
               />
-              <TextInput
-                style={styles.textInput}
-                placeholder='HH:MM AM/PM'
+
+              {/* time picker component handles platform differences */}
+              <TimePicker
                 value={newEvent.time}
-                onChangeText={(text) => setNewEvent({ ...newEvent, time: text })}
+                onChange={(date) =>
+                  setNewEvent({ ...newEvent, time: date })
+                }
               />
+              
               <TextInput
                 style={styles.textInput}
                 placeholder='Enter Location'
@@ -210,20 +214,20 @@ export function Events(): React.ReactElement {
                 <Pressable
                   style={[
                     styles.rsvpButton,
-                    newEvent.type === 'RSVP'  && styles.buttonPressed,
+                    newEvent.type === 'RSVP' && styles.buttonPressed,
                   ]
                   }
-                  onPress={() => 
+                  onPress={() =>
                     setNewEvent({ ...newEvent, type: newEvent.type === 'RSVP' ? '' : 'RSVP' })
                   }
                 >
-                  <Text 
-                    style ={
-                      newEvent.type === 'RSVP' ? 
-                      styles.buttonPressed : styles.generalText
-                      }>RSVP</Text> 
+                  <Text
+                    style={
+                      newEvent.type === 'RSVP' ?
+                        styles.buttonPressed : styles.generalText
+                    }>RSVP</Text>
                 </Pressable>
-            
+
                 <Pressable
                   style={[
                     styles.mandatoryButton,
@@ -231,20 +235,20 @@ export function Events(): React.ReactElement {
                   ]}
                   onPress={() => {
                     setNewEvent({ ...newEvent, type: newEvent.type === 'Mandatory' ? '' : 'Mandatory' });
-                    }
+                  }
                   }
                 >
-                  <Text 
-                    style ={
+                  <Text
+                    style={
                       newEvent.type === 'Mandatory' ?
-                       styles.buttonPressed : styles.generalText
-                       }>Mandatory</Text>
+                        styles.buttonPressed : styles.generalText
+                    }>Mandatory</Text>
                 </Pressable>
               </View>
 
               {/* confirm add event button */}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
-                
+
                 <TouchableOpacity
                   style={styles.confirmButton}
                   onPress={handleConfirmAddEvent}

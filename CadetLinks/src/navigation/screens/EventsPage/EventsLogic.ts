@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Alert } from 'react-native';
 import { eventsStyles as styles } from '../../../styles/EventsStyles';
 
 export interface Event {
   id: string;
   title: string;
-  date: string;
-  time: string;
+  date: Date;
+  time: Date;
   description: string;
   location: string;
   type: '' | 'RSVP' | 'Mandatory';
@@ -22,7 +22,13 @@ export interface Event {
 // }
 
 export function useEvents() {
-  const [selectedDate, setSelectedDate] = useState<string>('');
+  // helper used throughout the hook - must be defined before any computed values that call it
+  const formatDate = (d: Date | string): string => {
+    const date = typeof d === 'string' ? new Date(d) : d;
+    return date.toISOString().split('T')[0]; // Return just the date part (YYYY-MM-DD)
+  };
+
+  const [selectedDate, setSelectedDate] = useState<string>(formatDate(new Date()));
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [eventInfoModalVisible, setEventInfoModalVisible] = useState(false);
   const [rsvpStatus, setRsvpStatus] = useState<{ [eventId: string]: boolean }>({});
@@ -33,8 +39,8 @@ export function useEvents() {
     {
       id: '1',
       title: 'PT',
-      date: '2026-02-10',
-      time: '0600',
+      date: new Date('2026-02-10'),
+      time: new Date('2026-02-10T06:00:00'),
       description: 'Physical training session',
       location: 'Memorial Field',
       type: 'Mandatory',
@@ -42,8 +48,8 @@ export function useEvents() {
     {
       id: '2',
       title: 'LLAB',
-      date: '2026-02-10',
-      time: '0300',
+      date: new Date('2026-02-10'),
+      time: new Date('2026-02-10T03:00:00'),
       description: 'Leadership Lab',
       location: 'Room 113',
       type: 'Mandatory',
@@ -51,8 +57,8 @@ export function useEvents() {
     {
       id: '3',
       title: 'PT',
-      date: '2026-02-12',
-      time: '0600',
+      date: new Date('2026-02-12'),
+      time: new Date('2026-02-12T06:00:00'),
       description: 'Physical training session',
       location: 'Memorial Field',
       type: 'Mandatory',
@@ -60,8 +66,8 @@ export function useEvents() {
     {
       id: '4',
       title: 'Lunch & Learn',
-      date: '2026-02-12',
-      time: '1200',
+      date: new Date('2026-02-12'),
+      time: new Date('2026-02-12T12:00:00'),
       description: 'Lunch and a presentation',
       location: 'Air Force Classroom',
       type: 'RSVP',
@@ -71,8 +77,8 @@ export function useEvents() {
   const [newEvent, setNewEvent] = useState<Event>({
     id: '',
     title: '',
-    date: '',
-    time: '',
+    date: new Date(),
+    time: new Date(),
     description: '',
     location: '',
     type: '' as '' | 'RSVP' | 'Mandatory',
@@ -80,11 +86,20 @@ export function useEvents() {
 
   // Computed values
   const markedDates = allEvents.reduce((acc: any, event) => {
-    acc[event.date] = { marked: true, dotColor: 'blue' };
+    const dateKey = formatDate(event.date);
+    acc[dateKey] = { marked: true, dotColor: 'blue' };
     return acc;
   }, {});
 
-  const eventsForSelectedDate = allEvents.filter((ev) => ev.date === selectedDate);
+  // Memoized filtered and sorted events for the selected date
+  const eventsForSelectedDate = useMemo(() => {
+    return allEvents
+      .filter((ev) => formatDate(ev.date) === selectedDate)
+      .sort((a, b) => 
+        a.time.getTime() - b.time.getTime()
+    );
+       
+  }, [allEvents, selectedDate]);
 
   // Event handlers
   const handleEventPress = (event: Event) => {
@@ -105,12 +120,13 @@ export function useEvents() {
     setSelectedEvent(null);
   };
 
+
   const handleAddEvent = () => {
     setNewEvent({
       id: '',
       title: '',
-      date: '',
-      time: '',
+      date: new Date(),
+      time: new Date(),
       description: '',
       location: '',
       type: '' as '' | 'RSVP' | 'Mandatory',
@@ -126,14 +142,32 @@ export function useEvents() {
     }
 
     // Create a new event object with a unique random id
+    const combinedDateTime = new Date(newEvent.date);
+
+    combinedDateTime.setHours(newEvent.time.getHours());
+    combinedDateTime.setMinutes(newEvent.time.getMinutes());
+    combinedDateTime.setSeconds(0);
+    combinedDateTime.setMilliseconds(0);
     const eventToAdd: Event = {
       ...newEvent,
       id: Math.random().toString(36), // simple random id generator
-      type: newEvent.type as '' | 'RSVP' | 'Mandatory',
+      date: combinedDateTime,
+      time: combinedDateTime,
+      //type: newEvent.type as '' | 'RSVP' | 'Mandatory',
     };
 
-    // Add the new event to the allEvents array
-    setAllEvents([...allEvents, eventToAdd]);
+    console.log('Adding event:', eventToAdd);
+
+    // Add the new event and keep the list sorted by date and time
+    setAllEvents(prev => {
+      const combined = [...prev, eventToAdd];
+      combined.sort((a, b) => {
+        const dateDiff = a.date.getTime() - b.date.getTime();
+        if (dateDiff !== 0) return dateDiff;
+        return a.time.getTime() - b.time.getTime();
+      });
+      return combined;
+    });
     setAddEventsModalVisible(false);
     setToastMessage('Event added successfully');
     setTimeout(() => setToastMessage(null), 3000);
