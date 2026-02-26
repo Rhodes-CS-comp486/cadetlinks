@@ -1,166 +1,40 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Modal, Alert, TextInput, Pressable } from 'react-native';
+import React from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Pressable } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import { eventsStyles as styles } from '../../styles/EventsStyles';
+import { eventsStyles as styles } from '../../../styles/EventsStyles';
+import { useEvents } from './EventsLogic';
+import TimePicker from './Components/timePicker';
+import DatePicker from './Components/datePicker';
+import { set } from 'firebase/database';
 
-interface Event {
-  id: string;
-  title: string;
-  date: string;
-  time: string;
-  description: string;
-  location: string;
-  type: '' | 'RSVP' | 'Mandatory';
-}
-
+/*
+main events component that contains all UI. EventLogic contains
+all state and logic for this component, 
+which is accessed through the EventLogic custom hook
+*/
 export function Events(): React.ReactElement {
-  const [selectedDate, setSelectedDate] = useState<string>('');
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [eventInfoModalVisible, setEventInfoModalVisible] = useState(false);
-  const [rsvpStatus, setRsvpStatus] = useState<{ [eventId: string]: boolean }>({});
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [isPressed,setIsPressed] = useState(false); 
-  const [isMandatoryPressed,setIsMandatoryPressed] = useState(false); 
-  // - need a form and a function 
-  // - handle form submission that updates the allEvents array and markedDates object
-  const [addEventsModalVisible, setAddEventsModalVisible] = useState(false); //initially false since we only want to see it when we add an event 
-
-  {/* sample event data. remove later */ }
-  const [allEvents, setAllEvents] = useState<Event[]>([
-    {
-      id: '1',
-      title: 'PT',
-      date: '2026-02-10',
-      time: '0600',
-      description: 'Physical training session',
-      location: 'Memorial Field',
-      type: 'Mandatory',
-    },
-    {
-      id: '2',
-      title: 'LLAB',
-      date: '2026-02-10',
-      time: '0300',
-      description: 'Leadership Lab',
-      location: 'Manning Hall Room 113',
-      type: 'Mandatory',
-    },
-    {
-      id: '3',
-      title: 'PT',
-      date: '2026-02-12',
-      time: '0600',
-      description: 'Physical training session',
-      location: 'Memorial Field',
-      type: 'Mandatory',
-    },
-    {
-      id: '4',
-      title: 'Lunch & Learn',
-      date: '2026-02-12',
-      time: '1200',
-      description: 'Lunch and a presentation',
-      location: 'Air Force Classroom',
-      type: 'RSVP',
-    },
-  ]);
-
-  //new event form state
-  const [newEvent, setNewEvent] = useState({
-    title: '',
-    date: '',
-    time: '',
-    description: '',
-    location: '',
-    type: '' as '' | 'RSVP' | 'Mandatory',
-  })
-
-  {/* create an object where keys are dates and values are booleans indicating
-     if there's an event on that date */}
-  const markedDates = allEvents.reduce((acc: any, event) => {
-    acc[event.date] = { marked: true, dotColor: 'blue' };
-    return acc;
-  }, {});
-
-  const eventsForSelectedDate = allEvents.filter((ev) => ev.date === selectedDate);
-
-  {/*when user clicks on an event, set the selected event and open the modal*/ }
-  const handleEventPress = (event: Event) => {
-    setSelectedEvent(event);
-    setEventInfoModalVisible(true);
-  };
-
-  const handleRSVP = (eventId: string, confirming: boolean) => {
-    setRsvpStatus((prev) => ({ ...prev, [eventId]: confirming }));
-    setEventInfoModalVisible(false);
-    setSelectedEvent(null);
-    setToastMessage(confirming ? 'RSVP Confirmed' : 'RSVP Declined');
-    setTimeout(() => setToastMessage(null), 3000);
-  };
-
-  const handleCloseEventInfoModal = () => {
-    setEventInfoModalVisible(false);
-    setSelectedEvent(null);
-  };
-
-  const handleAddEvent = () => {
-    setNewEvent({
-      title: '',
-      date: '',
-      time: '',
-      description: '',
-      location: '',
-      type: '' as '' | 'RSVP' | 'Mandatory',
-    });
-    setAddEventsModalVisible(true);
-  };
-
-
-  const handleConfirmAddEvent = () => {
-    //validate form inputs
-    if (!newEvent.title || !newEvent.date || !newEvent.time || !newEvent.location || !newEvent.type) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
-    }
-
-    // create a new event object with a unique random id
-    const eventToAdd: Event = {
-      id: Math.random().toString(36),
-      ...newEvent,
-      type: newEvent.type as '',
-    };
-
-    // add the new event to the allEvents array and update markedDates
-    setAllEvents([...allEvents, eventToAdd]);
-    setAddEventsModalVisible(false);
-    setToastMessage('Event added successfully');
-    setTimeout(() => setToastMessage(null), 3000);
-  }
-
-  const handleCancelAddEvent = () => {
-    setAddEventsModalVisible(false);
-  };
-
-  const handleButtonPressRsvp = () => {
-    setIsPressed(!isPressed);
-  }
-
-  const handleButtonPressMandatory = () => {
-    setIsMandatoryPressed(!isMandatoryPressed);
-  }
-
-  {/* helper function to determine label text and style for event based on type and RSVP status */ }
-  const getLabelTextAndStyle = (event: { type: string; rsvpStatus?: boolean; id: string }): [any, string] => {
-    if (event.type === 'Mandatory') {
-      return [styles.mandatoryLabel, 'Mandatory'];
-    }
-    const status = rsvpStatus[event.id];
-    if (status === undefined) {
-      return [styles.rsvpLabel, 'RSVP'];
-    } else {
-      return status ? [styles.confirmButton, 'Confirmed'] : [styles.declineButton, 'Declined'];
-    }
-  }
+  // Use the custom hook to manage all event state and logic
+  const {
+    selectedDate,
+    setSelectedDate,
+    selectedEvent,
+    eventInfoModalVisible,
+    rsvpStatus,
+    toastMessage,
+    addEventsModalVisible,
+    allEvents,
+    newEvent,
+    setNewEvent,
+    markedDates,
+    eventsForSelectedDate,
+    handleEventPress,
+    handleRSVP,
+    handleCloseEventInfoModal,
+    handleAddEvent,
+    handleConfirmAddEvent,
+    handleCancelAddEvent,
+    getLabelTextAndStyle,
+  } = useEvents();
 
   return (
     <View style={styles.container}>
@@ -193,7 +67,7 @@ export function Events(): React.ReactElement {
                 >
                   <View style={styles.eventContent}>
                     <Text style={styles.eventTitle}>{event.title}</Text>
-                    <Text style={styles.eventTime}>{event.time}</Text>
+                    <Text style={styles.eventTime}>{event.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                     <Text style={styles.eventLocation}>{event.location}</Text>
                   </View>
                   <View style={styles.eventTypeContainer}>
@@ -246,10 +120,10 @@ export function Events(): React.ReactElement {
                 <Text style={styles.modalTitle}>{selectedEvent.title}</Text>
 
                 <Text style={styles.modalLabel}>Date:</Text>
-                <Text style={styles.modalText}>{selectedEvent.date}</Text>
+                <Text style={styles.modalText}>{selectedEvent.date.toLocaleDateString()}</Text>
 
                 <Text style={styles.modalLabel}>Time:</Text>
-                <Text style={styles.modalText}>{selectedEvent.time}</Text>
+                <Text style={styles.modalText}>{selectedEvent.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
 
                 <Text style={styles.modalLabel}>Location:</Text>
                 <Text style={styles.modalText}>{selectedEvent.location}</Text>
@@ -282,6 +156,7 @@ export function Events(): React.ReactElement {
       </Modal>
 
       {/*add event modal */}
+      {/* TODO: validate input and show error messages... maybe drop down instead of buttons for mandatory vs rsvp?*/}
       <Modal
         animationType="slide"
         transparent={true}
@@ -306,18 +181,22 @@ export function Events(): React.ReactElement {
                 value={newEvent.title}
                 onChangeText={(text) => setNewEvent({ ...newEvent, title: text })}
               />
-              <TextInput
-                style={styles.textInput}
-                placeholder='Enter Event Date (YYYY-MM-DD)'
+              
+              <DatePicker
                 value={newEvent.date}
-                onChangeText={(text) => setNewEvent({ ...newEvent, date: text })}
+                onChange={(date) =>
+                  setNewEvent({ ...newEvent, date: date })
+                }
               />
-              <TextInput
-                style={styles.textInput}
-                placeholder='HH:MM AM/PM'
+
+              {/* time picker component handles platform differences */}
+              <TimePicker
                 value={newEvent.time}
-                onChangeText={(text) => setNewEvent({ ...newEvent, time: text })}
+                onChange={(date) =>
+                  setNewEvent({ ...newEvent, time: date })
+                }
               />
+
               <TextInput
                 style={styles.textInput}
                 placeholder='Enter Location'
@@ -338,20 +217,20 @@ export function Events(): React.ReactElement {
                 <Pressable
                   style={[
                     styles.rsvpButton,
-                    newEvent.type === 'RSVP'  && styles.buttonPressed,
+                    newEvent.type === 'RSVP' && styles.buttonPressed,
                   ]
                   }
-                  onPress={() => 
+                  onPress={() =>
                     setNewEvent({ ...newEvent, type: newEvent.type === 'RSVP' ? '' : 'RSVP' })
                   }
                 >
-                  <Text 
-                    style ={
-                      newEvent.type === 'RSVP' ? 
-                      styles.buttonPressed : styles.generalText
-                      }>RSVP</Text> 
+                  <Text
+                    style={
+                      newEvent.type === 'RSVP' ?
+                        styles.buttonPressed : styles.generalText
+                    }>RSVP</Text>
                 </Pressable>
-            
+
                 <Pressable
                   style={[
                     styles.mandatoryButton,
@@ -359,20 +238,20 @@ export function Events(): React.ReactElement {
                   ]}
                   onPress={() => {
                     setNewEvent({ ...newEvent, type: newEvent.type === 'Mandatory' ? '' : 'Mandatory' });
-                    }
+                  }
                   }
                 >
-                  <Text 
-                    style ={
+                  <Text
+                    style={
                       newEvent.type === 'Mandatory' ?
-                       styles.buttonPressed : styles.generalText
-                       }>Mandatory</Text>
+                        styles.buttonPressed : styles.generalText
+                    }>Mandatory</Text>
                 </Pressable>
               </View>
 
               {/* confirm add event button */}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
-                
+
                 <TouchableOpacity
                   style={styles.confirmButton}
                   onPress={handleConfirmAddEvent}
