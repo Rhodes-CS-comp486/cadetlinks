@@ -4,6 +4,8 @@ import { Calendar } from 'react-native-calendars';
 import { eventsStyles as styles } from '../../../styles/EventsStyles';
 import { useEvents } from './EventsLogic';
 import TimePicker from './timePicker';
+import DatePicker from './datePicker';
+import { set } from 'firebase/database';
 
 /*
 main events component that contains all UI. EventLogic contains
@@ -179,11 +181,12 @@ export function Events(): React.ReactElement {
                 value={newEvent.title}
                 onChangeText={(text) => setNewEvent({ ...newEvent, title: text })}
               />
-              <TextInput
-                style={styles.textInput}
-                placeholder='Enter Event Date (YYYY-MM-DD)'
-                value={newEvent.date.toLocaleDateString()}
-                onChangeText={(text) => setNewEvent({ ...newEvent, date: new Date(text) })}
+              
+              <DatePicker
+                value={newEvent.date}
+                onChange={(date) =>
+                  setNewEvent({ ...newEvent, date: date })
+                }
               />
 
               {/* time picker component handles platform differences */}
@@ -193,7 +196,7 @@ export function Events(): React.ReactElement {
                   setNewEvent({ ...newEvent, time: date })
                 }
               />
-              
+
               <TextInput
                 style={styles.textInput}
                 placeholder='Enter Location'

@@ -167,4 +167,25 @@ export const eventsStyles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 14,
   },
+  scrollWheelIOS: {
+    color: '#999',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 12,
+    marginBottom: 15,
+    backgroundColor: '#f9f9f9',
+    justifyContent: 'center',
+  },
+  scrollWheelWeb: {
+    color: '#999',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 15,
+    backgroundColor: '#f9f9f9',
+    fontSize: 16,
+    fontFamily: 'System',
+  }
 });

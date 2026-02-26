@@ -122,6 +122,8 @@ export function useEvents() {
 
 
   const handleAddEvent = () => {
+
+
     setNewEvent({
       id: '',
       title: '',
