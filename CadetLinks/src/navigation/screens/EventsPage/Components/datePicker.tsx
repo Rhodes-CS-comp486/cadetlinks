@@ -8,7 +8,7 @@ import {
 import DateTimePicker, {
   DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
-import { eventsStyles } from './Styles/EventsStyles';
+import { eventsStyles } from '../Styles/EventsStyles';
 
 type DatePickerProps = {
   value: Date | null;
