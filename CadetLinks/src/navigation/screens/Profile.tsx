@@ -144,7 +144,7 @@ export function Profile({ route }: Props) {
                   {profile.firstName ?? "First"} {profile.lastName ?? "Last"}
                 </Text>
 
-                {/* Use what exists in your DB right now  hello*/}
+                {/* Use what exists in your DB right now  hellogi*/}
                 <Text style={styles.userinfo_sub}>
                   <Text style={styles.label_bold}>Flight: </Text>
                   {profile.flight ?? "—"} 
@@ -170,7 +170,7 @@ export function Profile({ route }: Props) {
 
                 {/* These are placeholders in your UI right now (keep them until DB has them) */}
                 <Text style={styles.userinfo_sub}>
-                  <Text style={styles.label_bold}>Detachment: </Text>
+                  <Text style={styles.label_bold}>Detachment : </Text>
                   {profile.detachment ?? "—"}
                 </Text>
                 <Text style={styles.userinfo_sub}>
