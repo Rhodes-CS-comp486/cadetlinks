@@ -8,20 +8,23 @@ import { onValue, ref, get, onChildRemoved } from 'firebase/database';
 import { db } from '../../firebase/config';
 
 export function Home() {
-  const profileRef = ref(db, 'cadets/icdixon_memphis_edu');
-  get(profileRef)
-  .then(snapshot => {
-    if (snapshot.exists()) {
-      console.log("Cadet data in Home:", snapshot.val());
-    } else {
-      console.log("No cadet data available");
-    }
-  })
-  .catch(error => {
-    console.error("Error reading cadet profile:", error);
-  });
-  //Settings Button
   const navigation = useNavigation();
+
+  useEffect(() => {
+    const profileRef = ref(db, "cadets/icdixon_memphis_edu");
+
+    get(profileRef)
+      .then((snapshot) => {
+        if (snapshot.exists()) {
+          console.log("✅ Cadet data in Home:", snapshot.val());
+        } else {
+          console.log("⚠️ No cadet data available");
+        }
+      })
+      .catch((error) => {
+        console.error("❌ Error reading cadet profile:", error);
+      });
+  }, []);
 
   useLayoutEffect(() => {
     if (!navigation || typeof navigation.setOptions !== 'function') return;
