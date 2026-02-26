@@ -9,9 +9,7 @@ import {
 import DateTimePicker, {
     DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
-import { eventsStyles } from './Styles/EventsStyles';
-import { dateToUnix } from 'react-native-paper-dates/lib/typescript/Date/dateUtils';
-
+import { eventsStyles } from '../Styles/EventsStyles';
 
 type TimePickerProps = {
     value: Date | null;

@@ -3,8 +3,8 @@ import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Pressable }
 import { Calendar } from 'react-native-calendars';
 import { eventsStyles as styles } from '../../../styles/EventsStyles';
 import { useEvents } from './EventsLogic';
-import TimePicker from './timePicker';
-import DatePicker from './datePicker';
+import TimePicker from './Components/timePicker';
+import DatePicker from './Components/datePicker';
 import { set } from 'firebase/database';
 
 /*
