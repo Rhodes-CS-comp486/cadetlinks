@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Alert } from 'react-native';
-import { eventsStyles as styles } from '../../../styles/EventsStyles';
+import { eventsStyles as styles } from '../../../styles/GeneralStyles';
+import { db } from "../../../firebase/config";
 
 export interface Event {
   id: string;

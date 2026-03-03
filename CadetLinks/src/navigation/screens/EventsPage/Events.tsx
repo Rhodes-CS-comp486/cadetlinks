@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Pressable } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import { eventsStyles as styles } from '../../../styles/EventsStyles';
+import { eventsStyles as styles } from '../../../styles/GeneralStyles';
 import { useEvents } from './EventsLogic';
 import TimePicker from './Components/timePicker';
 import DatePicker from './Components/datePicker';

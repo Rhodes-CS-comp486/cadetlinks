@@ -1,13 +1,6 @@
 import React, { useState } from 'react';
-import {
-  Platform,
-  Pressable,
-  Text,
-  View,
-} from 'react-native';
-import DateTimePicker, {
-  DateTimePickerEvent,
-} from '@react-native-community/datetimepicker';
+import {Platform,Pressable,Text,View,} from 'react-native';
+import DateTimePicker, {DateTimePickerEvent,} from '@react-native-community/datetimepicker';
 import { eventsStyles } from '../Styles/EventsStyles';
 
 type DatePickerProps = {
