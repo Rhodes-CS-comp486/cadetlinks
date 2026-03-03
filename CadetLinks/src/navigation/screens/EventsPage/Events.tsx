@@ -33,7 +33,7 @@ export function Events(): React.ReactElement {
     handleAddEvent,
     handleConfirmAddEvent,
     handleCancelAddEvent,
-    getLabelTextAndStyle,
+    getLabelTextAndStyle
   } = useEvents();
 
   return (
@@ -175,8 +175,9 @@ export function Events(): React.ReactElement {
             <ScrollView>
               <Text style={styles.modalTitle}>Add New Event</Text>
               {/* form inputs for new event details */}
+
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput,newEvent.title?.length>0? styles.userTextInput: styles.textInput]}
                 placeholder='Enter Event Title'
                 value={newEvent.title}
                 onChangeText={(text) => setNewEvent({ ...newEvent, title: text })}
@@ -198,13 +199,13 @@ export function Events(): React.ReactElement {
               />
 
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput,newEvent.location?.length > 0? styles.userTextInput: styles.textInput]}
                 placeholder='Enter Location'
                 value={newEvent.location}
                 onChangeText={(text) => setNewEvent({ ...newEvent, location: text })}
               />
               <TextInput
-                style={[styles.textInput, { height: 80 }]}
+                style={[styles.textInput, { height: 80 }, newEvent.description?.length > 0 ? styles.userTextInput : styles.textInput]}
                 placeholder='Enter Event Description'
                 value={newEvent.description}
                 onChangeText={(text) => setNewEvent({ ...newEvent, description: text })}

@@ -36,6 +36,9 @@ export function useEvents() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [addEventsModalVisible, setAddEventsModalVisible] = useState(false);
 
+  //vars for validations of input text fields in add event modal
+ 
+
   const [allEvents, setAllEvents] = useState<Event[]>([
     {
       id: '1',
