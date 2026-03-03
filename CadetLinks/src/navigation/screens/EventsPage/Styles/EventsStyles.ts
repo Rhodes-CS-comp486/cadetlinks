@@ -168,7 +168,7 @@ export const eventsStyles = StyleSheet.create({
     fontSize: 14,
   },
   scrollWheelIOS: {
-    color: '#999',
+    color: '#000000',
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
@@ -178,7 +178,7 @@ export const eventsStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   scrollWheelWeb: {
-    color: '#999',
+    color: '#000000',
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
@@ -186,6 +186,8 @@ export const eventsStyles = StyleSheet.create({
     marginBottom: 15,
     backgroundColor: '#f9f9f9',
     fontSize: 16,
-    fontFamily: 'System',
+    // fontFamily: 'System',
   }
+
+  
 });
