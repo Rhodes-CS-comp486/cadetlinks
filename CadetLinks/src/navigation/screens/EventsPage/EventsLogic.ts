@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Alert } from 'react-native';
-import { eventsStyles as styles } from '../../../styles/EventsStyles';
+import { eventsStyles as styles } from '../../../styles/GeneralStyles';
 
 export interface Event {
   id: string;
@@ -34,6 +34,9 @@ export function useEvents() {
   const [rsvpStatus, setRsvpStatus] = useState<{ [eventId: string]: boolean }>({});
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [addEventsModalVisible, setAddEventsModalVisible] = useState(false);
+
+  //vars for validations of input text fields in add event modal
+ 
 
   const [allEvents, setAllEvents] = useState<Event[]>([
     {
