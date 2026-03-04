@@ -1,63 +1,30 @@
-import React, { useEffect, useState } from "react";
+import React, { use, useEffect, useState } from "react";
 import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { StaticScreenProps, useNavigation } from "@react-navigation/native";
+import { Props, CadetProfile, loadGlobalProfile} from "./ProfileLogic";
+import { ref, get, set } from "firebase/database";
+import { db } from "../../../firebase/config";
 
-import { ref, get } from "firebase/database";
-import { db } from "../../firebase/config";
 
-type Props = StaticScreenProps<{
-  user: string;
-}>;
 
-// typed shape of what we expect from Firebase (optional fields so it won't crash if missing)
-type CadetProfile = {
-  firstName?: string;
-  lastName?: string;
-  cadetRank?: string;
-  job?: string;
-  flight?: string;
-  classYear?: number;
-  permissions?: string;
-  contact?: {
-    schoolEmail?: string;
-    personalEmail?: string;
-    cellPhone?: string;
-  };
-};
+// curr profile "icdixon_memphis_edu" which is the path to the Db
+
+export var globalProfile: CadetProfile | null = null; // global variable to hold the profile data across the app
 
 export function Profile({ route }: Props) {
+
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
-  // ---- Firebase profile state ----
-  const [profile, setProfile] = useState<CadetProfile | null>(null);
-  const [loadingProfile, setLoadingProfile] = useState(true);
-  const [profileError, setProfileError] = useState<string | null>(null);
+  const PROFILE_DB_REF = "icdixon_memphis_edu"; //  path in DB
 
-  useEffect(() => {
-    // Load a real cadet from your database (test cadet for now)
-    const profileRef = ref(db, "cadets/icdixon_memphis_edu");
 
-    get(profileRef)
-      .then((snapshot) => {
-        if (snapshot.exists()) {
-          console.log("✅ Cadet data in Profile:", snapshot.val());
-          setProfile(snapshot.val());
-        } else {
-          console.log("⚠️ No cadet data available (Profile)");
-          setProfile(null);
-        }
-      })
-      .catch((error) => {
-        console.error("❌ Error reading cadet profile (Profile):", error);
-        setProfileError("Could not load profile.");
-      })
-      .finally(() => {
-        setLoadingProfile(false);
-      });
-  }, []);
+  // should probs set this in the login page cuz this stuff gets loaded when profile page gets clicked ://
+  const { profile, loadingProfile, profileError } = loadGlobalProfile(PROFILE_DB_REF); 
+  globalProfile = profile; // set the global variable to the loaded profile so other pages can access it (not best practice but simplest for now)
+
 
   // test data for attendance -> will call from db later
   const attended = 20;

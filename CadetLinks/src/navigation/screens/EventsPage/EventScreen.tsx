@@ -91,6 +91,7 @@ export function Events(): React.ReactElement {
       )}
 
       {/* add event button */}
+      {/* opens add event modal and resets the newEvent stateq */}
       <TouchableOpacity
         style={styles.addEventButton}
         onPress={handleAddEvent}
