@@ -15,12 +15,9 @@ export interface Event {
   }
 /*
 TODO: 
-- Integrate with Firebase Realtime Database to load events into Calendar 
-- Add new events to DB when created in the app
 - Get user-specific ID to update EventRSVP status in DB when user RSVPs to an event
 - Add ability to edit/delete events (optional)
 */
-
 
 
 export function useEvents() {
@@ -40,12 +37,8 @@ export function useEvents() {
   const [rsvpStatus, setRsvpStatus] = useState<{ [eventId: string]: boolean }>({});
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [addEventsModalVisible, setAddEventsModalVisible] = useState(false);
+  const [allEvents, setAllEvents] = useState<Event[]>([]);
 
-  
-  //DB reference for events - update path as needed
-  //const db = getDatabase();
-  //const eventsDBRef = ref(db, "events");
-  //const rsvpDBRef = ref(db, "EventRSVPs");
 
   // Load events from Firebase Realtime Database
   useEffect(() => {
@@ -90,46 +83,6 @@ export function useEvents() {
 
     return () => unsubscribe(); // Cleanup listener on unmount
   }, []);
-
-
-  const [allEvents, setAllEvents] = useState<Event[]>([
-    // {
-    //   id: '1',
-    //   title: 'PT',
-    //   date: new Date('2026-02-10'),
-    //   time: new Date('2026-02-10T06:00:00'),
-    //   description: 'Physical training session',
-    //   location: 'Memorial Field',
-    //   type: 'Mandatory',
-    // },
-    // {
-    //   id: '2',
-    //   title: 'LLAB',
-    //   date: new Date('2026-02-10'),
-    //   time: new Date('2026-02-10T03:00:00'),
-    //   description: 'Leadership Lab',
-    //   location: 'Room 113',
-    //   type: 'Mandatory',
-    // },
-    // {
-    //   id: '3',
-    //   title: 'PT',
-    //   date: new Date('2026-02-12'),
-    //   time: new Date('2026-02-12T06:00:00'),
-    //   description: 'Physical training session',
-    //   location: 'Memorial Field',
-    //   type: 'Mandatory',
-    // },
-    // {
-    //   id: '4',
-    //   title: 'Lunch & Learn',
-    //   date: new Date('2026-02-12'),
-    //   time: new Date('2026-02-12T12:00:00'),
-    //   description: 'Lunch and a presentation',
-    //   location: 'Air Force Classroom',
-    //   type: 'RSVP',
-    // },
-  ]);
 
   const [newEvent, setNewEvent] = useState<Event>({
     id: '',
@@ -244,6 +197,8 @@ export function useEvents() {
       date: combinedDateTime,
       time: combinedDateTime,
     };
+
+    console.log("Reformatted event for DB:", eventToAdd);
     return eventToAdd;
   };
 
