@@ -7,34 +7,11 @@ import { Props, CadetProfile, loadGlobalProfile} from "./ProfileLogic";
 import { ref, get, set } from "firebase/database";
 import { db } from "../../../firebase/config";
 
-// export type Props = StaticScreenProps<{
-//   user: string;
-// }>;
 
 
-// // typed shape of what we expect from Firebase (optional fields so it won't crash if missing)
-// export type CadetProfile = {
-//   firstName?: string;
-//   lastName?: string;
-//   cadetRank?: string;
-//   job?: string;
-//   flight?: string;
-//   classYear?: number;
-//   permissions?: string;
-//   contact?: {
-//     schoolEmail?: string;
-//     personalEmail?: string;
-//     cellPhone?: string;
-//   };
-// };
-
-/* MADE CHANGES HERE SO OTHER PAGES CAN ACCESS THE GLOBAL PROFILE */
-// export var globalProfile: CadetProfile | null = null; // global variable to hold the profile data across the app
-// const PROFILE_DB_REF = "icdixon_memphis_edu"; //  path in DB
+// curr profile "icdixon_memphis_edu" which is the path to the Db
 
 export var globalProfile: CadetProfile | null = null; // global variable to hold the profile data across the app
-
-/* END HERE  */
 
 export function Profile({ route }: Props) {
 
@@ -44,7 +21,8 @@ export function Profile({ route }: Props) {
   const PROFILE_DB_REF = "icdixon_memphis_edu"; //  path in DB
 
 
-  const { profile, loadingProfile, profileError } = loadGlobalProfile(PROFILE_DB_REF); // use the global profile loader with the specific ID you want (can make this dynamic later)
+  // should probs set this in the login page cuz this stuff gets loaded when profile page gets clicked ://
+  const { profile, loadingProfile, profileError } = loadGlobalProfile(PROFILE_DB_REF); 
   globalProfile = profile; // set the global variable to the loaded profile so other pages can access it (not best practice but simplest for now)
 
 

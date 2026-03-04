@@ -6,14 +6,14 @@ import { ref, onValue } from "firebase/database";
 import { getProfileID } from '../ProfilePage/ProfileLogic';
 
 export interface Event {
-  id: string;
+  id: string 
   title: string;
   date: Date;
   time: Date;
   description: string;
   location: string;
   type: '' | 'RSVP' | 'Mandatory';
-}
+  }
 /*
 TODO: 
 - Integrate with Firebase Realtime Database to load events into Calendar 
@@ -21,6 +21,7 @@ TODO:
 - Get user-specific ID to update EventRSVP status in DB when user RSVPs to an event
 - Add ability to edit/delete events (optional)
 */
+
 
 
 export function useEvents() {
@@ -39,32 +40,35 @@ export function useEvents() {
 
   
   //DB reference for events - update path as needed
-  const eventsDBRef = ref(db, "Events");
+  const eventsDBRef = ref(db, "events");
   const rsvpDBRef = ref(db, "EventRSVPs");
-
-  const userId = getProfileID(); // ID for RSVP tracking
 
   // Load events from Firebase Realtime Database
   useEffect(() => {
     onValue(eventsDBRef, (snapshot) => {
       const eventsData = snapshot.val();
       console.log("Loaded events from DB:", eventsData);
+      console.log("User ID for RSVP tracking:", getProfileID());
+      //console.log("trying to access title of first event:", eventsData ? eventsData[Object.keys(eventsData)[0]].eventName : "No events found");
       if(eventsData) {
         // Transform the events data from the DB into the Event[] format expected by the app
-        // 
         const loadedEvents: Event[] = Object.keys(eventsData).map((key) => {
           const event = eventsData[key];
+
+          const dateStr = `${event.date}T${event.time}:00`; // Combine date and time into ISO string
+          const combinedDateTime = new Date(dateStr);
           return {
             id: key,
-            title: event.title,
-            date: new Date(event.date),
-            time: new Date(event.time),
-            description: event.description,
-            location: event.location,
-            type: event.type,
+            title: event.eventName,
+            date: combinedDateTime,
+            time: combinedDateTime,
+            description: event.details,
+            location: event.locationId,
+            type: event.mandatory === "true" ? "Mandatory" :"RSVP", // assuming DB stores type as string "True"/"False"
           };
         });
         setAllEvents(loadedEvents);
+        console.log("Transformed events for app:", loadedEvents);
       }
       else{
         console.log("No events found in DB");
@@ -161,6 +165,8 @@ export function useEvents() {
 
 
   const handleAddEvent = () => {
+
+    
 
 
     setNewEvent({
