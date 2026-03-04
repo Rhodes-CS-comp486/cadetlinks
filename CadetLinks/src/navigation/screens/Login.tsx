@@ -7,6 +7,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -14,17 +15,41 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../index";
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ref, get } from "firebase/database";
+import { db } from "../../firebase/config";
+
+/**
+ * Turn what the user types into your RTDB key format.
+ * Examples:
+ *  - "icdixon@memphis.edu"  -> "icdixon_memphis_edu"
+ *  - "camcoolsharp@gmail.com" -> "camcoolsharp_gmail_com"
+ *  - If they already type "icdixon_memphis_edu", it stays basically the same.
+ */
+function toCadetKey(raw: string): string {
+  const s = raw.trim().toLowerCase();
+
+  // If they typed the already-formatted key, keep it.
+  if (s.includes("_") && !s.includes("@")) return s;
+
+  // Otherwise, convert email-ish string to key
+  return s
+    .replace(/@/g, "_")
+    .replace(/\./g, "_")
+    .replace(/-/g, "_");
+}
+
 export function Login() {
   const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
+  const [password, setPassword] = useState<string>(""); // still required, but not validated here (no passwords in your export)
   const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList, "Login">>();
 
-  // LOGIN CHECK
-  const handleLogin = () => {
-    const enteredUsername = email.trim().toLowerCase();
+  const handleLogin = async () => {
+    const enteredUsername = email.trim();
     const enteredPassword = password.trim();
 
     // require something to be typed
@@ -33,12 +58,31 @@ export function Login() {
       return;
     }
 
-    // fake credentials for now
-    if (enteredUsername === "cadet" && enteredPassword === "cadet") {
-      setError("");
+    setLoading(true);
+    setError("");
+
+    try {
+      const cadetKey = toCadetKey(enteredUsername);
+
+      // Check if this cadet exists in RTDB
+      const cadetRef = ref(db, `cadets/${cadetKey}`);
+      const snapshot = await get(cadetRef);
+
+      if (!snapshot.exists()) {
+        setError("User not found. (Check spelling / try your full email.)");
+        return;
+      }
+
+      // Save who is logged in so Profile can load the correct record
+      await AsyncStorage.setItem("currentCadetKey", cadetKey);
+
+      // Go to app
       navigation.replace("HomeTabs");
-    } else {
-      setError("Invalid username or password.");
+    } catch (e) {
+      console.error("Login error:", e);
+      setError("Could not log in. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -61,7 +105,7 @@ export function Login() {
             <TextInput
               value={email}
               onChangeText={setEmail}
-              placeholder="Username"
+              placeholder="Email or cadet key"
               placeholderTextColor="#8A94A6"
               autoCapitalize="none"
               style={styles.input}
@@ -79,8 +123,19 @@ export function Login() {
 
             {error !== "" && <Text style={styles.errorText}>{error}</Text>}
 
-            <Pressable style={styles.primaryBtn} onPress={handleLogin}>
-              <Text style={styles.primaryBtnText}>Log in</Text>
+            <Pressable
+              style={[styles.primaryBtn, loading && { opacity: 0.8 }]}
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              {loading ? (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <ActivityIndicator />
+                  <Text style={styles.primaryBtnText}>Logging in…</Text>
+                </View>
+              ) : (
+                <Text style={styles.primaryBtnText}>Log in</Text>
+              )}
             </Pressable>
 
             <Pressable onPress={() => {}}>
