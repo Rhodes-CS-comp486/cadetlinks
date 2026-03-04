@@ -1,7 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { eventsStyles as styles } from '../../../styles/GeneralStyles';
 import { db } from "../../../firebase/config";
+import { ref, onValue } from "firebase/database";
+import { getProfileID } from '../ProfilePage/ProfileLogic';
 
 export interface Event {
   id: string;
@@ -12,15 +14,14 @@ export interface Event {
   location: string;
   type: '' | 'RSVP' | 'Mandatory';
 }
+/*
+TODO: 
+- Integrate with Firebase Realtime Database to load events into Calendar 
+- Add new events to DB when created in the app
+- Get user-specific ID to update EventRSVP status in DB when user RSVPs to an event
+- Add ability to edit/delete events (optional)
+*/
 
-// export interface NewEvent {
-//   title: string;
-//   date: string;
-//   time: string;
-//   description: string;
-//   location: string;
-//   type: '' | 'RSVP' | 'Mandatory';
-// }
 
 export function useEvents() {
   // helper used throughout the hook - must be defined before any computed values that call it
@@ -36,8 +37,42 @@ export function useEvents() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [addEventsModalVisible, setAddEventsModalVisible] = useState(false);
 
-  //vars for validations of input text fields in add event modal
- 
+  
+  //DB reference for events - update path as needed
+  const eventsDBRef = ref(db, "Events");
+  const rsvpDBRef = ref(db, "EventRSVPs");
+
+  const userId = getProfileID(); // ID for RSVP tracking
+
+  // Load events from Firebase Realtime Database
+  useEffect(() => {
+    onValue(eventsDBRef, (snapshot) => {
+      const eventsData = snapshot.val();
+      console.log("Loaded events from DB:", eventsData);
+      if(eventsData) {
+        // Transform the events data from the DB into the Event[] format expected by the app
+        // 
+        const loadedEvents: Event[] = Object.keys(eventsData).map((key) => {
+          const event = eventsData[key];
+          return {
+            id: key,
+            title: event.title,
+            date: new Date(event.date),
+            time: new Date(event.time),
+            description: event.description,
+            location: event.location,
+            type: event.type,
+          };
+        });
+        setAllEvents(loadedEvents);
+      }
+      else{
+        console.log("No events found in DB");
+        setAllEvents([]); // setting events to empty array if no data found in DB
+      }
+    });
+  }, []);
+
 
   const [allEvents, setAllEvents] = useState<Event[]>([
     {
