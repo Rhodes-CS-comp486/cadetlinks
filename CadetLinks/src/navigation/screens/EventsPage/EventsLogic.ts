@@ -1,31 +1,33 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { eventsStyles as styles } from '../../../styles/GeneralStyles';
-import { db } from "../../../firebase/config";
+import { getDatabase, ref, onValue, set, get } from "firebase/database";
+import { getProfileID } from '../ProfilePage/ProfileLogic';
 
 export interface Event {
-  id: string;
+  id: string 
   title: string;
   date: Date;
   time: Date;
   description: string;
   location: string;
   type: '' | 'RSVP' | 'Mandatory';
-}
+  }
+/*
+TODO: 
+- Get user-specific ID to update EventRSVP status in DB when user RSVPs to an event
+- Add ability to edit/delete events (optional)
+*/
 
-// export interface NewEvent {
-//   title: string;
-//   date: string;
-//   time: string;
-//   description: string;
-//   location: string;
-//   type: '' | 'RSVP' | 'Mandatory';
-// }
 
 export function useEvents() {
   // helper used throughout the hook - must be defined before any computed values that call it
   const formatDate = (d: Date | string): string => {
     const date = typeof d === 'string' ? new Date(d) : d;
+    if(isNaN(date.getTime())) {
+      console.error("Invalid date provided to formatDate:", d);
+      return ''; // Return empty string for invalid dates
+    }
     return date.toISOString().split('T')[0]; // Return just the date part (YYYY-MM-DD)
   };
 
@@ -35,45 +37,52 @@ export function useEvents() {
   const [rsvpStatus, setRsvpStatus] = useState<{ [eventId: string]: boolean }>({});
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [addEventsModalVisible, setAddEventsModalVisible] = useState(false);
+  const [allEvents, setAllEvents] = useState<Event[]>([]);
 
-  const [allEvents, setAllEvents] = useState<Event[]>([
-    {
-      id: '1',
-      title: 'PT',
-      date: new Date('2026-02-10'),
-      time: new Date('2026-02-10T06:00:00'),
-      description: 'Physical training session',
-      location: 'Memorial Field',
-      type: 'Mandatory',
-    },
-    {
-      id: '2',
-      title: 'LLAB',
-      date: new Date('2026-02-10'),
-      time: new Date('2026-02-10T03:00:00'),
-      description: 'Leadership Lab',
-      location: 'Room 113',
-      type: 'Mandatory',
-    },
-    {
-      id: '3',
-      title: 'PT',
-      date: new Date('2026-02-12'),
-      time: new Date('2026-02-12T06:00:00'),
-      description: 'Physical training session',
-      location: 'Memorial Field',
-      type: 'Mandatory',
-    },
-    {
-      id: '4',
-      title: 'Lunch & Learn',
-      date: new Date('2026-02-12'),
-      time: new Date('2026-02-12T12:00:00'),
-      description: 'Lunch and a presentation',
-      location: 'Air Force Classroom',
-      type: 'RSVP',
-    },
-  ]);
+
+  // Load events from Firebase Realtime Database
+  useEffect(() => {
+    const db = getDatabase();
+    const eventsDBRef = ref(db, "events");
+    
+    const unsubscribe = onValue(eventsDBRef, (snapshot) => {
+      const eventsData = snapshot.val();
+      console.log("Loaded events from DB:", eventsData);
+      console.log("User ID for RSVP tracking:", getProfileID());
+      //console.log("trying to access title of first event:", eventsData ? eventsData[Object.keys(eventsData)[0]].eventName : "No events found");
+      if(eventsData) {
+        // Transform the events data from the DB into the Event[] format expected by the app
+        const loadedEvents: Event[] = Object.keys(eventsData).map((key) => {
+            const event = eventsData[key];
+
+            const dateStr = `${event.date}T${event.time}`; // Combine date and time into ISO string
+            const combinedDateTime = new Date(dateStr);
+            if (isNaN(combinedDateTime.getTime())) {
+              console.error(`Invalid date for event ${key}:`, event.date, event.time);
+              return null;
+            }
+            return {
+              id: key,
+              title: event.eventName,
+              date: combinedDateTime,
+              time: combinedDateTime,
+              description: event.details,
+              location: event.locationId,
+              type: event.mandatory === "true" ? "Mandatory" :"RSVP", // assuming DB stores type as string "True"/"False"
+            };
+          })
+          .filter((event): event is Event => event !== null);
+        setAllEvents(loadedEvents);
+        console.log("Transformed events for app:", loadedEvents);
+      }
+      else{
+        console.log("No events found in DB");
+        setAllEvents([]); // setting events to empty array if no data found in DB
+      }
+    });
+
+    return () => unsubscribe(); // Cleanup listener on unmount
+  }, []);
 
   const [newEvent, setNewEvent] = useState<Event>({
     id: '',
@@ -122,9 +131,8 @@ export function useEvents() {
   };
 
 
+  // Reset newEvent state to default values when opening the add event modal
   const handleAddEvent = () => {
-
-
     setNewEvent({
       id: '',
       title: '',
@@ -137,6 +145,8 @@ export function useEvents() {
     setAddEventsModalVisible(true);
   };
 
+
+  // validate new event inputs and write to DB then close modal and show confirmation toast
   const handleConfirmAddEvent = () => {
     // Validate form inputs
     if (!newEvent.title || !newEvent.date || !newEvent.time || !newEvent.location || !newEvent.type) {
@@ -144,36 +154,52 @@ export function useEvents() {
       return;
     }
 
-    // Create a new event object with a unique random id
-    const combinedDateTime = new Date(newEvent.date);
+    writeToEventsDB(newEvent); // Write the new event to the database
 
-    combinedDateTime.setHours(newEvent.time.getHours());
-    combinedDateTime.setMinutes(newEvent.time.getMinutes());
-    combinedDateTime.setSeconds(0);
-    combinedDateTime.setMilliseconds(0);
-    const eventToAdd: Event = {
-      ...newEvent,
-      id: Math.random().toString(36), // simple random id generator
-      date: combinedDateTime,
-      time: combinedDateTime,
-      //type: newEvent.type as '' | 'RSVP' | 'Mandatory',
-    };
-
-    console.log('Adding event:', eventToAdd);
-
-    // Add the new event and keep the list sorted by date and time
-    setAllEvents(prev => {
-      const combined = [...prev, eventToAdd];
-      combined.sort((a, b) => {
-        const dateDiff = a.date.getTime() - b.date.getTime();
-        if (dateDiff !== 0) return dateDiff;
-        return a.time.getTime() - b.time.getTime();
-      });
-      return combined;
-    });
     setAddEventsModalVisible(false);
     setToastMessage('Event added successfully');
     setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const writeToEventsDB = (event: Event) => {
+    // Convert event object to the format expected by the DB
+    event = reformatEventForDB(event); // This will set the ID and reformat the date/time for DB storage
+    const db = getDatabase();
+    try{
+      set(ref(db, 'events/' + event.id), {
+        eventName: event.title,
+        date: formatDate(event.date),
+        time: event.time.toTimeString().split(' ')[0], // Store time as HH:MM:SS
+        details: event.description,
+        locationId: event.location,
+        mandatory: event.type === 'Mandatory' ? "true" : "false",
+      });
+      console.log("Event written to DB:", event);
+    } catch (error) {
+        console.error("Error writing event to DB:", error);
+    }
+
+  };
+
+  // helper function to reformat event object for DB storage: sets ID and date/time formatting
+  const reformatEventForDB = (event: Event) => {
+    const combinedDateTime = new Date(event.date);
+
+    combinedDateTime.setHours(event.time.getHours());
+    combinedDateTime.setMinutes(event.time.getMinutes());
+    combinedDateTime.setSeconds(0);
+    combinedDateTime.setMilliseconds(0);
+
+    //setting Id and reformating date for DB storage before writing to DB
+    const eventToAdd: Event = {
+      ...event,
+      id: Math.floor(Math.random() * 10000).toString(), // random number generator
+      date: combinedDateTime,
+      time: combinedDateTime,
+    };
+
+    console.log("Reformatted event for DB:", eventToAdd);
+    return eventToAdd;
   };
 
   const handleCancelAddEvent = () => {
