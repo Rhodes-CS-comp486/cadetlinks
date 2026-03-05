@@ -6,6 +6,7 @@ import { useEvents } from './EventsLogic';
 import TimePicker from './Components/timePicker';
 import DatePicker from './Components/datePicker';
 import { set } from 'firebase/database';
+import { DarkColors as colors } from '../../../styles/colors';
 
 /*
 main events component that contains all UI. EventLogic contains
@@ -45,7 +46,7 @@ export function Events(): React.ReactElement {
           ...markedDates,
           [selectedDate]: {
             selected: true,
-            selectedColor: '#1e90ff',
+            selectedColor: colors.primary,
           },
         }}
       />
