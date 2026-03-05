@@ -10,7 +10,7 @@ import profile from "../assets/profile.png";
 
 import { Home } from "./screens/Home";
 import { Login } from "./screens/Login";
-import { Profile } from "./screens/Profile";
+import { Profile } from "./screens/ProfilePage/Profile";
 import { Settings } from "./screens/Settings";
 import { Events } from "./screens/EventsPage/Events";
 import { NotFound } from "./screens/NotFound";
