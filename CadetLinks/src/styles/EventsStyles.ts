@@ -226,13 +226,4 @@ export const eventsStyles = StyleSheet.create({
     marginBottom: 15,
     backgroundColor: '#f9f9f9',
   },
-  userTextInput: {
-    color:'#000000',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5, 
-    padding: 10,
-    marginBottom: 15,
-    backgroundColor: '#f9f9f9',
-  },
 });
