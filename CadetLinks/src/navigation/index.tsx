@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { HeaderButton, Text } from '@react-navigation/elements';
 import { createStaticNavigation, StaticParamList } from '@react-navigation/native';
@@ -24,6 +25,26 @@ const createTabIcon = (source: any) => ({
     />
   ),
 });
+=======
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { HeaderButton, Text } from "@react-navigation/elements";
+import { createStaticNavigation, StaticParamList } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { Image } from "react-native";
+
+import calendar from "../assets/calendar.png";
+import newspaper from "../assets/newspaper.png";
+import profile from "../assets/profile.png";
+import briefcase from "../assets/briefcase.png";
+
+import { Home } from "./screens/Home";
+import { Login } from "./screens/Login";
+import { Profile } from "./screens/ProfilePage/Profile";
+import { Settings } from "./screens/Settings";
+import { Events } from "./screens/EventsPage/Events";
+import { NotFound } from "./screens/NotFound";
+import { Jobs } from "./screens/JobsPage/Jobs";
+>>>>>>> main
 
 const HomeTabs = createBottomTabNavigator({
   screenOptions: {
@@ -50,6 +71,21 @@ const HomeTabs = createBottomTabNavigator({
         ...createTabIcon(calendar),
       },
     },
+    Jobs: {
+      screen: Jobs,
+      options: {
+        title: "Jobs",
+        headerShown: false,
+        tabBarIcon: ({ color, size }) => (
+          <Image
+            source={briefcase}
+            tintColor={color}
+            style={{ width: size, height: size }}
+          />
+        ),
+      },
+    },
+    
     Profile: {
       screen: Profile,
       options: {
