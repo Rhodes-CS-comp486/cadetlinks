@@ -23,6 +23,7 @@ TODO:
 
 
 export function useEvents() {
+
   // helper used throughout the hook - must be defined before any computed values that call it
   const formatDate = (d: Date | string): string => {
     const date = typeof d === 'string' ? new Date(d) : d;
@@ -41,8 +42,35 @@ export function useEvents() {
   const [addEventsModalVisible, setAddEventsModalVisible] = useState(false);
   const [allEvents, setAllEvents] = useState<Event[]>([]);
 
+  const [newEvent, setNewEvent] = useState<Event>({
+    id: '',
+    title: '',
+    date: new Date(),
+    time: new Date(),
+    description: '',
+    location: '',
+    type: '' as '' | 'RSVP' | 'Mandatory',
+  });
 
-  // Load events from Firebase Realtime Database
+  // marked dates for calendar component 
+  const markedDates = allEvents.reduce((acc: any, event) => {
+    const dateKey = formatDate(event.date);
+    acc[dateKey] = { marked: true, dotColor: 'blue' };
+    return acc;
+  }, {});
+
+  // Memoized, filtered, and sorted events for the selected date
+  const eventsForSelectedDate = useMemo(() => {
+    return allEvents
+      .filter((ev) => formatDate(ev.date) === selectedDate)
+      .sort((a, b) => 
+        a.time.getTime() - b.time.getTime()
+    );
+       
+  }, [allEvents, selectedDate]);
+
+
+  // Load events and rsvps status from Firebase Realtime Database
   useEffect(() => {
     const db = getDatabase();
     const eventsDBRef = ref(db, "events");
@@ -52,7 +80,12 @@ export function useEvents() {
       console.log("Loaded events from DB:", eventsData);
       console.log("User ID for RSVP tracking:", cadetKey);
       //console.log("trying to access title of first event:", eventsData ? eventsData[Object.keys(eventsData)[0]].eventName : "No events found");
-      if(eventsData) {
+      if(!eventsData){
+        setAllEvents([]);
+        console.log("No events data found in DB, setting allEvents to empty array");
+        return;
+      }
+        
         // Transform the events data from the DB into the Event[] format expected by the app
         const loadedEvents: Event[] = Object.keys(eventsData).map((key) => {
             const event = eventsData[key];
@@ -76,46 +109,47 @@ export function useEvents() {
           .filter((event): event is Event => event !== null);
         setAllEvents(loadedEvents);
         console.log("Transformed events for app:", loadedEvents);
-      }
-      else{
-        console.log("No events found in DB");
-        setAllEvents([]); // setting events to empty array if no data found in DB
-      }
-    });
-
-    return () => unsubscribe(); // Cleanup listener on unmount
+      });
+      return () => unsubscribe();
   }, []);
 
-  
+  // Listen for changes in RSVP status for the current user across all events
+  useEffect(() => {
+     
 
-  const [newEvent, setNewEvent] = useState<Event>({
-    id: '',
-    title: '',
-    date: new Date(),
-    time: new Date(),
-    description: '',
-    location: '',
-    type: '' as '' | 'RSVP' | 'Mandatory',
-  });
+    // Listen for changes in the RSVP status for the current user across all events
+    setRsvpStatus({}); // Clear RSVP status when events load to avoid showing stale data
+    if(!cadetKey) return;
+   
+    const db = getDatabase();
+    const rsvpRef = ref(db, `rsvps/`);
+    const unsubscribeRsvp = onValue(rsvpRef, (snapshot) => {
+      const rsvpData = snapshot.val() || {};
+      console.log("Loaded RSVP data from DB:", rsvpData);
+      const userRsvpStatus: { [eventId: string]: boolean } = {};
 
-  // Computed values
-  const markedDates = allEvents.reduce((acc: any, event) => {
-    const dateKey = formatDate(event.date);
-    acc[dateKey] = { marked: true, dotColor: 'blue' };
-    return acc;
-  }, {});
+      Object.entries(rsvpData).forEach(([eventId, eventNode]) => {
+        const userNode = (eventNode as any)[cadetKey || ""]; // Access the current user's RSVP status for this event
+        const status = userNode?.status;
+        //console.log(`Processing RSVP for event ${eventId}:`, { userNode, status });
 
-  // Memoized filtered and sorted events for the selected date
-  const eventsForSelectedDate = useMemo(() => {
-    return allEvents
-      .filter((ev) => formatDate(ev.date) === selectedDate)
-      .sort((a, b) => 
-        a.time.getTime() - b.time.getTime()
-    );
-       
-  }, [allEvents, selectedDate]);
+        if(status === "Y") userRsvpStatus[eventId] = true;
+        if(status === "N") userRsvpStatus[eventId] = false;
+      });
+      setRsvpStatus(userRsvpStatus);
+      console.log("Processed RSVP status for user:", cadetKey, userRsvpStatus);
+    });
 
-  // Event handlers
+    return () => {
+      unsubscribeRsvp(); 
+    };
+  }, [cadetKey]);
+
+
+  /*
+  when event is pressed, set it as the selected event, open the modal:
+  if RSVP event load user's current RSVP status for that event from the DB to display in the modal
+  */
   const handleEventPress = async (event: Event) => {
     setSelectedEvent(event);
     if(event.type === 'RSVP') {
@@ -127,6 +161,7 @@ export function useEvents() {
     setEventInfoModalVisible(true);
   };
 
+  //called from eventscreen when user confirms or declines an RSVP - updates local state and DB
   const handleRSVP = (eventId: string, confirming: boolean) => {
     setRsvpStatus((prev) => ({ ...prev, [eventId]: confirming }));
     updateRSVPStatusInDB(eventId, confirming); // Update RSVP status in DB for the current user and event
@@ -153,11 +188,11 @@ export function useEvents() {
     }
   }
 
-  // helper to get current user's RSVP status for a given event.
+  // helper to get current user's RSVP status for a given event -> called from handleEventPress
   const getRSVPStatus = async(eventId: string):Promise< boolean | undefined > => {
     try{
       const db = getDatabase();
-      const rsvpRef = ref(db, `eventRSVPs/${eventId}/`+ `${cadetKey}`);
+      const rsvpRef = ref(db, `rsvps/${eventId}/`+ `${cadetKey}`);
       const snapshot = await get(rsvpRef);
       
       if(!snapshot.exists()) return undefined; // No RSVP status found for this user and event
@@ -241,9 +276,8 @@ export function useEvents() {
     console.log("Wrote to Events DB with ID:", event.id);
   };
 
+  // helper function to initialize an RSVP entry in the DB for a new event
   const initializeRsvpEntryToDB = async (eventId: string) => {
-    
-    // adding entry for the event in the RSVP section of the DB 
     try {
       const db = getDatabase();
       const userId = cadetKey;
@@ -257,7 +291,6 @@ export function useEvents() {
       console.error("Error initializing RSVP entry in DB:", error);
     } 
   }; 
-
 
   // helper function to reformat event object for DB storage: sets ID and date/time formatting
   const reformatEventForDB = (event: Event) => {
@@ -289,12 +322,18 @@ export function useEvents() {
     if (event.type === 'Mandatory') {
       return [styles.mandatoryLabel, 'Mandatory'];
     }
+
     const status = rsvpStatus[event.id];
-    if (status === undefined) {
-      return [styles.rsvpLabel, 'RSVP'];
-    } else {
-      return status ? [styles.confirmButton, 'Confirmed'] : [styles.declineButton, 'Declined'];
+
+    if( status === true) {
+      return [styles.confirmButton, 'Confirmed'];
     }
+
+    if( status === false) {
+      return [styles.declineButton, 'Declined'];
+    }
+    return [styles.rsvpLabel, 'RSVP']; // default for RSVP events with no response yet
+
   };
 
   // Return all state, computed values, handlers, and helpers
