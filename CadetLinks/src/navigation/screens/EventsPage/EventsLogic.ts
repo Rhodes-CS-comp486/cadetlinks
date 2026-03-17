@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { eventsStyles as styles } from '../../../styles/GeneralStyles';
-import { getDatabase, ref, onValue, set, get } from "firebase/database";
+import { getDatabase, ref, onValue, set, get, push } from "firebase/database";
 import { getProfileID } from '../ProfilePage/ProfileLogic';
+import {cadetKey} from '../Login';
 
 export interface Event {
   id: string 
@@ -48,7 +49,7 @@ export function useEvents() {
     const unsubscribe = onValue(eventsDBRef, (snapshot) => {
       const eventsData = snapshot.val();
       console.log("Loaded events from DB:", eventsData);
-      console.log("User ID for RSVP tracking:", getProfileID());
+      console.log("User ID for RSVP tracking:", cadetKey);
       //console.log("trying to access title of first event:", eventsData ? eventsData[Object.keys(eventsData)[0]].eventName : "No events found");
       if(eventsData) {
         // Transform the events data from the DB into the Event[] format expected by the app
@@ -119,11 +120,57 @@ export function useEvents() {
 
   const handleRSVP = (eventId: string, confirming: boolean) => {
     setRsvpStatus((prev) => ({ ...prev, [eventId]: confirming }));
+    updateRSVPInDB(eventId, confirming); // Update RSVP status in DB for the current user and event
     setEventInfoModalVisible(false);
     setSelectedEvent(null);
     setToastMessage(confirming ? 'RSVP Confirmed' : 'RSVP Declined');
     setTimeout(() => setToastMessage(null), 3000);
   };
+
+  // push RSVP status to DB for the current user and event
+  const updateRSVPInDB = (eventId: string, confirming: boolean) => {
+    const userId = cadetKey
+    console.log("Updating RSVP in DB for user:", userId, "event:", eventId, "confirming:", confirming);
+    
+    if (!userId) {
+      console.error("No user ID found for RSVP update");
+      return;
+    }
+  
+    try{
+      const db = getDatabase();
+      const rsvpRef = ref(db, `rsvps/${eventId}/ + ${userId}`);
+      set(rsvpRef,{
+        status: confirming? "Y":"N"
+      });
+      console.log("RSVP successfully written to DB:", `rsvps/${eventId}/${userId}`);
+    }
+    catch(error){
+      console.error("Error updating RSVP in DB:", error);
+    }
+  }
+
+  // helper to get current user's RSVP status for a given event.
+  const getRSVPStatus = (eventId: string): boolean | undefined => {
+    const db = getDatabase();
+    const userId = cadetKey;
+    const [status, setStatus] = useState<boolean | undefined>(undefined);
+      const rsvpRef = ref(db, `eventRSVPs/${eventId}/`+ userId);
+      const unsubscribe = onValue(rsvpRef, (snapshot) => {
+        const value = snapshot.val();
+        console.log("Loaded RSVP status from DB for user:", userId, "event:", eventId, "value:", value);
+        if (value === "Y") {
+          setStatus(true);
+        } else if (value === "N") {
+          setStatus(false);
+        }
+      });
+      unsubscribe(); // Unsubscribe immediately since we just want the current value
+      return status;
+  }
+  
+
+
 
   const handleCloseEventInfoModal = () => {
     setEventInfoModalVisible(false);
@@ -147,26 +194,27 @@ export function useEvents() {
 
 
   // validate new event inputs and write to DB then close modal and show confirmation toast
-  const handleConfirmAddEvent = () => {
+  const handleConfirmAddEvent = async () => {
     // Validate form inputs
     if (!newEvent.title || !newEvent.date || !newEvent.time || !newEvent.location || !newEvent.type) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
-    writeToEventsDB(newEvent); // Write the new event to the database
+    await writeToEventsDB(newEvent); // Write the new event to the database
 
     setAddEventsModalVisible(false);
     setToastMessage('Event added successfully');
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const writeToEventsDB = (event: Event) => {
+  // Helper function to write a new event to the Firebase Realtime Database
+  const writeToEventsDB = async (event: Event) => {
     // Convert event object to the format expected by the DB
     event = reformatEventForDB(event); // This will set the ID and reformat the date/time for DB storage
     const db = getDatabase();
     try{
-      set(ref(db, 'events/' + event.id), {
+      await set(ref(db, 'events/' + event.id), {
         eventName: event.title,
         date: formatDate(event.date),
         time: event.time.toTimeString().split(' ')[0], // Store time as HH:MM:SS
@@ -179,7 +227,32 @@ export function useEvents() {
         console.error("Error writing event to DB:", error);
     }
 
+    if(event.type === 'RSVP'){
+      await initializeRsvpEntryToDB(event.id); // Create corresponding entry in RSVP section of DB for the new event
+      console.log("Initialized RSVP entry in DB for event:", event.id);
+    }
+
+    //await initializeRsvpEntryToDB(event.id); // Create corresponding entry in RSVP section of DB for the new event
+    console.log("Wrote to Events DB with ID:", event.id);
   };
+
+  const initializeRsvpEntryToDB = async (eventId: string) => {
+    
+    // adding entry for the event in the RSVP section of the DB 
+    try {
+      const db = getDatabase();
+      const userId = cadetKey;
+      console.log("Initializing RSVP entry in DB for event:", eventId, "user:", userId);
+      const rsvpRef = ref(db, `rsvps/`+ `${eventId}` + `/${userId}`);
+      //const childSnapshot = push(rsvpRef);
+      await set(rsvpRef, {
+        status: ""  
+      });
+    } catch (error) {
+      console.error("Error initializing RSVP entry in DB:", error);
+    } 
+  }; 
+
 
   // helper function to reformat event object for DB storage: sets ID and date/time formatting
   const reformatEventForDB = (event: Event) => {

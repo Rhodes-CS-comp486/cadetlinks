@@ -13,7 +13,8 @@ import { useNavigation } from "@react-navigation/native";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ref, get } from "firebase/database";
-import { db } from "../../firebase/config";
+//import { db } from "./../firebase/config";
+import {db} from "../../../firebase/config";
 
 // USER INFO (from DB)
 type CadetProfile = {
