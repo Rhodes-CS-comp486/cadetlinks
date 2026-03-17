@@ -50,15 +50,18 @@ export const eventsStyles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: colors.text,
+    color: colors.text,
     marginBottom: 4,
   },
   eventTime: {
     fontSize: 13,
     color: colors.muted,
+    color: colors.muted,
     marginBottom: 4,
   },
   eventLocation: {
     fontSize: 12,
+    color: colors.muted,
     color: colors.muted,
   },
   eventTypeContainer: {
@@ -88,9 +91,11 @@ export const eventsStyles = StyleSheet.create({
   noEventsText: {
     fontSize: 14,
     color: colors.muted,
+    color: colors.muted,
   },
   modalOverlay: {
     flex: 1,
+    backgroundColor: colors.overlay,
     backgroundColor: colors.overlay,
     justifyContent: 'flex-end',
   },
@@ -105,11 +110,13 @@ export const eventsStyles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: colors.text,
+    color: colors.text,
     marginBottom: 16,
   },
   modalLabel: {
     fontSize: 13,
     fontWeight: 'bold',
+    color: colors.primary,
     color: colors.primary,
     marginTop: 12,
     marginBottom: 4,
@@ -117,9 +124,11 @@ export const eventsStyles = StyleSheet.create({
   modalText: {
     fontSize: 14,
     color: colors.muted,
+    color: colors.muted,
     lineHeight: 20,
   },
   rsvpButton: {
+    backgroundColor: colors.primary,
     backgroundColor: colors.primary,
     paddingVertical: 12,
     paddingHorizontal: 24,
@@ -129,6 +138,8 @@ export const eventsStyles = StyleSheet.create({
     marginBottom: 20,
   },
   buttonPressed: {
+    backgroundColor: colors.muted,
+    borderColor: colors.border,
     backgroundColor: colors.muted,
     borderColor: colors.border,
   },
@@ -152,6 +163,7 @@ export const eventsStyles = StyleSheet.create({
   },
   confirmButton: {
     backgroundColor: colors.success,
+    backgroundColor: colors.success,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
@@ -161,6 +173,7 @@ export const eventsStyles = StyleSheet.create({
   },
   declineButton: {
     backgroundColor: colors.danger,
+    backgroundColor: colors.danger,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
@@ -169,6 +182,7 @@ export const eventsStyles = StyleSheet.create({
     marginBottom: 20,
   },
   rsvpButtonText: {
+    color: colors.text,
     color: colors.text,
     fontWeight: 'bold',
     fontSize: 16,
@@ -195,6 +209,7 @@ export const eventsStyles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     backgroundColor: colors.primary,
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,
@@ -206,11 +221,13 @@ export const eventsStyles = StyleSheet.create({
   addEventButtonText: {
     fontSize: 40,
     color: colors.text,
+    color: colors.text,
     fontWeight: 'bold'
   },
   textInput: {
     color:colors.background,
     borderWidth: 1,
+    borderColor: colors.border,
     borderColor: colors.border,
     borderRadius: 5,
     padding: 10,
