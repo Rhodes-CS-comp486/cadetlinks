@@ -9,7 +9,7 @@ import {
 import DateTimePicker, {
     DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
-import { eventsStyles } from '../Styles/EventsStyles';
+import { eventsStyles as styles } from '../../../../styles/EventStyles';
 
 type TimePickerProps = {
     value: Date | null;
@@ -41,7 +41,7 @@ export default function TimePicker({
     if (Platform.OS === 'web') {
         // the style object produced by StyleSheet.create is a numeric ID; flatten
         // it into a plain object before passing to a DOM input.
-        const webStyle = StyleSheet.flatten(eventsStyles.scrollWheelWeb) as any;
+        const webStyle = StyleSheet.flatten(styles.scrollWheelWeb) as any;
 
         return (
             <input
@@ -68,7 +68,7 @@ export default function TimePicker({
     return (
         <View>
             <Pressable
-                style={eventsStyles.scrollWheelIOS}
+                style={styles.scrollWheelIOS}
                 onPress={() => setShow(true)}
             >
                 <Text>

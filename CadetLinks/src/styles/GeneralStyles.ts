@@ -15,7 +15,7 @@ export const generalStyles = StyleSheet.create({
         justifyContent: "space-between",
     },
     header_text: {
-        color: "white",
+        color: colors.text,
         fontSize: 22,
         fontWeight: "600",
         textAlign: "center",
@@ -30,10 +30,11 @@ export const generalStyles = StyleSheet.create({
             backgroundColor: colors.background,
     },
 
+    /* Wrap everything in a screens returned view in a ScreenLayout, then in a body_container to apply the same header, padding and background color to all screens */
     body_container: {
         flex: 1,
         padding: 16,
-        backgroundColor: "#0B1220",
+        backgroundColor: colors.background,
     },
 
     sectionTitle: {
