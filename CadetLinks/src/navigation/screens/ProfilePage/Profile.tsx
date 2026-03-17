@@ -1,5 +1,12 @@
-import React, { use, useEffect, useState } from "react";
-import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { StaticScreenProps, useNavigation } from "@react-navigation/native";
@@ -9,55 +16,121 @@ import { db } from "../../../firebase/config";
 import { profileStyles as styles } from "../../../styles/ProfileStyles";
 import { ScreenLayout } from "../../Components/ScreenLayout";
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-
-// curr profile "icdixon_memphis_edu" which is the path to the Db
-
-export var globalProfile: CadetProfile | null = null; // global variable to hold the profile data across the app
+// ATTENDANCE STATUS
+type AttendanceStatus = "P" | "A" | "E" | "L" | ".";
 
 export function Profile({ route }: Props) {
   const PROFILE_DB_REF = "icdixon_memphis_edu"; //  path in DB
 
+  // ---- Firebase profile state ----
+  const [profile, setProfile] = useState<CadetProfile | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
-  // should probs set this in the login page cuz this stuff gets loaded when profile page gets clicked ://
-  const { profile, loadingProfile, profileError } = loadGlobalProfile(PROFILE_DB_REF); 
-  globalProfile = profile; // set the global variable to the loaded profile so other pages can access it (not best practice but simplest for now)
+  // ---- Firebase attendance state (treat everything as PT for now) ----
+  const [loadingAttendance, setLoadingAttendance] = useState(true);
+  const [attendanceError, setAttendanceError] = useState<string | null>(null);
 
+  const [ptAttended, setPtAttended] = useState(0);
+  const [ptMissed, setPtMissed] = useState(0);
+  const [ptExcused, setPtExcused] = useState(0);
+  const [ptLate, setPtLate] = useState(0); // rn just for show, not in the profile or attendance percent calculations. not sure how to incorporate
 
-  // test data for attendance -> will call from db later
-  const attended = 20;
-  const missed = 5;
+  useEffect(() => {
+    const load = async () => {
+      setLoadingProfile(true);
+      setProfileError(null);
 
-  // calculating attendance percentage
-  const total = attended + missed;
-  const attendancePercent =
-    total === 0 ? 0 : Math.round((attended / total) * 100);
+      setLoadingAttendance(true);
+      setAttendanceError(null);
 
-  //if attendance > 90% then it's good standing
-  const inGoodStanding = attendancePercent >= 90;
+      try {
+        const key = await AsyncStorage.getItem("currentCadetKey");
+        setCadetKey(key);
 
-  // test data for PT attendance -> will call from db later
-  const ptAttended = 18;
-  const ptMissed = 2;
+        if (!key) {
+          setProfile(null);
+          setProfileError("No user is logged in.");
 
-  // calculating PT attendance percentage
-  const ptTotal = ptAttended + ptMissed;
+          // attendance should also stop
+          setPtAttended(0);
+          setPtMissed(0);
+          setPtExcused(0);
+          setPtLate(0);
+          setAttendanceError("No user is logged in.");
+          return;
+        }
+
+        // Load the logged-in cadet from your database
+        const profileRef = ref(db, `cadets/${key}`);
+        const profileSnap = await get(profileRef);
+
+        if (profileSnap.exists()) {
+          setProfile(profileSnap.val());
+        } else {
+          setProfile(null);
+          setProfileError("No profile found for this user.");
+        }
+
+        // ---- Load attendance from your database (everything = PT for now) ----
+        const attendanceRef = ref(db, "attendance");
+        const attendanceSnap = await get(attendanceRef);
+
+        const attendanceData = (attendanceSnap.val() ?? {}) as AttendanceRoot;
+
+        let p = 0;
+        let a = 0;
+        let e = 0;
+        let l = 0;
+
+        // go through every date and find THIS cadet's status on that date
+        for (const date of Object.keys(attendanceData)) {
+          const status = attendanceData?.[date]?.[key]?.status;
+
+          // "." or missing = ignore
+          if (!status || status === ".") continue;
+
+          if (status === "P") p++;
+          else if (status === "A") a++;
+          else if (status === "E") e++;
+          else if (status === "L") l++;
+        }
+
+        setPtAttended(p);
+        setPtMissed(a);
+        setPtExcused(e);
+        setPtLate(l);
+      } catch (error) {
+        console.error("❌ Error reading profile/attendance (Profile):", error);
+        setProfileError("Could not load profile.");
+        setAttendanceError("Could not load attendance.");
+      } finally {
+        setLoadingProfile(false);
+        setLoadingAttendance(false);
+      }
+    };
+
+    load();
+  }, []);
+
+  // --- PT attendance percentage (excused DOES NOT count toward missed) ---
+  // percent = Present / (Present + Absent)
+  const ptCountedTotal = ptAttended + ptMissed; // excused ignored
   const ptAttendancePercent =
-    ptTotal === 0 ? 0 : Math.round((ptAttended / ptTotal) * 100);
+    ptCountedTotal === 0 ? 0 : Math.round((ptAttended / ptCountedTotal) * 100);
 
   //if PT attendance > 90% then it's good standing
   const ptInGoodStanding = ptAttendancePercent >= 90;
 
-  // test data for LLAB attendance -> will call from db later
-  const llabAttended = 8;
-  const llabMissed = 2;
-
-  // calculating LLAB attendance percentage
+  // --- For now, treat LLAB as "coming soon" (keeping your UI the same) ---
+  // If you want to DELETE the LLAB card instead, say so and I’ll strip it.
+  const llabAttended = ptAttended;
+  const llabMissed = ptMissed;
   const llabTotal = llabAttended + llabMissed;
   const llabAttendancePercent =
     llabTotal === 0 ? 0 : Math.round((llabAttended / llabTotal) * 100);
-
-  //if LLAB attendance > 90% then it's good standing
   const llabInGoodStanding = llabAttendancePercent >= 90;
 
   return (
@@ -67,7 +140,7 @@ export function Profile({ route }: Props) {
       <ScrollView
         style={styles.body_container}
         contentContainerStyle={{ paddingBottom: 24 }}
-        showsVerticalScrollIndicator={false} // stacks children basically
+        showsVerticalScrollIndicator={false}
       >
         {/* USER INFO CARD */}
         <View style={styles.userinfo_card}>
@@ -78,14 +151,21 @@ export function Profile({ route }: Props) {
 
           {/* user info */}
           <View style={styles.userinfo_text_container}>
-            {/* loading/error states just for the profile block */}
             {loadingProfile ? (
               <View style={{ marginTop: 4 }}>
                 <ActivityIndicator />
                 <Text style={styles.userinfo_sub}>Loading profile…</Text>
               </View>
             ) : profileError ? (
-              <Text style={styles.userinfo_sub}>{profileError}</Text>
+              <>
+                <Text style={styles.userinfo_sub}>{profileError}</Text>
+                {cadetKey ? (
+                  <Text style={styles.userinfo_sub}>
+                    <Text style={styles.label_bold}>Key: </Text>
+                    {cadetKey}
+                  </Text>
+                ) : null}
+              </>
             ) : !profile ? (
               <Text style={styles.userinfo_sub}>No profile found.</Text>
             ) : (
@@ -94,10 +174,9 @@ export function Profile({ route }: Props) {
                   {profile.firstName ?? "First"} {profile.lastName ?? "Last"}
                 </Text>
 
-                {/* Use what exists in your DB right now  hellogi*/}
                 <Text style={styles.userinfo_sub}>
                   <Text style={styles.label_bold}>Flight: </Text>
-                  {profile.flight ?? "—"} 
+                  {profile.flight ?? "—"}
                 </Text>
 
                 <Text style={styles.userinfo_sub}>
@@ -109,38 +188,46 @@ export function Profile({ route }: Props) {
                   <Text style={styles.label_bold}>Job: </Text>
                   {profile.job ?? "—"}
                 </Text>
+
                 <Text style={styles.userinfo_sub}>
                   <Text style={styles.label_bold}>Class Year: </Text>
                   {profile.classYear ?? "—"}
                 </Text>
+
                 <Text style={styles.userinfo_sub}>
                   <Text style={styles.label_bold}>School Email: </Text>
                   {profile.contact?.schoolEmail ?? "—"}
                 </Text>
 
-                {/* These are placeholders in your UI right now (keep them until DB has them) */}
-                <Text style={styles.userinfo_sub}>
-                  <Text style={styles.label_bold}>Detachment : </Text>
-                  {profile.detachment ?? "—"}
-                </Text>
                 <Text style={styles.userinfo_sub}>
                   <Text style={styles.label_bold}>Direct Supervisor: </Text>
                   {profile.directSupervisor ?? "—"}
                 </Text>
 
-                {/* You can swap these to real DB attendance later */}
                 <Text style={styles.userinfo_sub}>
-                  <Text style={styles.label_bold}>Lab Attendance: </Text>{attendancePercent}%
+                  <Text style={styles.label_bold}>PT Attendance: </Text>
+                  {ptAttendancePercent}%
                 </Text>
+
                 <Text style={styles.userinfo_sub}>
-                  <Text style={styles.label_bold}>PT Attendance: </Text>{ptAttendancePercent}%
+                  <Text style={styles.label_bold}>Lab Attendance: </Text>
+                  {ptAttendancePercent}%
                 </Text>
+
+
                 <Text style={styles.userinfo_sub}>
                   <Text style={styles.label_bold}>Last PT Score: </Text>
                   {profile.lastPTScore ?? "—"}
                 </Text>
               </>
             )}
+
+            {/* attendance loading/error line (so you can tell if the PT card is "real" yet) */}
+            {loadingAttendance ? (
+              <Text style={styles.userinfo_sub}>Loading attendance…</Text>
+            ) : attendanceError ? (
+              <Text style={styles.userinfo_sub}>{attendanceError}</Text>
+            ) : null}
           </View>
         </View>
 
@@ -150,12 +237,10 @@ export function Profile({ route }: Props) {
         {/* PT ATTENDANCE CARD */}
         <View style={styles.attendance_card}>
           <View style={styles.attendance_top_row}>
-            {/* so that top row is circle and standing label are side by side */}
-            {/* circle with percent */}
             <View
               style={[
                 styles.attendance_circle,
-                ptInGoodStanding ? styles.circle_good : styles.circle_bad, // if in good standing, circle is green, else red
+                ptInGoodStanding ? styles.circle_good : styles.circle_bad,
               ]}
             >
               <Text style={styles.attendance_percent_text}>
@@ -163,12 +248,11 @@ export function Profile({ route }: Props) {
               </Text>
             </View>
 
-            {/* Standing label */}
             <View style={styles.standing_container}>
               <View
                 style={[
                   styles.standing_pill,
-                  ptInGoodStanding ? styles.pill_good : styles.pill_bad, // if ingoodstanding, good, else, bad
+                  ptInGoodStanding ? styles.pill_good : styles.pill_bad,
                 ]}
               >
                 <Text style={styles.standing_pill_text}>
@@ -179,17 +263,18 @@ export function Profile({ route }: Props) {
               <Text style={styles.standing_hint}>
                 Good standing requires ≥ 90%
               </Text>
+              <Text style={styles.standing_hint}>
+                Excused does not count against you
+              </Text>
             </View>
           </View>
 
-          {/* Stacked Bar (Attendance Bottom Row) */}
           <View style={styles.stacked_bar}>
-            {/* so that bar is underneath circle and standing label */}
             <View
               style={[
                 styles.bar_segment,
                 styles.bar_attended,
-                { flex: Math.max(ptAttended, 0.001) }, // stacked bar has flex row (children left to right) but this changes it based on percentage
+                { flex: Math.max(ptAttended, 0.001) },
               ]}
             />
             <View
@@ -201,7 +286,6 @@ export function Profile({ route }: Props) {
             />
           </View>
 
-          {/* Labels for bar */}
           <View style={styles.legend_row}>
             <View style={styles.legend_item}>
               <View style={[styles.legend_dot, styles.bar_attended]} />
@@ -213,20 +297,34 @@ export function Profile({ route }: Props) {
               <Text style={styles.legend_text}>Missed ({ptMissed})</Text>
             </View>
           </View>
+
+          {/*added stuff for excused and late */}
+          <View style={[styles.legend_row, { marginTop: 6 }]}>
+            <View style={styles.legend_item}>
+              <View style={[styles.legend_dot, { backgroundColor: "#9AA3B2" }]} />
+              <Text style={styles.legend_text}>Excused ({ptExcused})</Text>
+            </View>
+
+            <View style={styles.legend_item}>
+              <View style={[styles.legend_dot, { backgroundColor: "#9AA3B2" }]} />
+              <Text style={styles.legend_text}>Late ({ptLate})</Text>
+            </View>
+          </View>
         </View>
 
         {/* SECTION HEADER */}
         <Text style={styles.sectionTitle}>LLAB Attendance</Text>
+        <Text style={[styles.userinfo_sub, { marginLeft: 4, marginBottom: 8 }]}>
+          Coming soon — using PT data for now
+        </Text>
 
-        {/* LLAB ATTENDANCE CARD */}
+        {/* LLAB ATTENDANCE CARD (rn just pt attendance) */}
         <View style={styles.attendance_card}>
           <View style={styles.attendance_top_row}>
-            {/* so that top row is circle and standing label are side by side */}
-            {/* circle with percent */}
             <View
               style={[
                 styles.attendance_circle,
-                llabInGoodStanding ? styles.circle_good : styles.circle_bad, // if in good standing, circle is green, else red
+                llabInGoodStanding ? styles.circle_good : styles.circle_bad,
               ]}
             >
               <Text style={styles.attendance_percent_text}>
@@ -234,12 +332,11 @@ export function Profile({ route }: Props) {
               </Text>
             </View>
 
-            {/* Standing label */}
             <View style={styles.standing_container}>
               <View
                 style={[
                   styles.standing_pill,
-                  llabInGoodStanding ? styles.pill_good : styles.pill_bad, // if ingoodstanding, good, else, bad
+                  llabInGoodStanding ? styles.pill_good : styles.pill_bad,
                 ]}
               >
                 <Text style={styles.standing_pill_text}>
@@ -253,14 +350,12 @@ export function Profile({ route }: Props) {
             </View>
           </View>
 
-          {/* Stacked Bar (Attendance Bottom Row) */}
           <View style={styles.stacked_bar}>
-            {/* so that bar is underneath circle and standing label */}
             <View
               style={[
                 styles.bar_segment,
                 styles.bar_attended,
-                { flex: Math.max(llabAttended, 0.001) }, // stacked bar has flex row (children left to right) but this changes it based on percentage
+                { flex: Math.max(llabAttended, 0.001) },
               ]}
             />
             <View
@@ -272,7 +367,6 @@ export function Profile({ route }: Props) {
             />
           </View>
 
-          {/* Labels for bar */}
           <View style={styles.legend_row}>
             <View style={styles.legend_item}>
               <View style={[styles.legend_dot, styles.bar_attended]} />

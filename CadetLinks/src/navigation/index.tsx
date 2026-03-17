@@ -1,14 +1,8 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { HeaderButton, Text } from '@react-navigation/elements';
-import {
-  createStaticNavigation,
-  StaticParamList,
-} from '@react-navigation/native';
+import { createStaticNavigation, StaticParamList } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Image } from 'react-native';
-import calendar from '../assets/calendar.png';
-import newspaper from '../assets/newspaper.png';
-import profile from '../assets/profile.png';
 import { Home } from './screens/Home';
 import { Login } from "./screens/Login";
 import { Profile } from './screens/ProfilePage/Profile';
@@ -16,6 +10,10 @@ import { Settings } from './screens/Settings';
 import { Events } from './screens/EventsPage/EventScreen';
 import { NotFound } from './screens/NotFound';
 import { DarkColors as colors } from '../styles/colors';
+
+import calendar from '../assets/calendar.png';
+import newspaper from '../assets/newspaper.png';
+import profile from '../assets/profile.png';
 
 const createTabIcon = (source: any) => ({
   tabBarIcon: ({ color, size }: { color: string; size: number }) => (
@@ -65,36 +63,21 @@ const HomeTabs = createBottomTabNavigator({
 
 const RootStack = createNativeStackNavigator({
   screens: {
-    // move this so login is first. this is just for dev for now
     Login: {
       screen: Login,
-      options: { 
-        headerShown: false 
-      },
+      options: { headerShown: false },
     },
     HomeTabs: {
       screen: HomeTabs,
       options: {
-        title: 'Home',
+        title: "Home",
         headerShown: false,
-      },
-    },
-    Profile: {
-      screen: Profile,
-      linking: {
-        path: ':user(@[a-zA-Z0-9-_]+)',
-        parse: {
-          user: (value) => value.replace(/^@/, ''),
-        },
-        stringify: {
-          user: (value) => `@${value}`,
-        },
       },
     },
     Settings: {
       screen: Settings,
       options: ({ navigation }) => ({
-        presentation: 'modal',
+        presentation: "modal",
         headerRight: () => (
           <HeaderButton onPress={navigation.goBack}>
             <Text>Close</Text>
@@ -104,18 +87,13 @@ const RootStack = createNativeStackNavigator({
     },
     NotFound: {
       screen: NotFound,
-      options: {
-        title: '404',
-      },
-      linking: {
-        path: '*',
-      },
+      options: { title: "404" },
+      linking: { path: "*" },
     },
   },
 });
 
 export const Navigation = createStaticNavigation(RootStack);
-
 export type RootStackParamList = StaticParamList<typeof RootStack>;
 
 declare global {
