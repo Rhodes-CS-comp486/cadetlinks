@@ -1,11 +1,13 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Pressable } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import { eventsStyles as styles } from '../../../styles/GeneralStyles';
+import { eventsStyles as styles, calendarTheme } from '../../../styles/EventStyles';
 import { useEvents } from './EventsLogic';
 import TimePicker from './Components/timePicker';
 import DatePicker from './Components/datePicker';
 import { set } from 'firebase/database';
+import { DarkColors as colors } from '../../../styles/colors';
+import { ScreenLayout } from '../../Components/ScreenLayout';
 
 /*
 main events component that contains all UI. EventLogic contains
@@ -33,19 +35,26 @@ export function Events(): React.ReactElement {
     handleAddEvent,
     handleConfirmAddEvent,
     handleCancelAddEvent,
-    getLabelTextAndStyle,
+    getLabelTextAndStyle
   } = useEvents();
 
   return (
-    <View style={styles.container}>
+    <ScreenLayout title="Events">
+      <View style={styles.body_container}>
+
       {/* Calendar */}
       <Calendar
+        // Calendar Appearance
+        style={styles.calendar}
+        theme={calendarTheme}
+
+        // Calendar Functionality
         onDayPress={(day) => setSelectedDate(day.dateString)}
         markedDates={{
           ...markedDates,
           [selectedDate]: {
             selected: true,
-            selectedColor: '#1e90ff',
+            selectedColor: colors.accent,
           },
         }}
       />
@@ -91,6 +100,7 @@ export function Events(): React.ReactElement {
       )}
 
       {/* add event button */}
+      {/* opens add event modal and resets the newEvent stateq */}
       <TouchableOpacity
         style={styles.addEventButton}
         onPress={handleAddEvent}
@@ -175,8 +185,9 @@ export function Events(): React.ReactElement {
             <ScrollView>
               <Text style={styles.modalTitle}>Add New Event</Text>
               {/* form inputs for new event details */}
+
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput,newEvent.title?.length>0? styles.userTextInput: styles.textInput]}
                 placeholder='Enter Event Title'
                 value={newEvent.title}
                 onChangeText={(text) => setNewEvent({ ...newEvent, title: text })}
@@ -198,13 +209,13 @@ export function Events(): React.ReactElement {
               />
 
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput,newEvent.location?.length > 0? styles.userTextInput: styles.textInput]}
                 placeholder='Enter Location'
                 value={newEvent.location}
                 onChangeText={(text) => setNewEvent({ ...newEvent, location: text })}
               />
               <TextInput
-                style={[styles.textInput, { height: 80 }]}
+                style={[styles.textInput, { height: 80 }, newEvent.description?.length > 0 ? styles.userTextInput : styles.textInput]}
                 placeholder='Enter Event Description'
                 value={newEvent.description}
                 onChangeText={(text) => setNewEvent({ ...newEvent, description: text })}
@@ -227,7 +238,7 @@ export function Events(): React.ReactElement {
                   <Text
                     style={
                       newEvent.type === 'RSVP' ?
-                        styles.buttonPressed : styles.generalText
+                        styles.buttonPressed : styles.text
                     }>RSVP</Text>
                 </Pressable>
 
@@ -244,7 +255,7 @@ export function Events(): React.ReactElement {
                   <Text
                     style={
                       newEvent.type === 'Mandatory' ?
-                        styles.buttonPressed : styles.generalText
+                        styles.buttonPressed : styles.text
                     }>Mandatory</Text>
                 </Pressable>
               </View>
@@ -256,14 +267,14 @@ export function Events(): React.ReactElement {
                   style={styles.confirmButton}
                   onPress={handleConfirmAddEvent}
                 >
-                  <Text style={styles.generalText}>Confirm</Text>
+                  <Text style={styles.text}>Confirm</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   onPress={handleCancelAddEvent}
                   style={styles.declineButton}
                 >
-                  <Text style={styles.generalText}>Cancel</Text>
+                  <Text style={styles.text}>Cancel</Text>
                 </TouchableOpacity>
               </View>
 
@@ -274,6 +285,7 @@ export function Events(): React.ReactElement {
 
 
       </Modal>
-    </View>
+      </View>
+    </ScreenLayout>
   );
 }

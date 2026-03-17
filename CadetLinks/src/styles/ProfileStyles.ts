@@ -5,35 +5,6 @@ import {DarkColors as colors } from './colors';
 export const profileStyles = StyleSheet.create({
     ...generalStyles, //inherit general styles for container and others
 
-    // USER INFO
-    userinfo_card: {
-        backgroundColor: colors.card,
-        borderRadius: 18,
-        padding: 16, // doesn't get to edges
-        flexDirection: "row", // so they can be side by side
-        alignItems: "center",
-    },
-    avatar_container: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: colors.background,
-        justifyContent: "center",
-        alignItems: "center",
-        marginRight: 14,
-    },
-    userinfo_text_container: { flex: 1 },
-    userinfo_name: {
-        color: colors.text,
-        fontSize: 18,
-        fontWeight: "700",
-    },
-    userinfo_sub: {
-        color: colors.muted,
-        fontSize: 14,
-        marginTop: 4,
-    },
-
     // ATTENDANCE CARD //
     attendance_card: {
         backgroundColor: colors.card,
