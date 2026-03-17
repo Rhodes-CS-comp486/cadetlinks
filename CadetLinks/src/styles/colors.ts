@@ -7,6 +7,7 @@ export const LightColors = {
   background: '#FFFFFF',
   card: '#F9F9F9',
   overlay: 'rgba(0,0,0,0.5)',
+  shadow: "#1e1e1e",
 
   // text
   text: '#333333',
@@ -31,6 +32,7 @@ export const DarkColors: typeof LightColors = {
   background: '#0B1220',
   card: "#111B2E",
   overlay: "#111B2E",
+  shadow: "#1e1e1e",
 
   text: '#FFFFFF',
   muted: "#9AA3B2",

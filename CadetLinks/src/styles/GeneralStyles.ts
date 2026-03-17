@@ -21,8 +21,36 @@ export const generalStyles = StyleSheet.create({
         textAlign: "center",
         flex: 1,
     },
-    back_button: { width: 40, alignItems: "flex-start" },
-    right_space: { width: 40 },
+    header_button: { 
+        width: 40,
+        alignItems: "flex-start",
+    },
+    header_space: { width: 40 },
+
+    /* Dropdown menu styles */
+    dropdownMenu: {
+        position: 'absolute',
+        top: 60,        // adjust to sit just below header
+        right: 16,
+        backgroundColor: colors.shadow,
+        borderRadius: 10,
+        paddingVertical: 8,
+        minWidth: 180,
+        elevation: 5,       // Android shadow
+        shadowColor: colors.background, // iOS shadow
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+    },
+    dropdownItem: {
+        alignItems: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+    },
+    dropdownItemText: {
+        color: colors.text,
+        fontSize: 16,
+    },
 
     container: {
             flex: 1,

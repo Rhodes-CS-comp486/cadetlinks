@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { onValue, ref, get, onChildRemoved } from 'firebase/database';
 import { db } from '../../firebase/config';
 import { homeStyles as styles } from '../../styles/HomeStyles';
-import { ScreenLayout } from '../Components/ScreenLayout';
+import { HomeScreenLayout } from '../Components/ScreenLayout';
 
 export function Home() {
   const navigation = useNavigation();
@@ -52,7 +52,7 @@ export function Home() {
   ];
 
   return (
-    <ScreenLayout title="Home">
+    <HomeScreenLayout title="Home">
       <View style={styles.body_container}>
         
         <View style={styles.announcementContainer}>
@@ -76,6 +76,6 @@ export function Home() {
         </View>
 
       </View>
-    </ScreenLayout>
+    </HomeScreenLayout>
   );
 }
