@@ -7,13 +7,15 @@ import { Image } from "react-native";
 import calendar from "../assets/calendar.png";
 import newspaper from "../assets/newspaper.png";
 import profile from "../assets/profile.png";
+import briefcase from "../assets/briefcase.png";
 
 import { Home } from "./screens/Home";
 import { Login } from "./screens/Login";
-import { Profile } from "./screens/Profile";
+import { Profile } from "./screens/ProfilePage/Profile";
 import { Settings } from "./screens/Settings";
 import { Events } from "./screens/EventsPage/Events";
 import { NotFound } from "./screens/NotFound";
+import { Jobs } from "./screens/JobsPage/Jobs";
 
 const HomeTabs = createBottomTabNavigator({
   screens: {
@@ -43,6 +45,21 @@ const HomeTabs = createBottomTabNavigator({
         ),
       },
     },
+    Jobs: {
+      screen: Jobs,
+      options: {
+        title: "Jobs",
+        headerShown: false,
+        tabBarIcon: ({ color, size }) => (
+          <Image
+            source={briefcase}
+            tintColor={color}
+            style={{ width: size, height: size }}
+          />
+        ),
+      },
+    },
+    
     Profile: {
       screen: Profile,
       options: {
