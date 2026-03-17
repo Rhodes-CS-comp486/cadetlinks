@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -43,124 +43,40 @@ type AttendanceRoot = Record<
   string, // "YYYY-MM-DD"
   Record<string, { status?: AttendanceStatus }>
 >;
+// ...imports unchanged
+
+import { useProfileLogic } from "./ProfileLogic"; // ✅ adjust path if needed
 
 export function Profile(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
-  const [cadetKey, setCadetKey] = useState<string | null>(null);
+  const {
+    cadetKey,
 
-  // ---- Firebase profile state ----
-  const [profile, setProfile] = useState<CadetProfile | null>(null);
-  const [loadingProfile, setLoadingProfile] = useState(true);
-  const [profileError, setProfileError] = useState<string | null>(null);
+    profile,
+    loadingProfile,
+    profileError,
 
-  // ---- Firebase attendance state (treat everything as PT for now) ----
-  const [loadingAttendance, setLoadingAttendance] = useState(true);
-  const [attendanceError, setAttendanceError] = useState<string | null>(null);
+    loadingAttendance,
+    attendanceError,
 
-  const [ptAttended, setPtAttended] = useState(0);
-  const [ptMissed, setPtMissed] = useState(0);
-  const [ptExcused, setPtExcused] = useState(0);
-  const [ptLate, setPtLate] = useState(0); // rn just for show, not in the profile or attendance percent calculations. not sure how to incorporate
+    ptAttended,
+    ptMissed,
+    ptExcused,
+    ptLate,
+    ptAttendancePercent,
+    ptInGoodStanding,
 
-  useEffect(() => {
-    const load = async () => {
-      setLoadingProfile(true);
-      setProfileError(null);
-
-      setLoadingAttendance(true);
-      setAttendanceError(null);
-
-      try {
-        const key = await AsyncStorage.getItem("currentCadetKey");
-        setCadetKey(key);
-
-        if (!key) {
-          setProfile(null);
-          setProfileError("No user is logged in.");
-
-          // attendance should also stop
-          setPtAttended(0);
-          setPtMissed(0);
-          setPtExcused(0);
-          setPtLate(0);
-          setAttendanceError("No user is logged in.");
-          return;
-        }
-
-        // Load the logged-in cadet from your database
-        const profileRef = ref(db, `cadets/${key}`);
-        const profileSnap = await get(profileRef);
-
-        if (profileSnap.exists()) {
-          setProfile(profileSnap.val());
-        } else {
-          setProfile(null);
-          setProfileError("No profile found for this user.");
-        }
-
-        // ---- Load attendance from your database (everything = PT for now) ----
-        const attendanceRef = ref(db, "attendance");
-        const attendanceSnap = await get(attendanceRef);
-
-        const attendanceData = (attendanceSnap.val() ?? {}) as AttendanceRoot;
-
-        let p = 0;
-        let a = 0;
-        let e = 0;
-        let l = 0;
-
-        // go through every date and find THIS cadet's status on that date
-        for (const date of Object.keys(attendanceData)) {
-          const status = attendanceData?.[date]?.[key]?.status;
-
-          // "." or missing = ignore
-          if (!status || status === ".") continue;
-
-          if (status === "P") p++;
-          else if (status === "A") a++;
-          else if (status === "E") e++;
-          else if (status === "L") l++;
-        }
-
-        setPtAttended(p);
-        setPtMissed(a);
-        setPtExcused(e);
-        setPtLate(l);
-      } catch (error) {
-        console.error("❌ Error reading profile/attendance (Profile):", error);
-        setProfileError("Could not load profile.");
-        setAttendanceError("Could not load attendance.");
-      } finally {
-        setLoadingProfile(false);
-        setLoadingAttendance(false);
-      }
-    };
-
-    load();
-  }, []);
-
-  // --- PT attendance percentage (excused DOES NOT count toward missed) ---
-  // percent = Present / (Present + Absent)
-  const ptCountedTotal = ptAttended + ptMissed; // excused ignored
-  const ptAttendancePercent =
-    ptCountedTotal === 0 ? 0 : Math.round((ptAttended / ptCountedTotal) * 100);
-
-  //if PT attendance > 90% then it's good standing
-  const ptInGoodStanding = ptAttendancePercent >= 90;
-
-  // --- For now, treat LLAB as "coming soon" (keeping your UI the same) ---
-  // If you want to DELETE the LLAB card instead, say so and I’ll strip it.
-  const llabAttended = ptAttended;
-  const llabMissed = ptMissed;
-  const llabTotal = llabAttended + llabMissed;
-  const llabAttendancePercent =
-    llabTotal === 0 ? 0 : Math.round((llabAttended / llabTotal) * 100);
-  const llabInGoodStanding = llabAttendancePercent >= 90;
+    llabAttended,
+    llabMissed,
+    llabExcused,
+    llabLate,
+    llabAttendancePercent,
+    llabInGoodStanding,
+  } = useProfileLogic();
 
   return (
-    // parent containter
     <View style={styles.container}>
       {/* HEADER */}
       <View style={[styles.header_container, { paddingTop: insets.top + 10 }]}>
@@ -252,9 +168,8 @@ export function Profile(): React.ReactElement {
 
                 <Text style={styles.userinfo_sub}>
                   <Text style={styles.label_bold}>Lab Attendance: </Text>
-                  {ptAttendancePercent}%
+                  {llabAttendancePercent}%
                 </Text>
-
 
                 <Text style={styles.userinfo_sub}>
                   <Text style={styles.label_bold}>Last PT Score: </Text>
@@ -263,7 +178,6 @@ export function Profile(): React.ReactElement {
               </>
             )}
 
-            {/* attendance loading/error line (so you can tell if the PT card is "real" yet) */}
             {loadingAttendance ? (
               <Text style={styles.userinfo_sub}>Loading attendance…</Text>
             ) : attendanceError ? (
@@ -339,15 +253,18 @@ export function Profile(): React.ReactElement {
             </View>
           </View>
 
-          {/*added stuff for excused and late */}
           <View style={[styles.legend_row, { marginTop: 6 }]}>
             <View style={styles.legend_item}>
-              <View style={[styles.legend_dot, { backgroundColor: "#9AA3B2" }]} />
+              <View
+                style={[styles.legend_dot, { backgroundColor: "#9AA3B2" }]}
+              />
               <Text style={styles.legend_text}>Excused ({ptExcused})</Text>
             </View>
 
             <View style={styles.legend_item}>
-              <View style={[styles.legend_dot, { backgroundColor: "#9AA3B2" }]} />
+              <View
+                style={[styles.legend_dot, { backgroundColor: "#9AA3B2" }]}
+              />
               <Text style={styles.legend_text}>Late ({ptLate})</Text>
             </View>
           </View>
@@ -355,11 +272,8 @@ export function Profile(): React.ReactElement {
 
         {/* SECTION HEADER */}
         <Text style={styles.section_header}>LLAB Attendance</Text>
-        <Text style={[styles.userinfo_sub, { marginLeft: 4, marginBottom: 8 }]}>
-          Coming soon — using PT data for now
-        </Text>
 
-        {/* LLAB ATTENDANCE CARD (rn just pt attendance) */}
+        {/* LLAB ATTENDANCE CARD */}
         <View style={styles.attendance_card}>
           <View style={styles.attendance_top_row}>
             <View
@@ -387,6 +301,9 @@ export function Profile(): React.ReactElement {
 
               <Text style={styles.standing_hint}>
                 Good standing requires ≥ 90%
+              </Text>
+              <Text style={styles.standing_hint}>
+                Excused does not count against you
               </Text>
             </View>
           </View>
@@ -419,11 +336,28 @@ export function Profile(): React.ReactElement {
               <Text style={styles.legend_text}>Missed ({llabMissed})</Text>
             </View>
           </View>
+
+          <View style={[styles.legend_row, { marginTop: 6 }]}>
+            <View style={styles.legend_item}>
+              <View
+                style={[styles.legend_dot, { backgroundColor: "#9AA3B2" }]}
+              />
+              <Text style={styles.legend_text}>Excused ({llabExcused})</Text>
+            </View>
+
+            <View style={styles.legend_item}>
+              <View
+                style={[styles.legend_dot, { backgroundColor: "#9AA3B2" }]}
+              />
+              <Text style={styles.legend_text}>Late ({llabLate})</Text>
+            </View>
+          </View>
         </View>
       </ScrollView>
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
