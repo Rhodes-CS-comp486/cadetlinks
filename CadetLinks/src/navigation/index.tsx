@@ -15,40 +15,41 @@ import { Profile } from './screens/ProfilePage/Profile';
 import { Settings } from './screens/Settings';
 import { Events } from './screens/EventsPage/EventScreen';
 import { NotFound } from './screens/NotFound';
+import { DarkColors as colors } from '../styles/colors';
 
+const createTabIcon = (source: any) => ({
+  tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+    <Image
+      source={source}
+      tintColor={color}
+      style={{ width: size, height: size }}
+    />
+  ),
+});
 
 const HomeTabs = createBottomTabNavigator({
+  screenOptions: {
+    tabBarStyle: {
+      backgroundColor: colors.background,
+    },
+    tabBarActiveTintColor: '#FFFFFF',
+    tabBarInactiveTintColor: '#9AA3B2',
+    },
   screens: {
     Home: {
       screen: Home,
       options: {
         title: 'Home',
-        tabBarIcon: ({ color, size }) => (
-          <Image
-            source={newspaper}
-            tintColor={color}
-            style={{
-              width: size,
-              height: size,
-            }}
-          />
-        ),
+        headerShown: false,
+        ...createTabIcon(newspaper),
       },
     },
     Events: {
       screen: Events,
       options: {
         title: 'Events',
-        tabBarIcon: ({ color, size }) => (
-          <Image
-            source={calendar}
-            tintColor={color}
-            style={{
-              width: size,
-              height: size,
-            }}
-          />
-        ),
+        headerShown: false,
+        ...createTabIcon(calendar),
       },
     },
     Profile: {
@@ -56,16 +57,7 @@ const HomeTabs = createBottomTabNavigator({
       options: {
         title: 'Profile',
         headerShown:false,
-        tabBarIcon: ({ color, size }) => (
-          <Image
-            source={profile}
-            tintColor={color}
-            style={{
-              width: size,
-              height: size,
-            }}
-          />
-        ),
+        ...createTabIcon(profile),
       },
     },
   },

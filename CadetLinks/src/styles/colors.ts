@@ -16,6 +16,7 @@ export const LightColors = {
   primary: '#1e90ff',
   secondary: '#2196F3',
   accent: '#FF9800',
+  mutedAccent: '#ffb74d',
 
   // semantic
   success: '#4CAF50',
@@ -27,16 +28,17 @@ export const LightColors = {
 };
 
 export const DarkColors: typeof LightColors = {
-  background: '#000000',
-  card: '#121212',
-  overlay: 'rgba(0,0,0,0.5)',
+  background: '#0B1220',
+  card: "#111B2E",
+  overlay: "#111B2E",
 
   text: '#FFFFFF',
-  muted: '#999999',
+  muted: "#9AA3B2",
 
   primary: '#1e90ff',
   secondary: '#2196F3',
   accent: '#FF9800',
+  mutedAccent: '#ffb74d',
 
   success: '#4CAF50',
   danger: '#ff3a3a',

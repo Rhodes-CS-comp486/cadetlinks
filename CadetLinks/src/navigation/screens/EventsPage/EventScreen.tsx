@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Pressable } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import { eventsStyles as styles } from '../../../styles/GeneralStyles';
+import { eventsStyles as styles, calendarTheme } from '../../../styles/EventStyles';
 import { useEvents } from './EventsLogic';
 import TimePicker from './Components/timePicker';
 import DatePicker from './Components/datePicker';
 import { set } from 'firebase/database';
 import { DarkColors as colors } from '../../../styles/colors';
+import { ScreenLayout } from '../../Components/ScreenLayout';
 
 /*
 main events component that contains all UI. EventLogic contains
@@ -38,15 +39,22 @@ export function Events(): React.ReactElement {
   } = useEvents();
 
   return (
-    <View style={styles.container}>
+    <ScreenLayout title="Events">
+      <View style={styles.body_container}>
+
       {/* Calendar */}
       <Calendar
+        // Calendar Appearance
+        style={styles.calendar}
+        theme={calendarTheme}
+
+        // Calendar Functionality
         onDayPress={(day) => setSelectedDate(day.dateString)}
         markedDates={{
           ...markedDates,
           [selectedDate]: {
             selected: true,
-            selectedColor: colors.primary,
+            selectedColor: colors.accent,
           },
         }}
       />
@@ -230,7 +238,7 @@ export function Events(): React.ReactElement {
                   <Text
                     style={
                       newEvent.type === 'RSVP' ?
-                        styles.buttonPressed : styles.generalText
+                        styles.buttonPressed : styles.text
                     }>RSVP</Text>
                 </Pressable>
 
@@ -247,7 +255,7 @@ export function Events(): React.ReactElement {
                   <Text
                     style={
                       newEvent.type === 'Mandatory' ?
-                        styles.buttonPressed : styles.generalText
+                        styles.buttonPressed : styles.text
                     }>Mandatory</Text>
                 </Pressable>
               </View>
@@ -259,14 +267,14 @@ export function Events(): React.ReactElement {
                   style={styles.confirmButton}
                   onPress={handleConfirmAddEvent}
                 >
-                  <Text style={styles.generalText}>Confirm</Text>
+                  <Text style={styles.text}>Confirm</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   onPress={handleCancelAddEvent}
                   style={styles.declineButton}
                 >
-                  <Text style={styles.generalText}>Cancel</Text>
+                  <Text style={styles.text}>Cancel</Text>
                 </TouchableOpacity>
               </View>
 
@@ -277,6 +285,7 @@ export function Events(): React.ReactElement {
 
 
       </Modal>
-    </View>
+      </View>
+    </ScreenLayout>
   );
 }

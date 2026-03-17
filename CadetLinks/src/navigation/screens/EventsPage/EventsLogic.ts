@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Alert } from 'react-native';
-import { eventsStyles as styles } from '../../../styles/GeneralStyles';
+import { eventsStyles as styles } from '../../../styles/EventStyles';
 import { getDatabase, ref, onValue, set, get } from "firebase/database";
 import { getProfileID } from '../ProfilePage/ProfileLogic';
+import { DarkColors as colors } from '../../../styles/colors';
 
 export interface Event {
   id: string 
@@ -97,7 +98,7 @@ export function useEvents() {
   // Computed values
   const markedDates = allEvents.reduce((acc: any, event) => {
     const dateKey = formatDate(event.date);
-    acc[dateKey] = { marked: true, dotColor: 'blue' };
+    acc[dateKey] = { marked: true, dotColor: colors.accent };
     return acc;
   }, {});
 
