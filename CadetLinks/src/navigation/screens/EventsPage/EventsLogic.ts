@@ -4,6 +4,7 @@ import { eventsStyles as styles } from '../../../styles/GeneralStyles';
 import { getDatabase, ref, onValue, set, get, push } from "firebase/database";
 import { getProfileID } from '../ProfilePage/ProfileLogic';
 import {cadetKey} from '../Login';
+import { snap } from 'react-native-paper-dates/lib/typescript/Time/timeUtils';
 
 export interface Event {
   id: string 
@@ -85,6 +86,8 @@ export function useEvents() {
     return () => unsubscribe(); // Cleanup listener on unmount
   }, []);
 
+  
+
   const [newEvent, setNewEvent] = useState<Event>({
     id: '',
     title: '',
@@ -113,14 +116,20 @@ export function useEvents() {
   }, [allEvents, selectedDate]);
 
   // Event handlers
-  const handleEventPress = (event: Event) => {
+  const handleEventPress = async (event: Event) => {
     setSelectedEvent(event);
+    if(event.type === 'RSVP') {
+      const status = await getRSVPStatus(event.id);
+      if(status !== undefined) { 
+        setRsvpStatus((prev) => ({ ...prev, [event.id]: status }));
+      }
+    }
     setEventInfoModalVisible(true);
   };
 
   const handleRSVP = (eventId: string, confirming: boolean) => {
     setRsvpStatus((prev) => ({ ...prev, [eventId]: confirming }));
-    updateRSVPInDB(eventId, confirming); // Update RSVP status in DB for the current user and event
+    updateRSVPStatusInDB(eventId, confirming); // Update RSVP status in DB for the current user and event
     setEventInfoModalVisible(false);
     setSelectedEvent(null);
     setToastMessage(confirming ? 'RSVP Confirmed' : 'RSVP Declined');
@@ -128,22 +137,16 @@ export function useEvents() {
   };
 
   // push RSVP status to DB for the current user and event
-  const updateRSVPInDB = (eventId: string, confirming: boolean) => {
-    const userId = cadetKey
-    console.log("Updating RSVP in DB for user:", userId, "event:", eventId, "confirming:", confirming);
-    
-    if (!userId) {
-      console.error("No user ID found for RSVP update");
-      return;
-    }
-  
+  const updateRSVPStatusInDB = (eventId: string, confirming: boolean) => {
+    //const userId = cadetKey
+    console.log("Updating RSVP in DB for user:", cadetKey, "event:", eventId, "confirming:", confirming);
     try{
       const db = getDatabase();
-      const rsvpRef = ref(db, `rsvps/${eventId}/ + ${userId}`);
+      const rsvpRef = ref(db, `rsvps/${eventId}/` + `${cadetKey}`);
       set(rsvpRef,{
         status: confirming? "Y":"N"
       });
-      console.log("RSVP successfully written to DB:", `rsvps/${eventId}/${userId}`);
+      console.log("RSVP successfully written to DB:", { eventId, userId: cadetKey, status: confirming? "Y":"N" });
     }
     catch(error){
       console.error("Error updating RSVP in DB:", error);
@@ -151,26 +154,28 @@ export function useEvents() {
   }
 
   // helper to get current user's RSVP status for a given event.
-  const getRSVPStatus = (eventId: string): boolean | undefined => {
-    const db = getDatabase();
-    const userId = cadetKey;
-    const [status, setStatus] = useState<boolean | undefined>(undefined);
-      const rsvpRef = ref(db, `eventRSVPs/${eventId}/`+ userId);
-      const unsubscribe = onValue(rsvpRef, (snapshot) => {
-        const value = snapshot.val();
-        console.log("Loaded RSVP status from DB for user:", userId, "event:", eventId, "value:", value);
-        if (value === "Y") {
-          setStatus(true);
-        } else if (value === "N") {
-          setStatus(false);
-        }
-      });
-      unsubscribe(); // Unsubscribe immediately since we just want the current value
-      return status;
+  const getRSVPStatus = async(eventId: string):Promise< boolean | undefined > => {
+    try{
+      const db = getDatabase();
+      const rsvpRef = ref(db, `eventRSVPs/${eventId}/`+ `${cadetKey}`);
+      const snapshot = await get(rsvpRef);
+      
+      if(!snapshot.exists()) return undefined; // No RSVP status found for this user and event
+
+      const value = snapshot.val();
+      // The DB structure is assumed to be: rsvps/{eventId}/{userId}: { status: "Y" or "N" }
+      const status = typeof value === 'object' && 'status' in value ? value.status : undefined;
+
+      if(status === "Y") return true;
+      if(status === "N") return false;
+      return undefined; // In case of unexpected value
+
+    } catch (error) {
+      console.error("Error getting RSVP status from DB:", error);
+      return undefined;
+    } 
+    
   }
-  
-
-
 
   const handleCloseEventInfoModal = () => {
     setEventInfoModalVisible(false);
