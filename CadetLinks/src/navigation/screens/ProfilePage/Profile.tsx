@@ -11,6 +11,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
+// ...imports unchanged
+
 import { useProfileLogic } from "./ProfileLogic"; // ✅ adjust path if needed
 
 export function Profile(): React.ReactElement {
@@ -36,6 +38,8 @@ export function Profile(): React.ReactElement {
 
     llabAttended,
     llabMissed,
+    llabExcused,
+    llabLate,
     llabAttendancePercent,
     llabInGoodStanding,
   } = useProfileLogic();
@@ -132,7 +136,7 @@ export function Profile(): React.ReactElement {
 
                 <Text style={styles.userinfo_sub}>
                   <Text style={styles.label_bold}>Lab Attendance: </Text>
-                  {ptAttendancePercent}%
+                  {llabAttendancePercent}%
                 </Text>
 
                 <Text style={styles.userinfo_sub}>
@@ -236,9 +240,6 @@ export function Profile(): React.ReactElement {
 
         {/* SECTION HEADER */}
         <Text style={styles.section_header}>LLAB Attendance</Text>
-        <Text style={[styles.userinfo_sub, { marginLeft: 4, marginBottom: 8 }]}>
-          Coming soon — using PT data for now
-        </Text>
 
         {/* LLAB ATTENDANCE CARD */}
         <View style={styles.attendance_card}>
@@ -268,6 +269,9 @@ export function Profile(): React.ReactElement {
 
               <Text style={styles.standing_hint}>
                 Good standing requires ≥ 90%
+              </Text>
+              <Text style={styles.standing_hint}>
+                Excused does not count against you
               </Text>
             </View>
           </View>
@@ -300,11 +304,28 @@ export function Profile(): React.ReactElement {
               <Text style={styles.legend_text}>Missed ({llabMissed})</Text>
             </View>
           </View>
+
+          <View style={[styles.legend_row, { marginTop: 6 }]}>
+            <View style={styles.legend_item}>
+              <View
+                style={[styles.legend_dot, { backgroundColor: "#9AA3B2" }]}
+              />
+              <Text style={styles.legend_text}>Excused ({llabExcused})</Text>
+            </View>
+
+            <View style={styles.legend_item}>
+              <View
+                style={[styles.legend_dot, { backgroundColor: "#9AA3B2" }]}
+              />
+              <Text style={styles.legend_text}>Late ({llabLate})</Text>
+            </View>
+          </View>
         </View>
       </ScrollView>
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

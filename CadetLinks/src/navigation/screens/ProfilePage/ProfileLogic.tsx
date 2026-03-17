@@ -26,11 +26,35 @@ export type CadetProfile = {
 // ATTENDANCE STATUS
 type AttendanceStatus = "P" | "A" | "E" | "L" | ".";
 
-// attendance tree: attendance -> date -> cadetKey -> { status }
-type AttendanceRoot = Record<
+// attendance subtree: date -> cadetKey -> { status }
+type AttendanceSubtree = Record<
   string, // "YYYY-MM-DD"
   Record<string, { status?: AttendanceStatus }>
 >;
+
+function normalizeLlabKey(input: string) {
+  // "DiMauro" -> "dimauro", "O'Neil" -> "oneil"
+  return input.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function countAttendance(tree: AttendanceSubtree, cadetId: string) {
+  let p = 0;
+  let a = 0;
+  let e = 0;
+  let l = 0;
+
+  for (const date of Object.keys(tree)) {
+    const status = tree?.[date]?.[cadetId]?.status;
+    if (!status || status === ".") continue;
+
+    if (status === "P") p++;
+    else if (status === "A") a++;
+    else if (status === "E") e++;
+    else if (status === "L") l++;
+  }
+
+  return { attended: p, missed: a, excused: e, late: l };
+}
 
 export function useProfileLogic() {
   const [cadetKey, setCadetKey] = useState<string | null>(null);
@@ -40,14 +64,21 @@ export function useProfileLogic() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
 
-  // ---- Firebase attendance state (treat everything as PT for now) ----
+  // ---- Firebase attendance state ----
   const [loadingAttendance, setLoadingAttendance] = useState(true);
   const [attendanceError, setAttendanceError] = useState<string | null>(null);
 
+  // PT counts
   const [ptAttended, setPtAttended] = useState(0);
   const [ptMissed, setPtMissed] = useState(0);
   const [ptExcused, setPtExcused] = useState(0);
   const [ptLate, setPtLate] = useState(0);
+
+  // LLAB counts
+  const [llabAttended, setLlabAttended] = useState(0);
+  const [llabMissed, setLlabMissed] = useState(0);
+  const [llabExcused, setLlabExcused] = useState(0);
+  const [llabLate, setLlabLate] = useState(0);
 
   useEffect(() => {
     const load = async () => {
@@ -70,49 +101,55 @@ export function useProfileLogic() {
           setPtMissed(0);
           setPtExcused(0);
           setPtLate(0);
+
+          setLlabAttended(0);
+          setLlabMissed(0);
+          setLlabExcused(0);
+          setLlabLate(0);
+
           setAttendanceError("No user is logged in.");
           return;
         }
 
-        // Load the logged-in cadet from your database
+        // 1) Load profile first (we may need lastName to find LLAB key)
         const profileRef = ref(db, `cadets/${key}`);
         const profileSnap = await get(profileRef);
 
+        let profileVal: CadetProfile | null = null;
         if (profileSnap.exists()) {
-          setProfile(profileSnap.val());
+          profileVal = profileSnap.val();
+          setProfile(profileVal);
         } else {
           setProfile(null);
           setProfileError("No profile found for this user.");
         }
 
-        // ---- Load attendance from your database (everything = PT for now) ----
-        const attendanceRef = ref(db, "attendance");
-        const attendanceSnap = await get(attendanceRef);
+        // 2) Load PT attendance: attendance/PT
+        const ptRef = ref(db, "attendance/PT");
+        const ptSnap = await get(ptRef);
+        const ptData = (ptSnap.val() ?? {}) as AttendanceSubtree;
 
-        const attendanceData = (attendanceSnap.val() ?? {}) as AttendanceRoot;
+        const ptCounts = countAttendance(ptData, key);
+        setPtAttended(ptCounts.attended);
+        setPtMissed(ptCounts.missed);
+        setPtExcused(ptCounts.excused);
+        setPtLate(ptCounts.late);
 
-        let p = 0;
-        let a = 0;
-        let e = 0;
-        let l = 0;
+        // 3) Load LLAB attendance: attendance/LLAB
+        // In your export, LLAB keys look like last names (ex: "ball", "blackstone") :contentReference[oaicite:2]{index=2}
+        const llabRef = ref(db, "attendance/LLAB");
+        const llabSnap = await get(llabRef);
+        const llabData = (llabSnap.val() ?? {}) as AttendanceSubtree;
 
-        // go through every date and find THIS cadet's status on that date
-        for (const date of Object.keys(attendanceData)) {
-          const status = attendanceData?.[date]?.[key]?.status;
+        // Prefer: use normalized last name if available; otherwise fall back to the stored key
+        const llabKey =
+          profileVal?.lastName ? normalizeLlabKey(profileVal.lastName) : key;
 
-          // "." or missing = ignore
-          if (!status || status === ".") continue;
-
-          if (status === "P") p++;
-          else if (status === "A") a++;
-          else if (status === "E") e++;
-          else if (status === "L") l++;
-        }
-
-        setPtAttended(p);
-        setPtMissed(a);
-        setPtExcused(e);
-        setPtLate(l);
+        const llabCounts = countAttendance(llabData, llabKey);
+        setLlabAttended(llabCounts.attended);
+        setLlabMissed(llabCounts.missed);
+        setLlabExcused(llabCounts.excused);
+        setLlabLate(llabCounts.late);
       } catch (error) {
         console.error("❌ Error reading profile/attendance (Profile):", error);
         setProfileError("Could not load profile.");
@@ -127,21 +164,19 @@ export function useProfileLogic() {
   }, []);
 
   // --- PT attendance percentage (excused DOES NOT count toward missed) ---
-  const ptCountedTotal = ptAttended + ptMissed;
+  const ptCountedTotal = ptAttended + ptMissed + ptLate; // excused doesn't count
   const ptAttendancePercent =
-    ptCountedTotal === 0 ? 0 : Math.round((ptAttended / ptCountedTotal) * 100);
-
+    ptCountedTotal === 0 ? 0 : Math.round((ptAttended + (ptLate/2)) / ptCountedTotal * 100);
   const ptInGoodStanding = ptAttendancePercent >= 90;
 
-  // --- For now, treat LLAB as "coming soon" (keeping your UI the same) ---
-  const llabAttended = ptAttended;
-  const llabMissed = ptMissed;
-  const llabTotal = llabAttended + llabMissed;
+  // --- LLAB attendance percentage (excused DOES NOT count toward missed) ---
+  const llabCountedTotal = llabAttended + llabMissed + llabLate; // excused doesn't count
   const llabAttendancePercent =
-    llabTotal === 0 ? 0 : Math.round((llabAttended / llabTotal) * 100);
+    llabCountedTotal === 0
+      ? 0
+      : Math.round((llabAttended + (llabLate/2)) / llabCountedTotal * 100);
   const llabInGoodStanding = llabAttendancePercent >= 90;
 
-  // useMemo not required, but keeps a stable object identity (nice for rerenders)
   return useMemo(
     () => ({
       cadetKey,
@@ -162,6 +197,8 @@ export function useProfileLogic() {
 
       llabAttended,
       llabMissed,
+      llabExcused,
+      llabLate,
       llabAttendancePercent,
       llabInGoodStanding,
     }),
@@ -172,14 +209,18 @@ export function useProfileLogic() {
       profileError,
       loadingAttendance,
       attendanceError,
+
       ptAttended,
       ptMissed,
       ptExcused,
       ptLate,
       ptAttendancePercent,
       ptInGoodStanding,
+
       llabAttended,
       llabMissed,
+      llabExcused,
+      llabLate,
       llabAttendancePercent,
       llabInGoodStanding,
     ]
