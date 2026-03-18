@@ -39,8 +39,8 @@ export const DarkColors: typeof LightColors = {
 
   primary: '#1e90ff',
   secondary: '#2196F3',
-  accent: '#FF9800',
-  mutedAccent: '#ffb74d',
+  accent: '#FB9E50',
+  mutedAccent: '#f7b37c',
 
   success: '#4CAF50',
   danger: '#ff3a3a',

@@ -65,6 +65,16 @@ export const generalStyles = StyleSheet.create({
         backgroundColor: colors.background,
     },
 
+    /* COMMON TEXT STYLES */
+    title: { 
+        fontSize: 34, 
+        fontWeight: "800" 
+    },
+    subtitle: { 
+        color: colors.muted, 
+        marginTop: 6, 
+        marginBottom: 20 
+    },
     sectionTitle: {
         fontSize: 18,
         fontWeight: 'bold',
@@ -73,6 +83,12 @@ export const generalStyles = StyleSheet.create({
         marginLeft: 4,
         color: colors.text,
     },
+    text: {
+        color: colors.text,
+        fontSize: 16,
+    },
+
+    /* MODAL STYLES */
     closeButton: {
         alignSelf: 'flex-end',
         padding: 8,
@@ -82,10 +98,6 @@ export const generalStyles = StyleSheet.create({
         fontSize: 24,
         color: colors.muted,
         fontWeight: 'bold',
-    },
-    text: {
-        color: colors.text,
-        fontSize: 16,
     },
 
     /* USER INFO CARD */
