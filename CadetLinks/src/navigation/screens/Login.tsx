@@ -26,14 +26,16 @@ import { db } from "../../firebase/config";
  *  - "camcoolsharp@gmail.com" -> "camcoolsharp_gmail_com"
  *  - If they already type "icdixon_memphis_edu", it stays basically the same.
  */
+export let cadetKey: string | null = null; 
+
 function toCadetKey(raw: string): string {
-  const s = raw.trim().toLowerCase();
+  cadetKey = raw.trim().toLowerCase();
 
   // If they typed the already-formatted key, keep it.
-  if (s.includes("_") && !s.includes("@")) return s;
+  if (cadetKey.includes("_") && !cadetKey.includes("@")) return cadetKey;
 
   // Otherwise, convert email-ish string to key
-  return s
+  return cadetKey
     .replace(/@/g, "_")
     .replace(/\./g, "_")
     .replace(/-/g, "_");
@@ -62,7 +64,7 @@ export function Login() {
     setError("");
 
     try {
-      const cadetKey = toCadetKey(enteredUsername);
+      cadetKey = toCadetKey(enteredUsername);
 
       // Check if this cadet exists in RTDB
       const cadetRef = ref(db, `cadets/${cadetKey}`);

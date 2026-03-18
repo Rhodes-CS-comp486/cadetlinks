@@ -13,6 +13,38 @@ import { StaticScreenProps, useNavigation } from "@react-navigation/native";
 import { profileStyles as styles } from "../../../styles/ProfileStyles";
 import { ScreenLayout } from "../../Components/ScreenLayout";
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ref, get } from "firebase/database";
+//import { db } from "./../firebase/config";
+import {db} from "../../../firebase/config";
+
+// USER INFO (from DB)
+type CadetProfile = {
+  firstName?: string;
+  lastName?: string;
+  cadetRank?: string;
+  job?: string;
+  flight?: string;
+  classYear?: number;
+  permissions?: string;
+  contact?: {
+    schoolEmail?: string;
+    personalEmail?: string;
+    cellPhone?: string;
+  };
+
+  directSupervisor?: string;
+  lastPTScore?: string;
+};
+
+// ATTENDANCE STATUS
+type AttendanceStatus = "P" | "A" | "E" | "L" | ".";
+
+// attendance tree: attendance -> date -> cadetKey -> { status }
+type AttendanceRoot = Record<
+  string, // "YYYY-MM-DD"
+  Record<string, { status?: AttendanceStatus }>
+>;
 // ...imports unchanged
 
 import { useProfileLogic } from "./ProfileLogic"; // ✅ adjust path if needed
