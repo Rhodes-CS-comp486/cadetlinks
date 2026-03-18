@@ -1,35 +1,43 @@
 import { StyleSheet } from 'react-native';
+import { generalStyles } from './GeneralStyles';
+import {DarkColors as colors } from './colors';
+
+export const calendarTheme = {
+  calendarBackground: colors.overlay,
+  textSectionTitleColor: colors.text,
+  dayTextColor: colors.text,
+  textDisabledColor: colors.muted,
+  monthTextColor: colors.text,
+}
 
 export const eventsStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
+  ...generalStyles, //inherit general styles for container and others
+
+  calendar: {
+    borderWidth: 2,
+    borderColor: colors.border,
+    borderRadius: 8,
   },
+  
   eventsContainer: {
     maxHeight: 300,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: colors.background,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    color: '#333',
+    borderTopColor: colors.border,
   },
   eventRow: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: colors.card,
     padding: 12,
     marginBottom: 8,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'space-between',
     borderLeftWidth: 4,
-    borderLeftColor: '#1e90ff',
-    shadowColor: '#000',
+    borderLeftColor: colors.secondary,
+    shadowColor: colors.border,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
@@ -41,17 +49,17 @@ export const eventsStyles = StyleSheet.create({
   eventTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: colors.text,
     marginBottom: 4,
   },
   eventTime: {
     fontSize: 13,
-    color: '#666',
+    color: colors.muted,
     marginBottom: 4,
   },
   eventLocation: {
     fontSize: 12,
-    color: '#999',
+    color: colors.muted,
   },
   eventTypeContainer: {
     marginLeft: 12,
@@ -64,12 +72,12 @@ export const eventsStyles = StyleSheet.create({
     borderRadius: 4,
   },
   rsvpLabel: {
-    color: '#fff',
-    backgroundColor: '#2196F3',
+    color: colors.text,
+    backgroundColor: colors.primary,
   },
   mandatoryLabel: {
-    color: '#fff',
-    backgroundColor: '#FF9800',
+    color: colors.text,
+    backgroundColor: colors.accent,
   },
   noEventsContainer: {
     flex: 1,
@@ -79,50 +87,40 @@ export const eventsStyles = StyleSheet.create({
   },
   noEventsText: {
     fontSize: 14,
-    color: '#999',
+    color: colors.muted,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: colors.overlay,
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     padding: 20,
     maxHeight: '85%',
   },
-  closeButton: {
-    alignSelf: 'flex-end',
-    padding: 8,
-    marginBottom: 12,
-  },
-  closeButtonText: {
-    fontSize: 24,
-    color: '#333',
-    fontWeight: 'bold',
-  },
   modalTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: colors.text,
     marginBottom: 16,
   },
   modalLabel: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: '#1e90ff',
+    color: colors.primary,
     marginTop: 12,
     marginBottom: 4,
   },
   modalText: {
     fontSize: 14,
-    color: '#666',
+    color: colors.muted,
     lineHeight: 20,
   },
   rsvpButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: colors.primary,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
@@ -131,11 +129,11 @@ export const eventsStyles = StyleSheet.create({
     marginBottom: 20,
   },
   buttonPressed: {
-    backgroundColor: '#6b6b6b',
-    borderColor: '#2f3439',
+    backgroundColor: colors.muted,
+    borderColor: colors.border,
   },
   mandatoryButton: {
-    backgroundColor: '#FF9800',
+    backgroundColor: colors.accent,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
@@ -143,9 +141,8 @@ export const eventsStyles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 20,
   },
-
-   mandatoryButtonPressed: {
-    backgroundColor: '#d3c392',
+  mandatoryButtonPressed: {
+    backgroundColor: colors.muted,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
@@ -153,9 +150,8 @@ export const eventsStyles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 20,
   },
-
   confirmButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: colors.success,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
@@ -163,13 +159,8 @@ export const eventsStyles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 20,
   },
-  generalText: {
-    color: '#fff',
-    fontSize: 16,
-  },
-
   declineButton: {
-    backgroundColor: '#ff3a3a',
+    backgroundColor: colors.danger,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
@@ -178,21 +169,21 @@ export const eventsStyles = StyleSheet.create({
     marginBottom: 20,
   },
   rsvpButtonText: {
-    color: '#fff',
+    color: colors.text,
     fontWeight: 'bold',
     fontSize: 16,
   },
   mandatoryContainer: {
-    backgroundColor: '#FFF3CD',
+    backgroundColor: colors.background,
     padding: 12,
     borderRadius: 8,
     marginTop: 20,
     marginBottom: 20,
     borderLeftWidth: 4,
-    borderLeftColor: '#FFC107',
+    borderLeftColor: colors.accent,
   },
   mandatoryText: {
-    color: '#856404',
+    color: colors.muted,
     fontWeight: 'bold',
     fontSize: 14,
   },
@@ -203,27 +194,57 @@ export const eventsStyles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#1e90ff',
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,
-    shadowColor: '#000',
+    shadowColor: colors.border,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
   },
   addEventButtonText: {
     fontSize: 40,
-    color: '#fff',
+    color: colors.text,
     fontWeight: 'bold'
   },
   textInput: {
-    color:'#999',
+    color:colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 15,
+    backgroundColor: colors.muted,
+  },
+  userTextInput: {
+    color:colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 5, 
+    padding: 10,
+    marginBottom: 15,
+    backgroundColor: colors.background,
+  },
+  scrollWheelIOS: {
+    color: '#000000',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 12,
+    marginBottom: 15,
+    backgroundColor: '#f9f9f9',
+    justifyContent: 'center',
+  },
+  scrollWheelWeb: {
+    color: '#000000',
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
     padding: 10,
     marginBottom: 15,
     backgroundColor: '#f9f9f9',
+    fontSize: 16,
+    // fontFamily: 'System',
   },
 });

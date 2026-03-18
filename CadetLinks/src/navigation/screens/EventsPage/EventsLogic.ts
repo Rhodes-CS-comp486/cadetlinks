@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Alert } from 'react-native';
-import { eventsStyles as styles } from '../../../styles/GeneralStyles';
+import { eventsStyles as styles } from '../../../styles/EventStyles';
 import { getDatabase, ref, onValue, set, get, push } from "firebase/database";
-import { getProfileID } from '../ProfilePage/ProfileLogic';
+import { DarkColors as colors } from '../../../styles/colors';
 import {cadetKey} from '../Login';
 import { snap } from 'react-native-paper-dates/lib/typescript/Time/timeUtils';
 
