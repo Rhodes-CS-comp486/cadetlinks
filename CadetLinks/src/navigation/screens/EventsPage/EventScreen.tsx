@@ -133,7 +133,7 @@ export function Events(): React.ReactElement {
                 <Text style={styles.modalText}>{selectedEvent.description}</Text>
 
                 {/* only show RSVP button if it's an RSVP event and user hasn't responded yet */}
-                {selectedEvent.type === 'RSVP' && !rsvpStatus[selectedEvent.id] && (
+                {selectedEvent.type === 'RSVP' && rsvpStatus[selectedEvent.id] === undefined  && (
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
                     <TouchableOpacity
                       onPress={() => handleRSVP(selectedEvent.id, true)}
