@@ -103,6 +103,7 @@ export const generalStyles = StyleSheet.create({
     },
     inputPlaceholder: { 
         color: colors.inputPlaceholderText,
+        height: 40,
         borderWidth: 2,
         borderRadius: 12,
         borderColor: colors.border,
@@ -110,6 +111,7 @@ export const generalStyles = StyleSheet.create({
      },
      inputUser: {
         color: colors.inputUserText,
+        height: 40,
         borderWidth: 2,
         borderRadius: 12,
         borderColor: colors.border,

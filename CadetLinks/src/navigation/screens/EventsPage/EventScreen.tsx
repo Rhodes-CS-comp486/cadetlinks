@@ -226,7 +226,7 @@ export function Events(): React.ReactElement {
                 multiline
                 placeholder='Enter Event Description'
                 placeholderTextColor={styles.inputPlaceholder.color}
-                style={[styles.inputPlaceholder, { height: 80 }, newEvent.description.length > 0 ? styles.inputUser : styles.inputPlaceholder]}
+                style={[styles.inputPlaceholder, newEvent.description.length > 0 ? styles.inputUser : styles.inputPlaceholder, { height: 80 }]}
               />
 
               <Text style={styles.modalLabel}>Event Type:</Text>
