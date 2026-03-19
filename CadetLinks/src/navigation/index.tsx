@@ -16,6 +16,7 @@ import { Settings } from "./screens/Settings";
 import { Events } from "./screens/EventsPage/EventScreen";
 import { NotFound } from "./screens/NotFound";
 import { Jobs } from "./screens/JobsPage/Jobs";
+import ChangePasswordScreen from "./screens/changepassword";
 
 const HomeTabs = createBottomTabNavigator({
   screens: {
@@ -100,6 +101,10 @@ const RootStack = createNativeStackNavigator({
           </HeaderButton>
         ),
       }),
+    },
+    ChangePassword: {
+      screen: ChangePasswordScreen,
+      options: { title: "Change Password" },
     },
     NotFound: {
       screen: NotFound,
