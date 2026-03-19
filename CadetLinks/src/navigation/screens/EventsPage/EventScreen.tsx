@@ -186,11 +186,13 @@ export function Events(): React.ReactElement {
               <Text style={styles.modalTitle}>Add New Event</Text>
               {/* form inputs for new event details */}
 
+              {/* Event Title Input */}
               <TextInput
-                style={[styles.textInput,newEvent.title?.length>0? styles.userTextInput: styles.textInput]}
-                placeholder='Enter Event Title'
                 value={newEvent.title}
                 onChangeText={(text) => setNewEvent({ ...newEvent, title: text })}
+                placeholder='Enter Event Title'
+                placeholderTextColor={styles.inputPlaceholder.color}
+                style={[styles.inputPlaceholder,newEvent.title.length > 0 ? styles.inputUser : styles.inputPlaceholder]}
               />
               
               <DatePicker
@@ -208,18 +210,23 @@ export function Events(): React.ReactElement {
                 }
               />
 
+              {/* Event Location Input */}
               <TextInput
-                style={[styles.textInput,newEvent.location?.length > 0? styles.userTextInput: styles.textInput]}
-                placeholder='Enter Location'
                 value={newEvent.location}
                 onChangeText={(text) => setNewEvent({ ...newEvent, location: text })}
+                placeholder='Enter Location'
+                placeholderTextColor={styles.inputPlaceholder.color}
+                style={[styles.inputPlaceholder,newEvent.location.length > 0 ? styles.inputUser : styles.inputPlaceholder]}
               />
+
+              {/* Event Description Input */}
               <TextInput
-                style={[styles.textInput, { height: 80 }, newEvent.description?.length > 0 ? styles.userTextInput : styles.textInput]}
-                placeholder='Enter Event Description'
                 value={newEvent.description}
                 onChangeText={(text) => setNewEvent({ ...newEvent, description: text })}
                 multiline
+                placeholder='Enter Event Description'
+                placeholderTextColor={styles.inputPlaceholder.color}
+                style={[styles.inputPlaceholder, { height: 80 }, newEvent.description.length > 0 ? styles.inputUser : styles.inputPlaceholder]}
               />
 
               <Text style={styles.modalLabel}>Event Type:</Text>

@@ -21,14 +21,6 @@ export const loginStyles = StyleSheet.create({
 
     card: { backgroundColor: colors.card, borderRadius: 18, padding: 18 },
 
-    input: {
-        backgroundColor: colors.background,
-        borderRadius: 12,
-        paddingHorizontal: 12,
-        paddingVertical: 12,
-        color: colors.text,
-    },
-
     errorText: {
         color: colors.danger,
         textAlign: "center",
@@ -53,13 +45,6 @@ export const loginStyles = StyleSheet.create({
         color: colors.mutedAccent,
         fontWeight: "700",
     },
-
-    inputPlaceholder: { 
-        color: colors.muted,
-        borderWidth: 2,
-        borderRadius: 12,
-        borderColor: colors.border,
-     },
 
     loadingContainer: {
         flexDirection: "row",

@@ -208,24 +208,6 @@ export const eventsStyles = StyleSheet.create({
     color: colors.text,
     fontWeight: 'bold'
   },
-  textInput: {
-    color:colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 15,
-    backgroundColor: colors.muted,
-  },
-  userTextInput: {
-    color:colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 5, 
-    padding: 10,
-    marginBottom: 15,
-    backgroundColor: colors.background,
-  },
   scrollWheelIOS: {
     color: '#000000',
     borderWidth: 1,

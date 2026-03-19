@@ -112,7 +112,7 @@ export function Login() {
               placeholder="Email or cadet key"
               placeholderTextColor={styles.inputPlaceholder.color}
               autoCapitalize="none"
-              style={styles.inputPlaceholder}
+              style={[styles.inputPlaceholder, email.length > 0 ? styles.inputUser : styles.inputPlaceholder]}
             />
 
             <Text style={styles.text}>Password</Text>
@@ -122,7 +122,7 @@ export function Login() {
               placeholder="••••••••"
               placeholderTextColor={styles.inputPlaceholder.color}
               secureTextEntry
-              style={styles.inputPlaceholder}
+              style={[styles.inputPlaceholder,password.length > 0 ? styles.inputUser : styles.inputPlaceholder]}
             />
 
             {error !== "" && <Text style={styles.errorText}>{error}</Text>}
