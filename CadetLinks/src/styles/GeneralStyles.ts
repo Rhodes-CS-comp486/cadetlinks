@@ -99,6 +99,20 @@ export const generalStyles = StyleSheet.create({
         color: colors.muted,
         fontWeight: 'bold',
     },
+    inputPlaceholder: { 
+        color: colors.inputPlaceholderText,
+        borderWidth: 2,
+        borderRadius: 12,
+        borderColor: colors.border,
+        backgroundColor: colors.inputBackground,
+     },
+     inputUser: {
+        color: colors.inputUserText,
+        borderWidth: 2,
+        borderRadius: 12,
+        borderColor: colors.border,
+        backgroundColor: colors.inputBackground,
+     },
 
     /* USER INFO CARD */
     userinfo_card: {

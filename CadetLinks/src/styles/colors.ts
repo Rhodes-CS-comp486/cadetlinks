@@ -5,12 +5,15 @@ import { useColorScheme } from 'react-native';
 export const LightColors = {
   // background surfaces
   background: '#FFFFFF',
+  inputBackground: '#F5F5F5',
   card: '#F9F9F9',
   overlay: 'rgba(0,0,0,0.5)',
   shadow: "#1e1e1e",
 
   // text
   text: '#333333',
+  inputPlaceholderText: '#ffffff',
+  inputUserText: '#333333',
   muted: '#999999',
 
   // primary/brand
@@ -30,11 +33,14 @@ export const LightColors = {
 
 export const DarkColors: typeof LightColors = {
   background: '#0B1220',
+  inputBackground: '#e4e4e4',
   card: "#111B2E",
   overlay: "#111B2E",
   shadow: "#1e1e1e",
 
   text: '#FFFFFF',
+  inputPlaceholderText: '#333333',
+  inputUserText: '#000000',
   muted: "#9AA3B2",
 
   primary: '#1e90ff',
