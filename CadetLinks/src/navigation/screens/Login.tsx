@@ -19,6 +19,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ref, get } from "firebase/database";
 import { db } from "../../firebase/config";
 
+import { loginStyles as styles } from "../../styles/LoginStyles";
+
 /**
  * Turn what the user types into your RTDB key format.
  * Examples:
@@ -89,38 +91,38 @@ export function Login() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.outer_container}>
       <KeyboardAvoidingView
-        style={styles.safe}
+        style={styles.outer_container}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <View style={styles.container}>
-          <Text style={styles.title}>
-            <Text style={{ color: "#FB9E50" }}>Cadet</Text>
-            <Text style={{ color: "#FFFFFF" }}>Links</Text>
+        <View style={styles.body_container}>
+          <Text>
+            <Text style={styles.titleCadet}>Cadet</Text>
+            <Text style={styles.titleLinks}>Links</Text>
           </Text>
 
           <Text style={styles.subtitle}>AFROTC Cadet Portal</Text>
 
           <View style={styles.card}>
-            <Text style={styles.label}>Username</Text>
+            <Text style={styles.text}>Username</Text>
             <TextInput
               value={email}
               onChangeText={setEmail}
               placeholder="Email or cadet key"
-              placeholderTextColor="#8A94A6"
+              placeholderTextColor={styles.inputPlaceholder.color}
               autoCapitalize="none"
-              style={styles.input}
+              style={[styles.inputPlaceholder, email.length > 0 ? styles.inputUser : styles.inputPlaceholder]}
             />
 
-            <Text style={styles.label}>Password</Text>
+            <Text style={styles.text}>Password</Text>
             <TextInput
               value={password}
               onChangeText={setPassword}
               placeholder="••••••••"
-              placeholderTextColor="#8A94A6"
+              placeholderTextColor={styles.inputPlaceholder.color}
               secureTextEntry
-              style={styles.input}
+              style={[styles.inputPlaceholder,password.length > 0 ? styles.inputUser : styles.inputPlaceholder]}
             />
 
             {error !== "" && <Text style={styles.errorText}>{error}</Text>}
@@ -131,7 +133,7 @@ export function Login() {
               disabled={loading}
             >
               {loading ? (
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                <View style={styles.loadingContainer}>
                   <ActivityIndicator />
                   <Text style={styles.primaryBtnText}>Logging in…</Text>
                 </View>
@@ -149,53 +151,3 @@ export function Login() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#0B1220" },
-  container: { flex: 1, justifyContent: "center", padding: 24 },
-
-  title: { color: "white", fontSize: 34, fontWeight: "800" },
-  subtitle: { color: "#B8C0CC", marginTop: 6, marginBottom: 20 },
-
-  card: { backgroundColor: "#111B2E", borderRadius: 18, padding: 18 },
-
-  label: {
-    color: "#DCE3F0",
-    marginTop: 10,
-    marginBottom: 6,
-    fontWeight: "600",
-  },
-
-  input: {
-    backgroundColor: "#0B1220",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    color: "white",
-  },
-
-  errorText: {
-    color: "#FF6B6B",
-    textAlign: "center",
-    marginTop: 10,
-    marginBottom: 4,
-    fontWeight: "600",
-  },
-
-  primaryBtn: {
-    marginTop: 16,
-    backgroundColor: "#FB9E50",
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-
-  primaryBtnText: { color: "white", fontWeight: "800", fontSize: 16 },
-
-  link: {
-    marginTop: 12,
-    textAlign: "center",
-    color: "#f7b37c",
-    fontWeight: "700",
-  },
-});

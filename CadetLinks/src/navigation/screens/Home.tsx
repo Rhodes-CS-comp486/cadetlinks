@@ -6,6 +6,8 @@ import { Calendar } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
 import { onValue, ref, get, onChildRemoved } from 'firebase/database';
 import { db } from '../../firebase/config';
+import { homeStyles as styles } from '../../styles/HomeStyles';
+import { HomeScreenLayout } from '../Components/ScreenLayout';
 
 export function Home() {
   const navigation = useNavigation();
@@ -38,7 +40,7 @@ export function Home() {
         </TouchableOpacity>
       ),
     });
-  }, [navigation]);
+  }, [navigation]); 
 
   //Announcements
   const announcements = [
@@ -50,47 +52,30 @@ export function Home() {
   ];
 
   return (
-    <View style={{ flex: 1 }}>
-      <View style={styles.announcementContainer}>
-        <Text style={styles.sectionTitle}>Announcements</Text>
+    <HomeScreenLayout title="Home">
+      <View style={styles.body_container}>
+        
+        <View style={styles.announcementContainer}>
+          <Text style={styles.sectionTitle}>Announcements</Text>
 
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 10 }}>
-          {announcements.map(item => (
-            <View key={item.id} style={styles.announcementCard}>
-              <Text style={styles.announcementTitle}>{item.title}</Text>
-              <Text>{item.body}</Text>
-            </View>
-          ))}
-        </ScrollView>
+          <ScrollView 
+          style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 10 }}
+          persistentScrollbar={true}
+          >
+            {announcements.map(item => (
+              <View key={item.id} style={styles.announcementCard}>
+                <Text style={styles.announcementTitle}>{item.title}</Text>
+                <Text style={styles.announcementBody}>{item.body}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+
+        <View style={styles.eventsContainer}>
+        <Text style={styles.sectionTitle}> Upcoming Events </Text>
+        </View>
+
       </View>
-    </View>
+    </HomeScreenLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 10,
-  },
-  announcementContainer: {
-    padding: 15,
-    backgroundColor: '#eb8d0e',
-    height: '35%',
-  },
-  announcementCard: {
-    backgroundColor: '#f2f2f2',
-    padding: 10,
-    borderRadius: 8,
-    marginVertical: 5,
-  },
-  announcementTitle: {
-    fontWeight: 'bold',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-});
