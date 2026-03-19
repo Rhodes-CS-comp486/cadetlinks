@@ -16,6 +16,7 @@ import calendar from '../assets/calendar.png';
 import newspaper from '../assets/newspaper.png';
 import profile from '../assets/profile.png';
 import briefcase from '../assets/briefcase.png';
+import ChangePasswordScreen from './screens/changepassword';
 
 const createTabIcon = (source: any) => ({
   tabBarIcon: ({ color, size }: { color: string; size: number }) => (
@@ -101,6 +102,10 @@ const RootStack = createNativeStackNavigator({
           </HeaderButton>
         ),
       }),
+    },
+    ChangePassword: {
+      screen: ChangePasswordScreen,
+      options: { title: "Change Password" },
     },
     NotFound: {
       screen: NotFound,

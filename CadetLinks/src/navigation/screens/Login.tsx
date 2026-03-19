@@ -142,7 +142,7 @@ export function Login() {
               )}
             </Pressable>
 
-            <Pressable onPress={() => {}}>
+            <Pressable onPress={() => navigation.navigate("ChangePassword")}>
               <Text style={styles.link}>Forgot password?</Text>
             </Pressable>
           </View>
