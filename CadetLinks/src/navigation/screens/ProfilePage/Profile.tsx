@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -9,11 +9,14 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { StaticScreenProps, useNavigation } from "@react-navigation/native";
+import { profileStyles as styles } from "../../../styles/ProfileStyles";
+import { ScreenLayout } from "../../Components/ScreenLayout";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ref, get } from "firebase/database";
-import { db } from "../../firebase/config";
+//import { db } from "./../firebase/config";
+import {db} from "../../../firebase/config";
 
 // USER INFO (from DB)
 type CadetProfile = {
@@ -42,140 +45,42 @@ type AttendanceRoot = Record<
   string, // "YYYY-MM-DD"
   Record<string, { status?: AttendanceStatus }>
 >;
+// ...imports unchanged
+
+import { useProfileLogic } from "./ProfileLogic"; // ✅ adjust path if needed
 
 export function Profile(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
-  const [cadetKey, setCadetKey] = useState<string | null>(null);
+  const {
+    cadetKey,
 
-  // ---- Firebase profile state ----
-  const [profile, setProfile] = useState<CadetProfile | null>(null);
-  const [loadingProfile, setLoadingProfile] = useState(true);
-  const [profileError, setProfileError] = useState<string | null>(null);
+    profile,
+    loadingProfile,
+    profileError,
 
-  // ---- Firebase attendance state (treat everything as PT for now) ----
-  const [loadingAttendance, setLoadingAttendance] = useState(true);
-  const [attendanceError, setAttendanceError] = useState<string | null>(null);
+    loadingAttendance,
+    attendanceError,
 
-  const [ptAttended, setPtAttended] = useState(0);
-  const [ptMissed, setPtMissed] = useState(0);
-  const [ptExcused, setPtExcused] = useState(0);
-  const [ptLate, setPtLate] = useState(0); // rn just for show, not in the profile or attendance percent calculations. not sure how to incorporate
+    ptAttended,
+    ptMissed,
+    ptExcused,
+    ptLate,
+    ptAttendancePercent,
+    ptInGoodStanding,
 
-  useEffect(() => {
-    const load = async () => {
-      setLoadingProfile(true);
-      setProfileError(null);
-
-      setLoadingAttendance(true);
-      setAttendanceError(null);
-
-      try {
-        const key = await AsyncStorage.getItem("currentCadetKey");
-        setCadetKey(key);
-
-        if (!key) {
-          setProfile(null);
-          setProfileError("No user is logged in.");
-
-          // attendance should also stop
-          setPtAttended(0);
-          setPtMissed(0);
-          setPtExcused(0);
-          setPtLate(0);
-          setAttendanceError("No user is logged in.");
-          return;
-        }
-
-        // Load the logged-in cadet from your database
-        const profileRef = ref(db, `cadets/${key}`);
-        const profileSnap = await get(profileRef);
-
-        if (profileSnap.exists()) {
-          setProfile(profileSnap.val());
-        } else {
-          setProfile(null);
-          setProfileError("No profile found for this user.");
-        }
-
-        // ---- Load attendance from your database (everything = PT for now) ----
-        const attendanceRef = ref(db, "attendance");
-        const attendanceSnap = await get(attendanceRef);
-
-        const attendanceData = (attendanceSnap.val() ?? {}) as AttendanceRoot;
-
-        let p = 0;
-        let a = 0;
-        let e = 0;
-        let l = 0;
-
-        // go through every date and find THIS cadet's status on that date
-        for (const date of Object.keys(attendanceData)) {
-          const status = attendanceData?.[date]?.[key]?.status;
-
-          // "." or missing = ignore
-          if (!status || status === ".") continue;
-
-          if (status === "P") p++;
-          else if (status === "A") a++;
-          else if (status === "E") e++;
-          else if (status === "L") l++;
-        }
-
-        setPtAttended(p);
-        setPtMissed(a);
-        setPtExcused(e);
-        setPtLate(l);
-      } catch (error) {
-        console.error("❌ Error reading profile/attendance (Profile):", error);
-        setProfileError("Could not load profile.");
-        setAttendanceError("Could not load attendance.");
-      } finally {
-        setLoadingProfile(false);
-        setLoadingAttendance(false);
-      }
-    };
-
-    load();
-  }, []);
-
-  // --- PT attendance percentage (excused DOES NOT count toward missed) ---
-  // percent = Present / (Present + Absent)
-  const ptCountedTotal = ptAttended + ptMissed; // excused ignored
-  const ptAttendancePercent =
-    ptCountedTotal === 0 ? 0 : Math.round((ptAttended / ptCountedTotal) * 100);
-
-  //if PT attendance > 90% then it's good standing
-  const ptInGoodStanding = ptAttendancePercent >= 90;
-
-  // --- For now, treat LLAB as "coming soon" (keeping your UI the same) ---
-  // If you want to DELETE the LLAB card instead, say so and I’ll strip it.
-  const llabAttended = ptAttended;
-  const llabMissed = ptMissed;
-  const llabTotal = llabAttended + llabMissed;
-  const llabAttendancePercent =
-    llabTotal === 0 ? 0 : Math.round((llabAttended / llabTotal) * 100);
-  const llabInGoodStanding = llabAttendancePercent >= 90;
+    llabAttended,
+    llabMissed,
+    llabExcused,
+    llabLate,
+    llabAttendancePercent,
+    llabInGoodStanding,
+  } = useProfileLogic();
 
   return (
     // parent containter
-    <View style={styles.container}>
-      {/* HEADER */}
-      <View style={[styles.header_container, { paddingTop: insets.top + 10 }]}>
-        <View style={styles.header_row}>
-          <Pressable
-            onPress={() => navigation.goBack()}
-            style={styles.back_button}
-          >
-            <Ionicons name="chevron-back" size={26} color="white" />
-          </Pressable>
-
-          <Text style={styles.header_text}>Profile</Text>
-          <View style={styles.right_space} />
-        </View>
-      </View>
-
+    <ScreenLayout>
       {/* body */}
       <ScrollView
         style={styles.body_container}
@@ -251,9 +156,8 @@ export function Profile(): React.ReactElement {
 
                 <Text style={styles.userinfo_sub}>
                   <Text style={styles.label_bold}>Lab Attendance: </Text>
-                  {ptAttendancePercent}%
+                  {llabAttendancePercent}%
                 </Text>
-
 
                 <Text style={styles.userinfo_sub}>
                   <Text style={styles.label_bold}>Last PT Score: </Text>
@@ -262,7 +166,6 @@ export function Profile(): React.ReactElement {
               </>
             )}
 
-            {/* attendance loading/error line (so you can tell if the PT card is "real" yet) */}
             {loadingAttendance ? (
               <Text style={styles.userinfo_sub}>Loading attendance…</Text>
             ) : attendanceError ? (
@@ -272,7 +175,7 @@ export function Profile(): React.ReactElement {
         </View>
 
         {/* SECTION HEADER */}
-        <Text style={styles.section_header}>PT Attendance</Text>
+        <Text style={styles.sectionTitle}>PT Attendance</Text>
 
         {/* PT ATTENDANCE CARD */}
         <View style={styles.attendance_card}>
@@ -338,27 +241,27 @@ export function Profile(): React.ReactElement {
             </View>
           </View>
 
-          {/*added stuff for excused and late */}
           <View style={[styles.legend_row, { marginTop: 6 }]}>
             <View style={styles.legend_item}>
-              <View style={[styles.legend_dot, { backgroundColor: "#9AA3B2" }]} />
+              <View
+                style={[styles.legend_dot, { backgroundColor: "#9AA3B2" }]}
+              />
               <Text style={styles.legend_text}>Excused ({ptExcused})</Text>
             </View>
 
             <View style={styles.legend_item}>
-              <View style={[styles.legend_dot, { backgroundColor: "#9AA3B2" }]} />
+              <View
+                style={[styles.legend_dot, { backgroundColor: "#9AA3B2" }]}
+              />
               <Text style={styles.legend_text}>Late ({ptLate})</Text>
             </View>
           </View>
         </View>
 
         {/* SECTION HEADER */}
-        <Text style={styles.section_header}>LLAB Attendance</Text>
-        <Text style={[styles.userinfo_sub, { marginLeft: 4, marginBottom: 8 }]}>
-          Coming soon — using PT data for now
-        </Text>
+        <Text style={styles.sectionTitle}>LLAB Attendance</Text>
 
-        {/* LLAB ATTENDANCE CARD (rn just pt attendance) */}
+        {/* LLAB ATTENDANCE CARD */}
         <View style={styles.attendance_card}>
           <View style={styles.attendance_top_row}>
             <View
@@ -386,6 +289,9 @@ export function Profile(): React.ReactElement {
 
               <Text style={styles.standing_hint}>
                 Good standing requires ≥ 90%
+              </Text>
+              <Text style={styles.standing_hint}>
+                Excused does not count against you
               </Text>
             </View>
           </View>
@@ -418,163 +324,24 @@ export function Profile(): React.ReactElement {
               <Text style={styles.legend_text}>Missed ({llabMissed})</Text>
             </View>
           </View>
+
+          <View style={[styles.legend_row, { marginTop: 6 }]}>
+            <View style={styles.legend_item}>
+              <View
+                style={[styles.legend_dot, { backgroundColor: "#9AA3B2" }]}
+              />
+              <Text style={styles.legend_text}>Excused ({llabExcused})</Text>
+            </View>
+
+            <View style={styles.legend_item}>
+              <View
+                style={[styles.legend_dot, { backgroundColor: "#9AA3B2" }]}
+              />
+              <Text style={styles.legend_text}>Late ({llabLate})</Text>
+            </View>
+          </View>
         </View>
       </ScrollView>
-    </View>
+    </ScreenLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    gap: 10,
-    backgroundColor: "#0B1220",
-  },
-
-  header_container: {
-    backgroundColor: "#111B2E",
-    width: "100%",
-    paddingBottom: 12,
-    paddingHorizontal: 16,
-  },
-
-  header_row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-
-  back_button: { width: 40, alignItems: "flex-start" },
-  right_space: { width: 40 },
-
-  header_text: {
-    color: "white",
-    fontSize: 22,
-    fontWeight: "600",
-    textAlign: "center",
-    flex: 1,
-  },
-
-  body_container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: "#0B1220",
-  },
-
-  // USER INFO
-  userinfo_card: {
-    backgroundColor: "#111B2E",
-    borderRadius: 18,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  avatar_container: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#0B1220",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 14,
-  },
-
-  userinfo_text_container: { flex: 1 },
-
-  userinfo_name: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-
-  userinfo_sub: {
-    color: "#9AA3B2",
-    fontSize: 14,
-    marginTop: 4,
-  },
-
-  label_bold: {
-    fontWeight: "700",
-    color: "white",
-  },
-
-  section_header: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "700",
-    marginTop: 18,
-    marginBottom: 8,
-    marginLeft: 4,
-  },
-
-  attendance_card: {
-    backgroundColor: "#111B2E",
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 12,
-  },
-
-  attendance_top_row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-  },
-
-  attendance_circle: {
-    width: 92,
-    height: 92,
-    borderRadius: 46,
-    borderWidth: 4,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#0B1220",
-  },
-
-  circle_good: { borderColor: "green" },
-  circle_bad: { borderColor: "red" },
-
-  attendance_percent_text: {
-    color: "white",
-    fontSize: 22,
-    fontWeight: "800",
-  },
-
-  standing_container: { flex: 1 },
-
-  standing_pill: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-  },
-
-  pill_good: { backgroundColor: "rgba(0, 128, 0, 0.18)" },
-  pill_bad: { backgroundColor: "rgba(255, 0, 0, 0.18)" },
-
-  standing_pill_text: { color: "white", fontWeight: "700" },
-  standing_hint: { color: "#9AA3B2", marginTop: 6, fontSize: 12 },
-
-  stacked_bar: {
-    marginTop: 14,
-    height: 12,
-    borderRadius: 8,
-    overflow: "hidden",
-    flexDirection: "row",
-    backgroundColor: "#0B1220",
-  },
-
-  bar_segment: { height: "100%" },
-  bar_attended: { backgroundColor: "green" },
-  bar_missed: { backgroundColor: "red" },
-
-  legend_row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 10,
-  },
-
-  legend_item: { flexDirection: "row", alignItems: "center", gap: 6 },
-  legend_dot: { width: 10, height: 10, borderRadius: 5 },
-  legend_text: { color: "#9AA3B2", fontSize: 12 },
-});

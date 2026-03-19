@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {Platform,Pressable,Text,View,} from 'react-native';
 import DateTimePicker, {DateTimePickerEvent,} from '@react-native-community/datetimepicker';
-import { eventsStyles } from '../Styles/EventsStyles';
+import { eventsStyles as styles } from '../../../../styles/EventStyles';
 
 type DatePickerProps = {
   value: Date | null;
@@ -47,7 +47,7 @@ export default function DatePicker({
             onChange(newDate);
           }
         }}
-        style={eventsStyles.scrollWheelWeb as any}
+        style={styles.scrollWheelWeb as any}
       />
     );
   }
@@ -56,7 +56,7 @@ export default function DatePicker({
   return (
     <View>
       <Pressable
-        style={eventsStyles.scrollWheelIOS as any}
+        style={styles.scrollWheelIOS as any}
         onPress={() => setShow(true)}
       >
         <Text>

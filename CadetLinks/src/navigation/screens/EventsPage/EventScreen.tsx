@@ -1,11 +1,13 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Pressable } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import { eventsStyles as styles } from '../../../styles/GeneralStyles';
+import { eventsStyles as styles, calendarTheme } from '../../../styles/EventStyles';
 import { useEvents } from './EventsLogic';
 import TimePicker from './Components/timePicker';
 import DatePicker from './Components/datePicker';
 import { set } from 'firebase/database';
+import { DarkColors as colors } from '../../../styles/colors';
+import { ScreenLayout } from '../../Components/ScreenLayout';
 
 /*
 main events component that contains all UI. EventLogic contains
@@ -37,15 +39,22 @@ export function Events(): React.ReactElement {
   } = useEvents();
 
   return (
-    <View style={styles.container}>
+    <ScreenLayout>
+      <View style={styles.body_container}>
+
       {/* Calendar */}
       <Calendar
+        // Calendar Appearance
+        style={styles.calendar}
+        theme={calendarTheme}
+
+        // Calendar Functionality
         onDayPress={(day) => setSelectedDate(day.dateString)}
         markedDates={{
           ...markedDates,
           [selectedDate]: {
             selected: true,
-            selectedColor: '#1e90ff',
+            selectedColor: colors.accent,
           },
         }}
       />
@@ -133,7 +142,7 @@ export function Events(): React.ReactElement {
                 <Text style={styles.modalText}>{selectedEvent.description}</Text>
 
                 {/* only show RSVP button if it's an RSVP event and user hasn't responded yet */}
-                {selectedEvent.type === 'RSVP' && !rsvpStatus[selectedEvent.id] && (
+                {selectedEvent.type === 'RSVP' && rsvpStatus[selectedEvent.id] === undefined  && (
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
                     <TouchableOpacity
                       onPress={() => handleRSVP(selectedEvent.id, true)}
@@ -177,11 +186,13 @@ export function Events(): React.ReactElement {
               <Text style={styles.modalTitle}>Add New Event</Text>
               {/* form inputs for new event details */}
 
+              {/* Event Title Input */}
               <TextInput
-                style={[styles.textInput,newEvent.title?.length>0? styles.userTextInput: styles.textInput]}
-                placeholder='Enter Event Title'
                 value={newEvent.title}
                 onChangeText={(text) => setNewEvent({ ...newEvent, title: text })}
+                placeholder='Enter Event Title'
+                placeholderTextColor={styles.inputPlaceholder.color}
+                style={[styles.inputPlaceholder,newEvent.title.length > 0 ? styles.inputUser : styles.inputPlaceholder]}
               />
               
               <DatePicker
@@ -199,18 +210,23 @@ export function Events(): React.ReactElement {
                 }
               />
 
+              {/* Event Location Input */}
               <TextInput
-                style={[styles.textInput,newEvent.location?.length > 0? styles.userTextInput: styles.textInput]}
-                placeholder='Enter Location'
                 value={newEvent.location}
                 onChangeText={(text) => setNewEvent({ ...newEvent, location: text })}
+                placeholder='Enter Location'
+                placeholderTextColor={styles.inputPlaceholder.color}
+                style={[styles.inputPlaceholder,newEvent.location.length > 0 ? styles.inputUser : styles.inputPlaceholder]}
               />
+
+              {/* Event Description Input */}
               <TextInput
-                style={[styles.textInput, { height: 80 }, newEvent.description?.length > 0 ? styles.userTextInput : styles.textInput]}
-                placeholder='Enter Event Description'
                 value={newEvent.description}
                 onChangeText={(text) => setNewEvent({ ...newEvent, description: text })}
                 multiline
+                placeholder='Enter Event Description'
+                placeholderTextColor={styles.inputPlaceholder.color}
+                style={[styles.inputPlaceholder, newEvent.description.length > 0 ? styles.inputUser : styles.inputPlaceholder, { height: 80 }]}
               />
 
               <Text style={styles.modalLabel}>Event Type:</Text>
@@ -229,7 +245,7 @@ export function Events(): React.ReactElement {
                   <Text
                     style={
                       newEvent.type === 'RSVP' ?
-                        styles.buttonPressed : styles.generalText
+                        styles.buttonPressed : styles.text
                     }>RSVP</Text>
                 </Pressable>
 
@@ -246,7 +262,7 @@ export function Events(): React.ReactElement {
                   <Text
                     style={
                       newEvent.type === 'Mandatory' ?
-                        styles.buttonPressed : styles.generalText
+                        styles.buttonPressed : styles.text
                     }>Mandatory</Text>
                 </Pressable>
               </View>
@@ -258,14 +274,14 @@ export function Events(): React.ReactElement {
                   style={styles.confirmButton}
                   onPress={handleConfirmAddEvent}
                 >
-                  <Text style={styles.generalText}>Confirm</Text>
+                  <Text style={styles.text}>Confirm</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   onPress={handleCancelAddEvent}
                   style={styles.declineButton}
                 >
-                  <Text style={styles.generalText}>Cancel</Text>
+                  <Text style={styles.text}>Cancel</Text>
                 </TouchableOpacity>
               </View>
 
@@ -276,6 +292,7 @@ export function Events(): React.ReactElement {
 
 
       </Modal>
-    </View>
+      </View>
+    </ScreenLayout>
   );
 }
