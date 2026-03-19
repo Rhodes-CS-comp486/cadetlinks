@@ -37,6 +37,11 @@ function normalizeLlabKey(input: string) {
   return input.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+function normalizePTKey(input: string) {
+  // "DiMauro" -> "dimauro", "O'Neil" -> "oneil"
+  return input.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
 function countAttendance(tree: AttendanceSubtree, cadetId: string) {
   let p = 0;
   let a = 0;
@@ -129,7 +134,12 @@ export function useProfileLogic() {
         const ptSnap = await get(ptRef);
         const ptData = (ptSnap.val() ?? {}) as AttendanceSubtree;
 
-        const ptCounts = countAttendance(ptData, key);
+        // Prefer: use normalized last name if available; otherwise fall back to the stored key
+        const PTKey =
+          profileVal?.lastName ? normalizePTKey(profileVal.lastName) : key;
+
+
+        const ptCounts = countAttendance(ptData, PTKey);
         setPtAttended(ptCounts.attended);
         setPtMissed(ptCounts.missed);
         setPtExcused(ptCounts.excused);
