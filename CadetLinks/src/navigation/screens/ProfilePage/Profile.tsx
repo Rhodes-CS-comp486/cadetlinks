@@ -80,7 +80,7 @@ export function Profile(): React.ReactElement {
 
   return (
     // parent containter
-    <ScreenLayout title="Profile">
+    <ScreenLayout>
       {/* body */}
       <ScrollView
         style={styles.body_container}

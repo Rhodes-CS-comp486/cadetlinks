@@ -66,7 +66,7 @@ export function Jobs(): React.ReactElement {
   const anyVisibleActions = actions.length > 0;
 
   return (
-    <ScreenLayout title="Events">
+    <ScreenLayout>
       <View style={styles.body_container}>
 
         {/* BODY */}

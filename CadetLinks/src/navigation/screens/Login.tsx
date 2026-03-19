@@ -98,8 +98,8 @@ export function Login() {
       >
         <View style={styles.body_container}>
           <Text>
-            <Text style={styles.titleCadet}>Cadet</Text>
-            <Text style={styles.titleLinks}>Links</Text>
+            <Text style={[styles.title, styles.titleCadet]}>Cadet</Text>
+            <Text style={[styles.title, styles.titleLinks]}>Links</Text>
           </Text>
 
           <Text style={styles.subtitle}>AFROTC Cadet Portal</Text>

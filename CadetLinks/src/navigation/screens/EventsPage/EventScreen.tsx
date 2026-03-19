@@ -39,7 +39,7 @@ export function Events(): React.ReactElement {
   } = useEvents();
 
   return (
-    <ScreenLayout title="Events">
+    <ScreenLayout>
       <View style={styles.body_container}>
 
       {/* Calendar */}

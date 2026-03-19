@@ -52,7 +52,7 @@ export function Home() {
   ];
 
   return (
-    <HomeScreenLayout title="Home">
+    <HomeScreenLayout>
       <View style={styles.body_container}>
         
         <View style={styles.announcementContainer}>

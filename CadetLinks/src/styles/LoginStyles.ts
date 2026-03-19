@@ -15,10 +15,6 @@ export const loginStyles = StyleSheet.create({
         justifyContent: "center",
     },
 
-    titleCadet: { ...generalStyles.title, color: colors.accent },
-    titleLinks: { ...generalStyles.title, color: colors.text },
-
-
     card: { backgroundColor: colors.card, borderRadius: 18, padding: 18 },
 
     errorText: {

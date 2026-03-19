@@ -66,6 +66,8 @@ export const generalStyles = StyleSheet.create({
     },
 
     /* COMMON TEXT STYLES */
+    titleCadet: { color: colors.accent },
+    titleLinks: { color: colors.text },
     title: { 
         fontSize: 34, 
         fontWeight: "800" 
