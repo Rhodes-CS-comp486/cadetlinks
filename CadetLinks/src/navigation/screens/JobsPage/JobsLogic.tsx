@@ -1,6 +1,7 @@
+// JobsLogic.tsx
 import { useEffect, useMemo, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ref, get, update, remove } from "firebase/database";
+import { ref, get } from "firebase/database";
 import { db } from "../../../firebase/config";
 
 export type CadetProfile = {
@@ -32,54 +33,18 @@ export type JobsAction = {
   allowed: boolean;
 };
 
-export type EventItem = {
-  id: string;
-  eventName?: string;
-  date?: string;
-  time?: string;
-  details?: string;
-  locationId?: string;
-  mandatory?: boolean;
-};
-
-export type CadetListItem = {
-  cadetKey: string;
-  firstName: string;
-  lastName: string;
-  fullName: string;
-  attendanceKey: string;
-};
-
-export type AttendanceStatus = "P" | "A" | "L";
-
 function parsePermissions(permissionString?: string): string[] {
   if (!permissionString) return [];
 
+  // handles:
+  // "All"
+  // "Attendance Taking"
+  // "File Uploading, Attendance Taking"
+  // "n/a"
   return permissionString
     .split(",")
     .map((item) => item.trim())
     .filter((item) => item.length > 0 && item.toLowerCase() !== "n/a");
-}
-
-function normalizeAttendanceKey(input: string) {
-  return input.toLowerCase().replace(/[^a-z0-9]/g, "");
-}
-
-function getTodayString() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function inferAttendanceBucket(eventName?: string): "PT" | "LLAB" | null {
-  const name = (eventName ?? "").toLowerCase();
-
-  if (name.includes("pt")) return "PT";
-  if (name.includes("llab") || name.includes("lab")) return "LLAB";
-
-  return null;
 }
 
 export function useJobsLogic() {
@@ -95,11 +60,6 @@ export function useJobsLogic() {
   const [canTakeAttendance, setCanTakeAttendance] = useState(false);
   const [canUploadFiles, setCanUploadFiles] = useState(false);
   const [canMakeEvents, setCanMakeEvents] = useState(false);
-
-  // attendance modal data
-  const [todayEvents, setTodayEvents] = useState<EventItem[]>([]);
-  const [allCadets, setAllCadets] = useState<CadetListItem[]>([]);
-  const [loadingAttendanceTools, setLoadingAttendanceTools] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -139,15 +99,17 @@ export function useJobsLogic() {
         const cadetData = profileSnap.val() as CadetProfile;
         setProfile(cadetData);
 
-        // permissions come from cadets/{key}/permissions
+        // NEW: permissions now come directly from cadets/{key}/permissions
         const parsedPermissions = parsePermissions(cadetData.permissions);
         setPermissionNames(parsedPermissions);
 
         const all = parsedPermissions.includes("All");
         const attendance =
           all || parsedPermissions.includes("Attendance Taking");
-        const files = all || parsedPermissions.includes("File Uploading");
-        const events = all || parsedPermissions.includes("Event Making");
+        const files =
+          all || parsedPermissions.includes("File Uploading");
+        const events =
+          all || parsedPermissions.includes("Event Making");
 
         setIsAll(all);
         setCanTakeAttendance(attendance);
@@ -164,116 +126,6 @@ export function useJobsLogic() {
     load();
   }, []);
 
-  async function loadAttendanceModalData() {
-    setLoadingAttendanceTools(true);
-
-    try {
-      const today = getTodayString();
-
-      // load today's events
-      const eventsRef = ref(db, "events");
-      const eventsSnap = await get(eventsRef);
-      const eventsData = (eventsSnap.val() ?? {}) as Record<string, EventItem>;
-
-      const todaysEvents = Object.entries(eventsData)
-        .map(([id, value]) => ({
-          id,
-          ...value,
-        }))
-        .filter((event) => event.date === today && !!event.eventName)
-        .sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
-
-      setTodayEvents(todaysEvents);
-
-      // load cadets
-      const cadetsRef = ref(db, "cadets");
-      const cadetsSnap = await get(cadetsRef);
-      const cadetsData = (cadetsSnap.val() ?? {}) as Record<string, CadetProfile>;
-
-      const cadetList = Object.entries(cadetsData)
-        .map(([key, value]) => {
-          const firstName = value.firstName ?? "";
-          const lastName = value.lastName ?? "";
-          const fullName = `${firstName} ${lastName}`.trim() || key;
-
-          return {
-            cadetKey: key,
-            firstName,
-            lastName,
-            fullName,
-            attendanceKey: normalizeAttendanceKey(lastName || key),
-          };
-        })
-        .sort((a, b) => a.fullName.localeCompare(b.fullName));
-
-      setAllCadets(cadetList);
-    } catch (e) {
-      console.error("❌ Error loading attendance modal data:", e);
-      throw e;
-    } finally {
-      setLoadingAttendanceTools(false);
-    }
-  }
-
-  async function saveAttendanceForEvent(
-    selectedEventId: string,
-    overrides: Record<string, AttendanceStatus>
-  ) {
-    const selectedEvent = todayEvents.find((event) => event.id === selectedEventId);
-
-    if (!selectedEvent) {
-      throw new Error("Please select an event.");
-    }
-
-    const bucket = inferAttendanceBucket(selectedEvent.eventName);
-
-    if (!bucket) {
-      throw new Error(
-        'Could not tell whether this event is PT or LLAB. Add "PT" or "LLAB" to the event name, or add an attendanceType field.'
-      );
-    }
-
-    const date = selectedEvent.date;
-    if (!date) {
-      throw new Error("Selected event does not have a valid date.");
-    }
-
-    const updates: Record<string, { status: AttendanceStatus }> = {};
-
-    // everyone defaults to present
-    for (const cadet of allCadets) {
-      const chosenStatus = overrides[cadet.cadetKey] ?? "P";
-      updates[`attendance/${bucket}/${date}/${cadet.attendanceKey}`] = {
-        status: chosenStatus,
-      };
-    }
-
-    await update(ref(db), updates);
-  }
-
-  async function clearAttendanceForEvent(selectedEventId: string) {
-    const selectedEvent = todayEvents.find((event) => event.id === selectedEventId);
-
-    if (!selectedEvent) {
-      throw new Error("Please select an event.");
-    }
-
-    const bucket = inferAttendanceBucket(selectedEvent.eventName);
-
-    if (!bucket) {
-      throw new Error(
-        'Could not tell whether this event is PT or LLAB. Add "PT" or "LLAB" to the event name, or add an attendanceType field.'
-      );
-    }
-
-    const date = selectedEvent.date;
-    if (!date) {
-      throw new Error("Selected event does not have a valid date.");
-    }
-
-    await remove(ref(db, `attendance/${bucket}/${date}`));
-  }
-
   // only show actions the cadet is actually allowed to use
   const actions: JobsAction[] = [];
 
@@ -282,6 +134,7 @@ export function useJobsLogic() {
       id: "attendance",
       title: "Take Attendance",
       subtitle: "Mark PT / LLAB attendance for cadets",
+      routeHint: "Attendance", // change if your real route name is different
       allowed: true,
     });
   }
@@ -291,7 +144,7 @@ export function useJobsLogic() {
       id: "files",
       title: "Upload Files",
       subtitle: "Upload PDFs and other documents for cadets",
-      routeHint: "Files",
+      routeHint: "Files", // change if your real route name is different
       allowed: true,
     });
   }
@@ -301,7 +154,7 @@ export function useJobsLogic() {
       id: "event_making",
       title: "Event Making",
       subtitle: "Create and publish events to the wing calendar",
-      routeHint: "Events",
+      routeHint: "Events", // change if your real route name is different
       allowed: true,
     });
   }
@@ -328,13 +181,6 @@ export function useJobsLogic() {
       canUploadFiles,
       canMakeEvents,
       actions,
-
-      todayEvents,
-      allCadets,
-      loadingAttendanceTools,
-      loadAttendanceModalData,
-      saveAttendanceForEvent,
-      clearAttendanceForEvent,
     }),
     [
       cadetKey,
@@ -347,9 +193,6 @@ export function useJobsLogic() {
       canUploadFiles,
       canMakeEvents,
       actions,
-      todayEvents,
-      allCadets,
-      loadingAttendanceTools,
     ]
   );
 }
