@@ -1,20 +1,18 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { eventsStyles as styles } from '../../../styles/EventStyles';
-import { getDatabase, ref, onValue, set, get, push } from "firebase/database";
-import { DarkColors as colors } from '../../../styles/colors';
-import {cadetKey} from '../Login';
-import { snap } from 'react-native-paper-dates/lib/typescript/Time/timeUtils';
+import { getDatabase, ref, onValue, set, get } from "firebase/database";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface Event {
-  id: string 
+  id: string
   title: string;
   date: Date;
   time: Date;
   description: string;
   location: string;
   type: '' | 'RSVP' | 'Mandatory';
-  }
+}
 /*
 TODO: 
 - Get user-specific ID to update EventRSVP status in DB when user RSVPs to an event
@@ -27,7 +25,7 @@ export function useEvents() {
   // helper used throughout the hook - must be defined before any computed values that call it
   const formatDate = (d: Date | string): string => {
     const date = typeof d === 'string' ? new Date(d) : d;
-    if(isNaN(date.getTime())) {
+    if (isNaN(date.getTime())) {
       console.error("Invalid date provided to formatDate:", d);
       return ''; // Return empty string for invalid dates
     }
@@ -41,6 +39,8 @@ export function useEvents() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [addEventsModalVisible, setAddEventsModalVisible] = useState(false);
   const [allEvents, setAllEvents] = useState<Event[]>([]);
+  const [cadetKeyFromStorage, setCadetKeyFromStorage] = useState<string | null>(null);
+  const [cadetKeyLoaded, setCadetKeyLoaded] = useState<boolean>(false);
 
   const [newEvent, setNewEvent] = useState<Event>({
     id: '',
@@ -51,6 +51,30 @@ export function useEvents() {
     location: '',
     type: '' as '' | 'RSVP' | 'Mandatory',
   });
+
+  //loading persisted cadetKey from AsyncStorage on component mount
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCadetKey = async () => {
+      try {
+        const storedCadetKey = await AsyncStorage.getItem('currentCadetKey');
+        if (isMounted) {
+          setCadetKeyFromStorage(storedCadetKey);
+          setCadetKeyLoaded(true); // Mark that we've finished loading the cadet key
+          console.log("Loaded cadet key from storage:", storedCadetKey);
+        }
+      } catch (error) {
+        console.error('Error loading cadet key from storage:', error);
+      }
+    };
+
+    loadCadetKey();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // marked dates for calendar component 
   const markedDates = allEvents.reduce((acc: any, event) => {
@@ -63,64 +87,66 @@ export function useEvents() {
   const eventsForSelectedDate = useMemo(() => {
     return allEvents
       .filter((ev) => formatDate(ev.date) === selectedDate)
-      .sort((a, b) => 
+      .sort((a, b) =>
         a.time.getTime() - b.time.getTime()
-    );
-       
+      );
+
   }, [allEvents, selectedDate]);
 
 
-  // Load events and rsvps status from Firebase Realtime Database
+  // Load events from Firebase Realtime Database
   useEffect(() => {
     const db = getDatabase();
     const eventsDBRef = ref(db, "events");
-    
+
     const unsubscribe = onValue(eventsDBRef, (snapshot) => {
       const eventsData = snapshot.val();
       console.log("Loaded events from DB:", eventsData);
-      console.log("User ID for RSVP tracking:", cadetKey);
-      //console.log("trying to access title of first event:", eventsData ? eventsData[Object.keys(eventsData)[0]].eventName : "No events found");
-      if(!eventsData){
+      //console.log("User ID for RSVP tracking:", cadetKeyFromStorage);
+      if (!eventsData) {
         setAllEvents([]);
         console.log("No events data found in DB, setting allEvents to empty array");
         return;
       }
-        
-        // Transform the events data from the DB into the Event[] format expected by the app
-        const loadedEvents: Event[] = Object.keys(eventsData).map((key) => {
-            const event = eventsData[key];
 
-            const dateStr = `${event.date}T${event.time}`; // Combine date and time into ISO string
-            const combinedDateTime = new Date(dateStr);
-            if (isNaN(combinedDateTime.getTime())) {
-              console.error(`Invalid date for event ${key}:`, event.date, event.time);
-              return null;
-            }
-            return {
-              id: key,
-              title: event.eventName,
-              date: combinedDateTime,
-              time: combinedDateTime,
-              description: event.details,
-              location: event.locationId,
-              type: event.mandatory === "true" ? "Mandatory" :"RSVP", // assuming DB stores type as string "True"/"False"
-            };
-          })
-          .filter((event): event is Event => event !== null);
-        setAllEvents(loadedEvents);
-        console.log("Transformed events for app:", loadedEvents);
-      });
-      return () => unsubscribe();
+      // Transform the events data from the DB into the Event[] format expected by the app
+      const loadedEvents: Event[] = Object.keys(eventsData).map((key) => {
+        const event = eventsData[key];
+
+        const dateStr = `${event.date}T${event.time}`; // Combine date and time into ISO string
+        const combinedDateTime = new Date(dateStr);
+        if (isNaN(combinedDateTime.getTime())) {
+          console.error(`Invalid date for event ${key}:`, event.date, event.time);
+          return null;
+        }
+        return {
+          id: key,
+          title: event.eventName,
+          date: combinedDateTime,
+          time: combinedDateTime,
+          description: event.details,
+          location: event.locationId,
+          type: event.mandatory === true ? "Mandatory" : "RSVP", // assuming DB stores type as boolean true/false
+        };
+      })
+        .filter((event): event is Event => event !== null);
+      setAllEvents(loadedEvents);
+      console.log("Transformed events for app:", loadedEvents);
+    });
+    return () => unsubscribe();
   }, []);
 
-  // Listen for changes in RSVP status for the current user across all events
-  useEffect(() => {
-     
 
-    // Listen for changes in the RSVP status for the current user across all events
+  // Listen for changes in RSVP status for the curr user across all events
+  useEffect(() => {
+    if (!cadetKeyLoaded) return;
+
     setRsvpStatus({}); // Clear RSVP status when events load to avoid showing stale data
-    if(!cadetKey) return;
-   
+    if (!cadetKeyFromStorage) {
+      console.warn('No cadet key found in storage; cannot load RSVP status.');
+      return;
+    }
+
     const db = getDatabase();
     const rsvpRef = ref(db, `rsvps/`);
     const unsubscribeRsvp = onValue(rsvpRef, (snapshot) => {
@@ -129,21 +155,21 @@ export function useEvents() {
       const userRsvpStatus: { [eventId: string]: boolean } = {};
 
       Object.entries(rsvpData).forEach(([eventId, eventNode]) => {
-        const userNode = (eventNode as any)[cadetKey || ""]; // Access the current user's RSVP status for this event
+        const userNode = (eventNode as any)[cadetKeyFromStorage.toString() || ""]; // Access the current user's RSVP status for this event
         const status = userNode?.status;
         //console.log(`Processing RSVP for event ${eventId}:`, { userNode, status });
 
-        if(status === "Y") userRsvpStatus[eventId] = true;
-        if(status === "N") userRsvpStatus[eventId] = false;
+        if (status === "Y") userRsvpStatus[eventId] = true;
+        if (status === "N") userRsvpStatus[eventId] = false;
       });
       setRsvpStatus(userRsvpStatus);
-      console.log("Processed RSVP status for user:", cadetKey, userRsvpStatus);
+      console.log("Processed RSVP status for user:", cadetKeyFromStorage, userRsvpStatus);
     });
 
     return () => {
-      unsubscribeRsvp(); 
+      unsubscribeRsvp();
     };
-  }, [cadetKey]);
+  }, [cadetKeyFromStorage]);
 
 
   /*
@@ -152,9 +178,9 @@ export function useEvents() {
   */
   const handleEventPress = async (event: Event) => {
     setSelectedEvent(event);
-    if(event.type === 'RSVP') {
+    if (event.type === 'RSVP') {
       const status = await getRSVPStatus(event.id);
-      if(status !== undefined) { 
+      if (status !== undefined) {
         setRsvpStatus((prev) => ({ ...prev, [event.id]: status }));
       }
     }
@@ -164,7 +190,7 @@ export function useEvents() {
   //called from eventscreen when user confirms or declines an RSVP - updates local state and DB
   const handleRSVP = (eventId: string, confirming: boolean) => {
     setRsvpStatus((prev) => ({ ...prev, [eventId]: confirming }));
-    updateRSVPStatusInDB(eventId, confirming); // Update RSVP status in DB for the current user and event
+    void updateRSVPStatusInDB(eventId, confirming); // Update RSVP status in DB for the current user and event
     setEventInfoModalVisible(false);
     setSelectedEvent(null);
     setToastMessage(confirming ? 'RSVP Confirmed' : 'RSVP Declined');
@@ -172,44 +198,53 @@ export function useEvents() {
   };
 
   // push RSVP status to DB for the current user and event
-  const updateRSVPStatusInDB = (eventId: string, confirming: boolean) => {
-    //const userId = cadetKey
-    console.log("Updating RSVP in DB for user:", cadetKey, "event:", eventId, "confirming:", confirming);
-    try{
-      const db = getDatabase();
-      const rsvpRef = ref(db, `rsvps/${eventId}/` + `${cadetKey}`);
-      set(rsvpRef,{
-        status: confirming? "Y":"N"
-      });
-      console.log("RSVP successfully written to DB:", { eventId, userId: cadetKey, status: confirming? "Y":"N" });
+  const updateRSVPStatusInDB = async (eventId: string, confirming: boolean) => {
+    if (!cadetKeyFromStorage) {
+      console.warn('Cannot update RSVP without a persisted cadet key.');
+      return;
     }
-    catch(error){
+
+    console.log("Updating RSVP in DB for user:", cadetKeyFromStorage, "event:", eventId, "confirming:", confirming);
+    try {
+      const db = getDatabase();
+      const rsvpRef = ref(db, `rsvps/${eventId}/` + `${cadetKeyFromStorage}`);
+      await set(rsvpRef, {
+        status: confirming ? "Y" : "N"
+      });
+      console.log("RSVP successfully written to DB:", { eventId, userId: cadetKeyFromStorage, status: confirming ? "Y" : "N" });
+    }
+    catch (error) {
       console.error("Error updating RSVP in DB:", error);
     }
   }
 
   // helper to get current user's RSVP status for a given event -> called from handleEventPress
-  const getRSVPStatus = async(eventId: string):Promise< boolean | undefined > => {
-    try{
+  const getRSVPStatus = async (eventId: string): Promise<boolean | undefined> => {
+    if (!cadetKeyFromStorage) {
+      console.warn('Cannot load RSVP status without a persisted cadet key.');
+      return undefined;
+    }
+
+    try {
       const db = getDatabase();
-      const rsvpRef = ref(db, `rsvps/${eventId}/`+ `${cadetKey}`);
+      const rsvpRef = ref(db, `rsvps/${eventId}/` + `${cadetKeyFromStorage}`);
       const snapshot = await get(rsvpRef);
-      
-      if(!snapshot.exists()) return undefined; // No RSVP status found for this user and event
+
+      if (!snapshot.exists()) return undefined; // No RSVP status found for this user and event
 
       const value = snapshot.val();
       // The DB structure is assumed to be: rsvps/{eventId}/{userId}: { status: "Y" or "N" }
       const status = typeof value === 'object' && 'status' in value ? value.status : undefined;
 
-      if(status === "Y") return true;
-      if(status === "N") return false;
+      if (status === "Y") return true;
+      if (status === "N") return false;
       return undefined; // In case of unexpected value
 
     } catch (error) {
       console.error("Error getting RSVP status from DB:", error);
       return undefined;
-    } 
-    
+    }
+
   }
 
   const handleCloseEventInfoModal = () => {
@@ -253,7 +288,7 @@ export function useEvents() {
     // Convert event object to the format expected by the DB
     event = reformatEventForDB(event); // This will set the ID and reformat the date/time for DB storage
     const db = getDatabase();
-    try{
+    try {
       await set(ref(db, 'events/' + event.id), {
         eventName: event.title,
         date: formatDate(event.date),
@@ -264,10 +299,10 @@ export function useEvents() {
       });
       console.log("Event written to DB:", event);
     } catch (error) {
-        console.error("Error writing event to DB:", error);
+      console.error("Error writing event to DB:", error);
     }
 
-    if(event.type === 'RSVP'){
+    if (event.type === 'RSVP') {
       await initializeRsvpEntryToDB(event.id); // Create corresponding entry in RSVP section of DB for the new event
       console.log("Initialized RSVP entry in DB for event:", event.id);
     }
@@ -278,19 +313,24 @@ export function useEvents() {
 
   // helper function to initialize an RSVP entry in the DB for a new event
   const initializeRsvpEntryToDB = async (eventId: string) => {
+    if (!cadetKeyFromStorage) {
+      console.warn('Cannot initialize RSVP entry without a persisted cadet key.');
+      return;
+    }
+
     try {
       const db = getDatabase();
-      const userId = cadetKey;
+      const userId = cadetKeyFromStorage;
       console.log("Initializing RSVP entry in DB for event:", eventId, "user:", userId);
-      const rsvpRef = ref(db, `rsvps/`+ `${eventId}` + `/${userId}`);
+      const rsvpRef = ref(db, `rsvps/` + `${eventId}` + `/${userId}`);
       //const childSnapshot = push(rsvpRef);
       await set(rsvpRef, {
-        status: ""  
+        status: ""
       });
     } catch (error) {
       console.error("Error initializing RSVP entry in DB:", error);
-    } 
-  }; 
+    }
+  };
 
   // helper function to reformat event object for DB storage: sets ID and date/time formatting
   const reformatEventForDB = (event: Event) => {
@@ -325,11 +365,11 @@ export function useEvents() {
 
     const status = rsvpStatus[event.id];
 
-    if( status === true) {
+    if (status === true) {
       return [styles.confirmButton, 'Confirmed'];
     }
 
-    if( status === false) {
+    if (status === false) {
       return [styles.declineButton, 'Declined'];
     }
     return [styles.rsvpLabel, 'RSVP']; // default for RSVP events with no response yet

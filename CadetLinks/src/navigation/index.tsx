@@ -3,8 +3,8 @@ import { HeaderButton, Text } from '@react-navigation/elements';
 import { createStaticNavigation, StaticParamList } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Image } from 'react-native';
-import { Home } from './screens/Home';
-import { Login } from "./screens/Login";
+import { HomePage } from './screens/HomePage/Home';
+import { Login } from "./screens/LoginPage/Login";
 import { Profile } from './screens/ProfilePage/Profile';
 import { Jobs } from './screens/JobsPage/Jobs';
 import { Settings } from './screens/Settings';
@@ -38,7 +38,7 @@ const HomeTabs = createBottomTabNavigator({
     },
   screens: {
     Home: {
-      screen: Home,
+      screen: HomePage,
       options: {
         title: 'Home',
         headerShown: false,

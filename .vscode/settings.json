@@ -1,3 +1,9 @@
 {
-    "editor.defaultFormatter": "msjsdiag.vscode-react-native"
+    "editor.defaultFormatter": "msjsdiag.vscode-react-native",
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "vscode.typescript-language-features"
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "vscode.typescript-language-features"
+    }
 }
