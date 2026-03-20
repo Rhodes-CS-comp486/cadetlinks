@@ -7,6 +7,8 @@ import TimePicker from './Components/timePicker';
 import DatePicker from './Components/datePicker';
 import { DarkColors as colors } from '../../../styles/colors';
 import { ScreenLayout } from '../../Components/ScreenLayout';
+import { cadetPermissionsMap } from '../Home';
+import { PERMISSIONS } from '../../../assets/constants';
 
 export function Events(): React.ReactElement {
   const {
@@ -90,12 +92,14 @@ export function Events(): React.ReactElement {
         )}
 
         {/* Add Event Button */}
-        <TouchableOpacity
-          style={styles.addEventButton}
-          onPress={handleAddEvent}
-        >
-          <Text style={styles.addEventButtonText}>+</Text>
-        </TouchableOpacity>
+        {cadetPermissionsMap.get(PERMISSIONS.EVENT_MAKING) && (
+          <TouchableOpacity
+            style={styles.addEventButton}
+            onPress={handleAddEvent}
+          >
+            <Text style={styles.addEventButtonText}>+</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Event Info Modal */}
         <Modal

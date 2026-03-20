@@ -1,10 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { eventsStyles as styles } from '../../../styles/EventStyles';
-import { getDatabase, ref, onValue, set, get, push } from "firebase/database";
-import { DarkColors as colors } from '../../../styles/colors';
-import {cadetKey} from '../Login';
-import { snap } from 'react-native-paper-dates/lib/typescript/Time/timeUtils';
+import { getDatabase, ref, onValue, set, get } from "firebase/database";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface Event {
   id: string 
@@ -41,7 +39,8 @@ export function useEvents() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [addEventsModalVisible, setAddEventsModalVisible] = useState(false);
   const [allEvents, setAllEvents] = useState<Event[]>([]);
-
+  const [cadetKeyFromStorage, setCadetKeyFromStorage] = useState<string | null>(null);
+  
   const [newEvent, setNewEvent] = useState<Event>({
     id: '',
     title: '',
@@ -51,6 +50,27 @@ export function useEvents() {
     location: '',
     type: '' as '' | 'RSVP' | 'Mandatory',
   });
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCadetKey = async () => {
+      try {
+        const storedCadetKey = await AsyncStorage.getItem('currentCadetKey');
+        if (isMounted) {
+          setCadetKeyFromStorage(storedCadetKey);
+        }
+      } catch (error) {
+        console.error('Error loading cadet key from storage:', error);
+      }
+    };
+
+    loadCadetKey();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // marked dates for calendar component 
   const markedDates = allEvents.reduce((acc: any, event) => {
@@ -71,14 +91,14 @@ export function useEvents() {
 
 
   // Load events and rsvps status from Firebase Realtime Database
-  useEffect(() => {
+  useEffect( () => {
     const db = getDatabase();
     const eventsDBRef = ref(db, "events");
-    
+  
     const unsubscribe = onValue(eventsDBRef, (snapshot) => {
       const eventsData = snapshot.val();
       console.log("Loaded events from DB:", eventsData);
-      console.log("User ID for RSVP tracking:", cadetKey);
+      console.log("User ID for RSVP tracking:", cadetKeyFromStorage);
       //console.log("trying to access title of first event:", eventsData ? eventsData[Object.keys(eventsData)[0]].eventName : "No events found");
       if(!eventsData){
         setAllEvents([]);
@@ -119,7 +139,7 @@ export function useEvents() {
 
     // Listen for changes in the RSVP status for the current user across all events
     setRsvpStatus({}); // Clear RSVP status when events load to avoid showing stale data
-    if(!cadetKey) return;
+    if(!cadetKeyFromStorage) return;
    
     const db = getDatabase();
     const rsvpRef = ref(db, `rsvps/`);
@@ -129,7 +149,7 @@ export function useEvents() {
       const userRsvpStatus: { [eventId: string]: boolean } = {};
 
       Object.entries(rsvpData).forEach(([eventId, eventNode]) => {
-        const userNode = (eventNode as any)[cadetKey || ""]; // Access the current user's RSVP status for this event
+        const userNode = (eventNode as any)[cadetKeyFromStorage.toString() || ""]; // Access the current user's RSVP status for this event
         const status = userNode?.status;
         //console.log(`Processing RSVP for event ${eventId}:`, { userNode, status });
 
@@ -137,13 +157,13 @@ export function useEvents() {
         if(status === "N") userRsvpStatus[eventId] = false;
       });
       setRsvpStatus(userRsvpStatus);
-      console.log("Processed RSVP status for user:", cadetKey, userRsvpStatus);
+      console.log("Processed RSVP status for user:", cadetKeyFromStorage, userRsvpStatus);
     });
 
     return () => {
       unsubscribeRsvp(); 
     };
-  }, [cadetKey]);
+  }, [cadetKeyFromStorage]);
 
 
   /*
@@ -164,7 +184,7 @@ export function useEvents() {
   //called from eventscreen when user confirms or declines an RSVP - updates local state and DB
   const handleRSVP = (eventId: string, confirming: boolean) => {
     setRsvpStatus((prev) => ({ ...prev, [eventId]: confirming }));
-    updateRSVPStatusInDB(eventId, confirming); // Update RSVP status in DB for the current user and event
+    void updateRSVPStatusInDB(eventId, confirming); // Update RSVP status in DB for the current user and event
     setEventInfoModalVisible(false);
     setSelectedEvent(null);
     setToastMessage(confirming ? 'RSVP Confirmed' : 'RSVP Declined');
@@ -172,16 +192,20 @@ export function useEvents() {
   };
 
   // push RSVP status to DB for the current user and event
-  const updateRSVPStatusInDB = (eventId: string, confirming: boolean) => {
-    //const userId = cadetKey
-    console.log("Updating RSVP in DB for user:", cadetKey, "event:", eventId, "confirming:", confirming);
+  const updateRSVPStatusInDB = async (eventId: string, confirming: boolean) => {
+    if (!cadetKeyFromStorage) {
+      console.warn('Cannot update RSVP without a persisted cadet key.');
+      return;
+    }
+
+    console.log("Updating RSVP in DB for user:", cadetKeyFromStorage, "event:", eventId, "confirming:", confirming);
     try{
       const db = getDatabase();
-      const rsvpRef = ref(db, `rsvps/${eventId}/` + `${cadetKey}`);
-      set(rsvpRef,{
+      const rsvpRef = ref(db, `rsvps/${eventId}/` + `${cadetKeyFromStorage}`);
+      await set(rsvpRef,{
         status: confirming? "Y":"N"
       });
-      console.log("RSVP successfully written to DB:", { eventId, userId: cadetKey, status: confirming? "Y":"N" });
+      console.log("RSVP successfully written to DB:", { eventId, userId: cadetKeyFromStorage, status: confirming? "Y":"N" });
     }
     catch(error){
       console.error("Error updating RSVP in DB:", error);
@@ -190,9 +214,14 @@ export function useEvents() {
 
   // helper to get current user's RSVP status for a given event -> called from handleEventPress
   const getRSVPStatus = async(eventId: string):Promise< boolean | undefined > => {
+    if (!cadetKeyFromStorage) {
+      console.warn('Cannot load RSVP status without a persisted cadet key.');
+      return undefined;
+    }
+
     try{
       const db = getDatabase();
-      const rsvpRef = ref(db, `rsvps/${eventId}/`+ `${cadetKey}`);
+      const rsvpRef = ref(db, `rsvps/${eventId}/`+ `${cadetKeyFromStorage}`);
       const snapshot = await get(rsvpRef);
       
       if(!snapshot.exists()) return undefined; // No RSVP status found for this user and event
@@ -278,9 +307,14 @@ export function useEvents() {
 
   // helper function to initialize an RSVP entry in the DB for a new event
   const initializeRsvpEntryToDB = async (eventId: string) => {
+    if (!cadetKeyFromStorage) {
+      console.warn('Cannot initialize RSVP entry without a persisted cadet key.');
+      return;
+    }
+
     try {
       const db = getDatabase();
-      const userId = cadetKey;
+      const userId = cadetKeyFromStorage;
       console.log("Initializing RSVP entry in DB for event:", eventId, "user:", userId);
       const rsvpRef = ref(db, `rsvps/`+ `${eventId}` + `/${userId}`);
       //const childSnapshot = push(rsvpRef);

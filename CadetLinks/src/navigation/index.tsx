@@ -4,7 +4,7 @@ import { createStaticNavigation, StaticParamList } from '@react-navigation/nativ
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Image } from 'react-native';
 import { Home } from './screens/Home';
-import { Login } from "./screens/Login";
+import { Login } from "./screens/LoginPage/Login";
 import { Profile } from './screens/ProfilePage/Profile';
 import { Jobs } from './screens/JobsPage/Jobs';
 import { Settings } from './screens/Settings';
