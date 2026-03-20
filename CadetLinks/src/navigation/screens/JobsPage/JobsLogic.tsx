@@ -176,10 +176,13 @@ export function useJobsLogic() {
       const eventsData = (eventsSnap.val() ?? {}) as Record<string, EventItem>;
 
       const todaysEvents = Object.entries(eventsData)
-        .map(([id, value]) => ({
-          id,
-          ...value,
-        }))
+        .map(([id, value]) => {
+          const { id: _ignoredId, ...rest } = value;
+          return {
+            id,
+            ...rest,
+          };
+        })
         .filter((event) => event.date === today && !!event.eventName)
         .sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
 

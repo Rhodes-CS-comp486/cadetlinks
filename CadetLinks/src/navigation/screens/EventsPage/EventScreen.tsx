@@ -226,7 +226,7 @@ export function Events(): React.ReactElement {
                   ]}
                 />
 
-                {/* 🔥 NEW TOGGLE */}
+                {/* NEW TOGGLE */}
                 <Text style={styles.modalLabel}>Event Type:</Text>
 
                 <View
