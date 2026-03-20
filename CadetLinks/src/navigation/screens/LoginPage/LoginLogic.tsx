@@ -64,7 +64,8 @@ export function useLoginLogic() {
             // Save who is logged in so Profile can load the correct record
             // use currentCadetKey for persistence across app restarts, and cadetKey for in-app reference
             await AsyncStorage.setItem("currentCadetKey", cadetKey);
-
+            const storedCadetKey = await AsyncStorage.getItem("currentCadetKey");
+            console.log("Stored cadet key in AsyncStorage:", storedCadetKey);
             // Go to app
             navigation.replace("HomeTabs");
         } catch (e) {

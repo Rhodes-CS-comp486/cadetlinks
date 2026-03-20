@@ -7,8 +7,8 @@ import TimePicker from './Components/timePicker';
 import DatePicker from './Components/datePicker';
 import { DarkColors as colors } from '../../../styles/colors';
 import { ScreenLayout } from '../../Components/ScreenLayout';
-import { cadetPermissionsMap } from '../Home';
 import { PERMISSIONS } from '../../../assets/constants';
+import { useHomeLogic } from '../HomePage/HomeLogic';
 
 export function Events(): React.ReactElement {
   const {
@@ -31,6 +31,8 @@ export function Events(): React.ReactElement {
     handleCancelAddEvent,
     getLabelTextAndStyle
   } = useEvents();
+
+  const{cadetPermissionsMap} = useHomeLogic();
 
   return (
     <ScreenLayout>
