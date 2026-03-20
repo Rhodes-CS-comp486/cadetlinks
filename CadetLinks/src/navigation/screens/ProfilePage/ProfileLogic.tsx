@@ -1,10 +1,9 @@
-// ProfileLogic.tsx
 import { useEffect, useMemo, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ref, get } from "firebase/database";
+import { ref, get, onValue } from "firebase/database"; // added onValue for real-time updates
 import { db } from "../../../firebase/config";
 
-// USER INFO (from DB)
+// USER INFO STRUCTURE (from FB)
 export type CadetProfile = {
   firstName?: string;
   lastName?: string;
@@ -28,15 +27,20 @@ type AttendanceStatus = "P" | "A" | "E" | "L" | ".";
 
 // attendance subtree: date -> cadetKey -> { status }
 type AttendanceSubtree = Record<
-  string, // "YYYY-MM-DD"
+  string,
   Record<string, { status?: AttendanceStatus }>
 >;
 
+// normalizing strings to match FB keys (for attendance lookup)
 function normalizeLlabKey(input: string) {
-  // "DiMauro" -> "dimauro", "O'Neil" -> "oneil"
   return input.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+function normalizePTKey(input: string) {
+  return input.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+// returns cadet attendance counts for PT or LLAB
 function countAttendance(tree: AttendanceSubtree, cadetId: string) {
   let p = 0;
   let a = 0;
@@ -81,6 +85,9 @@ export function useProfileLogic() {
   const [llabLate, setLlabLate] = useState(0);
 
   useEffect(() => {
+    let unsubscribePT: (() => void) | null = null;
+    let unsubscribeLLAB: (() => void) | null = null;
+
     const load = async () => {
       setLoadingProfile(true);
       setProfileError(null);
@@ -96,7 +103,6 @@ export function useProfileLogic() {
           setProfile(null);
           setProfileError("No user is logged in.");
 
-          // attendance should also stop
           setPtAttended(0);
           setPtMissed(0);
           setPtExcused(0);
@@ -108,14 +114,17 @@ export function useProfileLogic() {
           setLlabLate(0);
 
           setAttendanceError("No user is logged in.");
+          setLoadingProfile(false);
+          setLoadingAttendance(false);
           return;
         }
 
-        // 1) Load profile first (we may need lastName to find LLAB key)
+        // 1) Load profile first
         const profileRef = ref(db, `cadets/${key}`);
         const profileSnap = await get(profileRef);
 
         let profileVal: CadetProfile | null = null;
+
         if (profileSnap.exists()) {
           profileVal = profileSnap.val();
           setProfile(profileVal);
@@ -124,57 +133,90 @@ export function useProfileLogic() {
           setProfileError("No profile found for this user.");
         }
 
-        // 2) Load PT attendance: attendance/PT
-        const ptRef = ref(db, "attendance/PT");
-        const ptSnap = await get(ptRef);
-        const ptData = (ptSnap.val() ?? {}) as AttendanceSubtree;
+        // figure out the keys used in attendance
+        const ptKey =
+          profileVal?.lastName ? normalizePTKey(profileVal.lastName) : key;
 
-        const ptCounts = countAttendance(ptData, key);
-        setPtAttended(ptCounts.attended);
-        setPtMissed(ptCounts.missed);
-        setPtExcused(ptCounts.excused);
-        setPtLate(ptCounts.late);
-
-        // 3) Load LLAB attendance: attendance/LLAB
-        // In your export, LLAB keys look like last names (ex: "ball", "blackstone") :contentReference[oaicite:2]{index=2}
-        const llabRef = ref(db, "attendance/LLAB");
-        const llabSnap = await get(llabRef);
-        const llabData = (llabSnap.val() ?? {}) as AttendanceSubtree;
-
-        // Prefer: use normalized last name if available; otherwise fall back to the stored key
         const llabKey =
           profileVal?.lastName ? normalizeLlabKey(profileVal.lastName) : key;
 
-        const llabCounts = countAttendance(llabData, llabKey);
-        setLlabAttended(llabCounts.attended);
-        setLlabMissed(llabCounts.missed);
-        setLlabExcused(llabCounts.excused);
-        setLlabLate(llabCounts.late);
+        // listens for PT attendance in real time
+        const ptRef = ref(db, "attendance/PT"); 
+        unsubscribePT = onValue( // listens for changes in PT attendance and updates counts
+          ptRef,
+          (snapshot) => {
+            const ptData = (snapshot.val() ?? {}) as AttendanceSubtree;
+            const ptCounts = countAttendance(ptData, ptKey);
+
+            setPtAttended(ptCounts.attended);
+            setPtMissed(ptCounts.missed);
+            setPtExcused(ptCounts.excused);
+            setPtLate(ptCounts.late);
+
+            setAttendanceError(null);
+            setLoadingAttendance(false);
+          },
+          (error) => {
+            console.error("❌ Error listening to PT attendance:", error);
+            setAttendanceError("Could not load PT attendance.");
+            setLoadingAttendance(false);
+          }
+        );
+
+        // listens for LLAB attendance in real time
+        const llabRef = ref(db, "attendance/LLAB");
+        unsubscribeLLAB = onValue(
+          llabRef,
+          (snapshot) => {
+            const llabData = (snapshot.val() ?? {}) as AttendanceSubtree;
+            const llabCounts = countAttendance(llabData, llabKey);
+
+            setLlabAttended(llabCounts.attended);
+            setLlabMissed(llabCounts.missed);
+            setLlabExcused(llabCounts.excused);
+            setLlabLate(llabCounts.late);
+
+            setAttendanceError(null);
+            setLoadingAttendance(false);
+          },
+          (error) => {
+            console.error("❌ Error listening to LLAB attendance:", error);
+            setAttendanceError("Could not load LLAB attendance.");
+            setLoadingAttendance(false);
+          }
+        );
       } catch (error) {
         console.error("❌ Error reading profile/attendance (Profile):", error);
         setProfileError("Could not load profile.");
         setAttendanceError("Could not load attendance.");
+        setLoadingAttendance(false);
       } finally {
         setLoadingProfile(false);
-        setLoadingAttendance(false);
       }
     };
 
     load();
+
+    return () => {
+      if (unsubscribePT) unsubscribePT();
+      if (unsubscribeLLAB) unsubscribeLLAB();
+    };
   }, []);
 
-  // --- PT attendance percentage (excused DOES NOT count toward missed) ---
-  const ptCountedTotal = ptAttended + ptMissed + ptLate; // excused doesn't count
+  // --- PT attendance percentage (excused doesn't count toward missed) ---
+  const ptCountedTotal = ptAttended + ptMissed + ptLate;
   const ptAttendancePercent =
-    ptCountedTotal === 0 ? 0 : Math.round((ptAttended + (ptLate/2)) / ptCountedTotal * 100);
+    ptCountedTotal === 0
+      ? 0
+      : Math.round(((ptAttended + ptLate / 2) / ptCountedTotal) * 100);
   const ptInGoodStanding = ptAttendancePercent >= 90;
 
-  // --- LLAB attendance percentage (excused DOES NOT count toward missed) ---
-  const llabCountedTotal = llabAttended + llabMissed + llabLate; // excused doesn't count
+  // --- LLAB attendance percentage (excused doesn't count toward missed) ---
+  const llabCountedTotal = llabAttended + llabMissed + llabLate;
   const llabAttendancePercent =
     llabCountedTotal === 0
       ? 0
-      : Math.round((llabAttended + (llabLate/2)) / llabCountedTotal * 100);
+      : Math.round(((llabAttended + llabLate / 2) / llabCountedTotal) * 100);
   const llabInGoodStanding = llabAttendancePercent >= 90;
 
   return useMemo(

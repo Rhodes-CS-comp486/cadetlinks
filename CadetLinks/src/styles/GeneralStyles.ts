@@ -1,238 +1,149 @@
 import { StyleSheet } from 'react-native';
+import {DarkColors as colors } from './colors';
 
-export const eventsStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  eventsContainer: {
-    maxHeight: 300,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#f9f9f9',
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    color: '#333',
-  },
-  eventRow: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    padding: 12,
-    marginBottom: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderLeftWidth: 4,
-    borderLeftColor: '#1e90ff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  eventContent: {
-    flex: 1,
-  },
-  eventTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  eventTime: {
-    fontSize: 13,
-    color: '#666',
-    marginBottom: 4,
-  },
-  eventLocation: {
-    fontSize: 12,
-    color: '#999',
-  },
-  eventTypeContainer: {
-    marginLeft: 12,
-  },
-  eventTypeLabel: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  rsvpLabel: {
-    color: '#fff',
-    backgroundColor: '#2196F3',
-  },
-  mandatoryLabel: {
-    color: '#fff',
-    backgroundColor: '#FF9800',
-  },
-  noEventsContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-  },
-  noEventsText: {
-    fontSize: 14,
-    color: '#999',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    padding: 20,
-    maxHeight: '85%',
-  },
-  closeButton: {
-    alignSelf: 'flex-end',
-    padding: 8,
-    marginBottom: 12,
-  },
-  closeButtonText: {
-    fontSize: 24,
-    color: '#333',
-    fontWeight: 'bold',
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 16,
-  },
-  modalLabel: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#1e90ff',
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  modalText: {
-    fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
-  },
-  rsvpButton: {
-    backgroundColor: '#2196F3',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  buttonPressed: {
-    backgroundColor: '#6b6b6b',
-    borderColor: '#2f3439',
-  },
-  mandatoryButton: {
-    backgroundColor: '#FF9800',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20,
-  },
+export const generalStyles = StyleSheet.create({
+    /* HEADER STYLES */
+    header_container: {
+        backgroundColor: colors.background,
+        width: "100%",
+        paddingBottom: 12,
+        paddingHorizontal: 16,
+    },
+    header_row: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+    },
+    header_text: {
+        color: colors.text,
+        fontSize: 22,
+        fontWeight: "600",
+        textAlign: "center",
+        flex: 1,
+    },
+    header_button: { 
+        width: 40,
+        alignItems: "flex-start",
+    },
+    header_space: { width: 40 },
 
-   mandatoryButtonPressed: {
-    backgroundColor: '#d3c392',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20,
-  },
+    /* Dropdown menu styles */
+    dropdownMenu: {
+        position: 'absolute',
+        top: 60,        // adjust to sit just below header
+        right: 16,
+        backgroundColor: colors.shadow,
+        borderRadius: 10,
+        paddingVertical: 8,
+        minWidth: 180,
+        elevation: 5,       // Android shadow
+        shadowColor: colors.background, // iOS shadow
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+    },
+    dropdownItem: {
+        alignItems: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+    },
+    dropdownItemText: {
+        color: colors.text,
+        fontSize: 16,
+    },
 
-  confirmButton: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  generalText: {
-    color: '#fff',
-    fontSize: 16,
-  },
+    container: {
+            flex: 1,
+            gap: 10,
+            backgroundColor: colors.background,
+    },
 
-  declineButton: {
-    backgroundColor: '#ff3a3a',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  rsvpButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  mandatoryContainer: {
-    backgroundColor: '#FFF3CD',
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 20,
-    marginBottom: 20,
-    borderLeftWidth: 4,
-    borderLeftColor: '#FFC107',
-  },
-  mandatoryText: {
-    color: '#856404',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  addEventButton: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#1e90ff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  addEventButtonText: {
-    fontSize: 40,
-    color: '#fff',
-    fontWeight: 'bold'
-  },
-  textInput: {
-    color:'#999',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 15,
-    backgroundColor: '#f9f9f9',
-  },
-  userTextInput: {
-    color:'#000000',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5, 
-    padding: 10,
-    marginBottom: 15,
-    backgroundColor: '#f9f9f9',
-  },
+    /* Wrap everything in a screens returned view in a ScreenLayout, then in a body_container to apply the same header, padding and background color to all screens */
+    body_container: {
+        flex: 1,
+        padding: 16,
+        backgroundColor: colors.background,
+    },
+
+    /* COMMON TEXT STYLES */
+    titleCadet: { color: colors.accent },
+    titleLinks: { color: colors.text },
+    title: { 
+        fontSize: 34, 
+        fontWeight: "800" 
+    },
+    subtitle: { 
+        color: colors.muted, 
+        marginTop: 6, 
+        marginBottom: 20 
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginTop: 18,
+        marginBottom: 8,
+        marginLeft: 4,
+        color: colors.text,
+    },
+    text: {
+        color: colors.text,
+        fontSize: 16,
+    },
+
+    /* MODAL STYLES */
+    closeButton: {
+        alignSelf: 'flex-end',
+        padding: 8,
+        marginBottom: 12,
+    },
+    closeButtonText: {
+        fontSize: 24,
+        color: colors.muted,
+        fontWeight: 'bold',
+    },
+    inputPlaceholder: { 
+        color: colors.inputPlaceholderText,
+        height: 40,
+        borderWidth: 2,
+        borderRadius: 12,
+        borderColor: colors.border,
+        backgroundColor: colors.inputBackground,
+     },
+     inputUser: {
+        color: colors.inputUserText,
+        height: 40,
+        borderWidth: 2,
+        borderRadius: 12,
+        borderColor: colors.border,
+        backgroundColor: colors.inputBackground,
+     },
+
+    /* USER INFO CARD */
+    userinfo_card: {
+        backgroundColor: colors.card,
+        borderRadius: 18,
+        padding: 16, // doesn't get to edges
+        flexDirection: "row", // so they can be side by side
+        alignItems: "center",
+    },
+    avatar_container: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: colors.background,
+        justifyContent: "center",
+        alignItems: "center",
+        marginRight: 14,
+    },
+    userinfo_text_container: { flex: 1 },
+    userinfo_name: {
+        color: colors.text,
+        fontSize: 18,
+        fontWeight: "700",
+    },
+    userinfo_sub: {
+        color: colors.muted,
+        fontSize: 14,
+        marginTop: 4,
+    },
 });
