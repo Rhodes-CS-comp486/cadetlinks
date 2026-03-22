@@ -23,7 +23,7 @@ export function BaseScreenLayout({
 
   const menuItems = [
     {label: "Settings", onPress: () => navigation.navigate('Settings')},
-    {label: "Logout", onPress: () => console.log("Logging out...")},
+    {label: "Logout", onPress: () => navigation.navigate('Login')},
   ]
 
   const leftNode = left ?? (
