@@ -101,6 +101,8 @@ export const generalStyles = StyleSheet.create({
     },
     inputPlaceholder: { 
         color: colors.inputPlaceholderText,
+        paddingHorizontal: 12,  // ← add this
+        paddingVertical: 10,    // ← add this for vertical breathing room too
         borderWidth: 2,
         borderRadius: 12,
         borderColor: colors.border,
@@ -112,6 +114,8 @@ export const generalStyles = StyleSheet.create({
         borderRadius: 12,
         borderColor: colors.border,
         backgroundColor: colors.inputBackground,
+        paddingHorizontal: 12,  // ← add this
+        paddingVertical: 10,    // ← add this for vertical breathing room too
      },
 
     /* USER INFO CARD */

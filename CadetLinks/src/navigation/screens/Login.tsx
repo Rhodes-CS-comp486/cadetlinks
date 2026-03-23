@@ -75,8 +75,8 @@ export function Login() {
       } else {
         setError("Could not log in. Please try again.");
         console.error("❌ Login error:", e);
-        console.error("❌ Login error code:", e.code);  // add this
-        console.error("❌ Login error message:", e.message);  // add this
+        //console.error("❌ Login error code:", e.code);  // add this
+        //console.error("❌ Login error message:", e.message);  // add this
       }
     } finally {
       setLoading(false);
@@ -102,7 +102,7 @@ export function Login() {
             <TextInput
               value={email}
               onChangeText={setEmail}
-              placeholder="you@memphis.edu"
+              placeholder=" Cadet Email"
               placeholderTextColor={styles.inputPlaceholder.color}
               autoCapitalize="none"
               keyboardType="email-address"
@@ -116,7 +116,7 @@ export function Login() {
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder="••••••••"
+              placeholder=" ••••••••"
               placeholderTextColor={styles.inputPlaceholder.color}
               secureTextEntry
               style={[

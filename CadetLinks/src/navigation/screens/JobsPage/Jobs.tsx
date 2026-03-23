@@ -1,6 +1,5 @@
 // Jobs.tsx
 import React, { useMemo, useState } from "react";
-
 import {
   View,
   Text,
@@ -14,7 +13,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { jobStyles as styles } from "../../../styles/JobStyles";
 import { ScreenLayout } from "../../Components/ScreenLayout";
-
 import {
   useJobsLogic,
   JobsAction,
@@ -61,7 +59,7 @@ export function Jobs(): React.ReactElement {
   const [eventDropdownOpen, setEventDropdownOpen] = useState(false);
   const [savingAttendance, setSavingAttendance] = useState(false);
   const [clearingAttendance, setClearingAttendance] = useState(false);
- const [attendanceOverrides, setAttendanceOverrides] = useState<Record<string, AttendanceStatus>>({});
+  const [attendanceOverrides, setAttendanceOverrides] = useState<Record<string, AttendanceStatus>>({});
 
   const fullName =
     profile?.firstName || profile?.lastName
@@ -73,20 +71,22 @@ export function Jobs(): React.ReactElement {
   const permissionText =
     permissionNames.length > 0 ? permissionNames.join(", ") : "None";
 
+  // ?? [] guards against undefined on first render
+  const safeEvents = todayEvents ?? [];
+  const safeCadets = allCadets ?? [];
+
   const selectedEvent = useMemo(
-    () => todayEvents.find((event) => event.id === selectedEventId),
-    [todayEvents, selectedEventId]
+    () => safeEvents.find((event) => event.id === selectedEventId),
+    [safeEvents, selectedEventId]
   );
 
   const markedAbsentCount = useMemo(
-    () =>
-      Object.values(attendanceOverrides).filter((s) => s === "A").length,
+    () => Object.values(attendanceOverrides).filter((s) => s === "A").length,
     [attendanceOverrides]
   );
 
   const markedLateCount = useMemo(
-    () =>
-      Object.values(attendanceOverrides).filter((s) => s === "L").length,
+    () => Object.values(attendanceOverrides).filter((s) => s === "L").length,
     [attendanceOverrides]
   );
 
@@ -183,7 +183,7 @@ export function Jobs(): React.ReactElement {
     navigation.navigate(a.routeHint);
   };
 
-  const anyVisibleActions = actions.length > 0;
+  const anyVisibleActions = (actions ?? []).length > 0;
 
   return (
     <ScreenLayout title="Jobs">
@@ -235,7 +235,7 @@ export function Jobs(): React.ReactElement {
           {!loading && !error && anyVisibleActions ? (
             <>
               <Text style={styles.sectionTitle}>Actions</Text>
-              {actions.map((a) => (
+              {(actions ?? []).map((a) => (
                 <Pressable
                   key={a.id}
                   onPress={() => onPressAction(a)}
@@ -308,12 +308,12 @@ export function Jobs(): React.ReactElement {
 
                   {eventDropdownOpen ? (
                     <View style={styles.dropdownMenu}>
-                      {todayEvents.length === 0 ? (
+                      {safeEvents.length === 0 ? (
                         <Text style={styles.dropdownEmptyText}>
                           No events found for today.
                         </Text>
                       ) : (
-                        todayEvents.map((event) => (
+                        safeEvents.map((event) => (
                           <Pressable
                             key={event.id}
                             onPress={() => {
@@ -352,14 +352,14 @@ export function Jobs(): React.ReactElement {
                   {/* CADET LIST */}
                   <Text style={styles.fieldLabel}>Cadets</Text>
                   <View style={styles.cadetListCard}>
-                    {allCadets.map((cadet, index) => {
+                    {safeCadets.map((cadet, index) => {
                       const status = getCadetStatus(cadet.cadetKey);
                       return (
                         <View
                           key={cadet.cadetKey}
                           style={[
                             styles.cadetRow,
-                            index === allCadets.length - 1
+                            index === safeCadets.length - 1
                               ? { borderBottomWidth: 0 }
                               : null,
                           ]}
