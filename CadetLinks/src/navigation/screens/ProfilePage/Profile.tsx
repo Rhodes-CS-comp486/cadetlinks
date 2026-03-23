@@ -13,10 +13,10 @@ import { StaticScreenProps, useNavigation } from "@react-navigation/native";
 import { profileStyles as styles } from "../../../styles/ProfileStyles";
 import { ScreenLayout } from "../../Components/ScreenLayout";
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ref, get } from "firebase/database";
+//import AsyncStorage from "@react-native-async-storage/async-storage";
+//import { ref, get } from "firebase/database";
 //import { db } from "./../firebase/config";
-import {db} from "../../../firebase/config";
+//import {db} from "../../../firebase/config";
 
 // USER INFO (from DB)
 type CadetProfile = {
@@ -80,7 +80,7 @@ export function Profile(): React.ReactElement {
 
   return (
     // parent containter
-    <ScreenLayout title="Profile">
+    <ScreenLayout>
       {/* body */}
       <ScrollView
         style={styles.body_container}

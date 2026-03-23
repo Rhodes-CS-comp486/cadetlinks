@@ -1,5 +1,6 @@
 // Jobs.tsx
 import React, { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -13,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { jobStyles as styles } from "../../../styles/JobStyles";
 import { ScreenLayout } from "../../Components/ScreenLayout";
+
 import {
   useJobsLogic,
   JobsAction,
@@ -21,7 +23,7 @@ import {
 
 type NavAny = ReturnType<typeof useNavigation<any>>;
 
-function iconForAction(id: JobsAction["id"]) {
+function iconForAction(id: JobsAction["id"]) { // this function maps icons to actions.
   switch (id) {
     case "attendance":
       return "checkbox-outline";
@@ -46,6 +48,7 @@ export function Jobs(): React.ReactElement {
     error,
     permissionNames,
     actions,
+
     todayEvents,
     allCadets,
     loadingAttendanceTools,
@@ -54,92 +57,112 @@ export function Jobs(): React.ReactElement {
     clearAttendanceForEvent,
   } = useJobsLogic();
 
-  const [attendanceModalVisible, setAttendanceModalVisible] = useState(false);
-  const [selectedEventId, setSelectedEventId] = useState<string>("");
-  const [eventDropdownOpen, setEventDropdownOpen] = useState(false);
-  const [savingAttendance, setSavingAttendance] = useState(false);
-  const [clearingAttendance, setClearingAttendance] = useState(false);
-  const [attendanceOverrides, setAttendanceOverrides] = useState<Record<string, AttendanceStatus>>({});
+  const [attendanceModalVisible, setAttendanceModalVisible] = useState(false); // attendance modal state
+  const [selectedEventId, setSelectedEventId] = useState<string>(""); // selected event ID for attendance modal
+  const [eventDropdownOpen, setEventDropdownOpen] = useState(false); // whether the event dropdown in the attendance modal is open
+
+  const [savingAttendance, setSavingAttendance] = useState(false); // whether we're currently saving attendance (disables buttons and shows spinner)
+  const [clearingAttendance, setClearingAttendance] = useState(false); // whether we're currently clearing attendance (disables buttons and shows spinner)
+
+  // only stores cadets who are NOT present
+  const [attendanceOverrides, setAttendanceOverrides] = useState<
+    Record<string, AttendanceStatus>
+  >({});
 
   const fullName =
     profile?.firstName || profile?.lastName
       ? `${profile?.firstName ?? ""} ${profile?.lastName ?? ""}`.trim()
-      : "Cadet";
+      : "Cadet"; // grabs cadet name from profile (cadet if no name)
 
-  const jobText = profile?.job ?? "—";
+  const jobText = profile?.job ?? "—"; // grabs job from profile (dash if no job)
 
   const permissionText =
-    permissionNames.length > 0 ? permissionNames.join(", ") : "None";
-
-  // ?? [] guards against undefined on first render
-  const safeEvents = todayEvents ?? [];
-  const safeCadets = allCadets ?? [];
+    permissionNames.length > 0 ? permissionNames.join(", ") : "None"; // gets permission names or "none"
 
   const selectedEvent = useMemo(
-    () => safeEvents.find((event) => event.id === selectedEventId),
-    [safeEvents, selectedEventId]
+    () => todayEvents.find((event) => event.id === selectedEventId),
+    [todayEvents, selectedEventId]
   );
 
+  // counting absent and late
   const markedAbsentCount = useMemo(
-    () => Object.values(attendanceOverrides).filter((s) => s === "A").length,
+    () =>
+      Object.values(attendanceOverrides).filter((status) => status === "A")
+        .length,
     [attendanceOverrides]
   );
 
   const markedLateCount = useMemo(
-    () => Object.values(attendanceOverrides).filter((s) => s === "L").length,
+    () =>
+      Object.values(attendanceOverrides).filter((status) => status === "L")
+        .length,
     [attendanceOverrides]
   );
 
+  // opens attendance modal and loads data
   const openAttendanceModal = async () => {
     try {
       await loadAttendanceModalData();
-      setAttendanceModalVisible(true);
-      setSelectedEventId("");
-      setAttendanceOverrides({});
-      setEventDropdownOpen(false);
-    } catch {
+      setAttendanceModalVisible(true); // opens modal
+      setSelectedEventId(""); // resets selected event
+      setAttendanceOverrides({}); // resets overrides (A or L status)
+      setEventDropdownOpen(false); // closes event dropdown
+    } 
+    catch {
       Alert.alert("Error", "Could not load attendance tools.");
     }
   };
 
-  const setCadetStatus = (cadetKeyToUpdate: string, status: AttendanceStatus) => {
+  // helper to set attendance status for a cadet in the overrides state
+  const setCadetStatus = (
+    cadetKeyToUpdate: string,
+    status: AttendanceStatus
+  ) => {
     setAttendanceOverrides((prev) => {
       const next = { ...prev };
+
+      // Present is default, so remove it from overrides if set to P
       if (status === "P") {
         delete next[cadetKeyToUpdate];
-      } else {
+      } 
+      else {
         next[cadetKeyToUpdate] = status;
       }
+
       return next;
     });
   };
 
   const getCadetStatus = (cadetKeyToCheck: string): AttendanceStatus => {
-    return attendanceOverrides[cadetKeyToCheck] ?? "P";
+    return attendanceOverrides[cadetKeyToCheck] ?? "P"; // if a cadet name isn't in the override list then they're present
   };
 
+  // when you press "save attendance" in the attendance modal (saves attendance to FB and closes modal if successful, shows alert if error)
   const submitAttendance = async () => {
-    if (!selectedEventId) {
+    if (!selectedEventId) { // if no event is selected, show an alert
       Alert.alert("Select an event", "Please choose today's event first.");
       return;
     }
     try {
       setSavingAttendance(true);
-      await saveAttendanceForEvent(selectedEventId, attendanceOverrides);
+      await saveAttendanceForEvent(selectedEventId, attendanceOverrides); // saves attendance to FB
       setAttendanceModalVisible(false);
       Alert.alert("Success", "Attendance was saved.");
-    } catch (e: any) {
+    } 
+    catch (e: any) {
       Alert.alert("Could not save attendance", e?.message ?? "Unknown error.");
-    } finally {
+    } 
+    finally {
       setSavingAttendance(false);
     }
   };
-
+  // when you press "clear attendance" in the attendance modal (clears attendance in FB and closes modal if successful, shows alert if error)
   const onClearAttendance = () => {
     if (!selectedEventId) {
       Alert.alert("Select an event", "Please choose an event first.");
       return;
     }
+
     Alert.alert(
       "Clear Attendance",
       "This will remove all saved attendance for the selected event date. Continue?",
@@ -156,7 +179,10 @@ export function Jobs(): React.ReactElement {
               setAttendanceModalVisible(false);
               Alert.alert("Cleared", "Attendance was cleared for that event.");
             } catch (e: any) {
-              Alert.alert("Could not clear attendance", e?.message ?? "Unknown error.");
+              Alert.alert(
+                "Could not clear attendance",
+                e?.message ?? "Unknown error."
+              );
             } finally {
               setClearingAttendance(false);
             }
@@ -166,6 +192,7 @@ export function Jobs(): React.ReactElement {
     );
   };
 
+  // when you press an action, navigate to where it should go. no routes for files, event making, or account creation yet.
   const onPressAction = async (a: JobsAction) => {
     if (!a.allowed) return;
 
@@ -174,19 +201,15 @@ export function Jobs(): React.ReactElement {
       return;
     }
 
-    if (a.id === "create_accounts") {
-      Alert.alert("Coming soon", "Account creation will be added later.");
-      return;
-    }
 
-    if (!a.routeHint) return;
+    if (!a.routeHint) return; 
     navigation.navigate(a.routeHint);
   };
 
   const anyVisibleActions = (actions ?? []).length > 0;
 
   return (
-    <ScreenLayout title="Jobs">
+    <ScreenLayout>
       <View style={styles.body_container}>
         <ScrollView
           style={styles.body_container}
@@ -205,7 +228,7 @@ export function Jobs(): React.ReactElement {
                   <ActivityIndicator />
                   <Text style={styles.userinfo_sub}>Loading jobs…</Text>
                 </View>
-              ) : error ? (
+              ) : error ? ( 
                 <>
                   <Text style={styles.userinfo_sub}>{error}</Text>
                   {cadetKey ? (
@@ -249,6 +272,7 @@ export function Jobs(): React.ReactElement {
                         color="white"
                       />
                     </View>
+
                     <View style={styles.flexOne}>
                       <Text style={styles.action_title}>{a.title}</Text>
                       <Text style={styles.action_subtitle}>{a.subtitle}</Text>
@@ -273,10 +297,10 @@ export function Jobs(): React.ReactElement {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-
             {/* HEADER */}
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Take Attendance</Text>
+
               <Pressable onPress={() => setAttendanceModalVisible(false)}>
                 <Ionicons name="close" size={24} color="white" />
               </Pressable>
@@ -292,9 +316,9 @@ export function Jobs(): React.ReactElement {
             ) : (
               <>
                 <ScrollView showsVerticalScrollIndicator={false}>
-
                   {/* EVENT DROPDOWN */}
                   <Text style={styles.fieldLabel}>Select Event</Text>
+
                   <Pressable
                     onPress={() => setEventDropdownOpen((prev) => !prev)}
                     style={styles.dropdownButton}
@@ -308,12 +332,12 @@ export function Jobs(): React.ReactElement {
 
                   {eventDropdownOpen ? (
                     <View style={styles.dropdownMenu}>
-                      {safeEvents.length === 0 ? (
+                      {todayEvents.length === 0 ? (
                         <Text style={styles.dropdownEmptyText}>
                           No events found for today.
                         </Text>
                       ) : (
-                        safeEvents.map((event) => (
+                        todayEvents.map((event) => (
                           <Pressable
                             key={event.id}
                             onPress={() => {
@@ -351,20 +375,23 @@ export function Jobs(): React.ReactElement {
 
                   {/* CADET LIST */}
                   <Text style={styles.fieldLabel}>Cadets</Text>
+
                   <View style={styles.cadetListCard}>
-                    {safeCadets.map((cadet, index) => {
+                    {allCadets.map((cadet, index) => {
                       const status = getCadetStatus(cadet.cadetKey);
+
                       return (
                         <View
                           key={cadet.cadetKey}
                           style={[
                             styles.cadetRow,
-                            index === safeCadets.length - 1
+                            index === allCadets.length - 1
                               ? { borderBottomWidth: 0 }
                               : null,
                           ]}
                         >
                           <Text style={styles.cadetName}>{cadet.fullName}</Text>
+
                           <View style={styles.statusRow}>
                             <Pressable
                               onPress={() => setCadetStatus(cadet.cadetKey, "P")}
@@ -373,8 +400,11 @@ export function Jobs(): React.ReactElement {
                                 status === "P" && styles.presentButtonActive,
                               ]}
                             >
-                              <Text style={styles.statusButtonText}>Present</Text>
+                              <Text style={styles.statusButtonText}>
+                                Present
+                              </Text>
                             </Pressable>
+
                             <Pressable
                               onPress={() => setCadetStatus(cadet.cadetKey, "A")}
                               style={[
@@ -382,8 +412,11 @@ export function Jobs(): React.ReactElement {
                                 status === "A" && styles.absentButtonActive,
                               ]}
                             >
-                              <Text style={styles.statusButtonText}>Absent</Text>
+                              <Text style={styles.statusButtonText}>
+                                Absent
+                              </Text>
                             </Pressable>
+
                             <Pressable
                               onPress={() => setCadetStatus(cadet.cadetKey, "L")}
                               style={[
@@ -426,7 +459,9 @@ export function Jobs(): React.ReactElement {
                     {clearingAttendance ? (
                       <ActivityIndicator color="white" />
                     ) : (
-                      <Text style={styles.statusButtonText}>Clear Attendance</Text>
+                      <Text style={styles.statusButtonText}>
+                        Clear Attendance
+                      </Text>
                     )}
                   </Pressable>
 
@@ -442,7 +477,9 @@ export function Jobs(): React.ReactElement {
                     {savingAttendance ? (
                       <ActivityIndicator color="white" />
                     ) : (
-                      <Text style={styles.statusButtonText}>Save Attendance</Text>
+                      <Text style={styles.statusButtonText}>
+                        Save Attendance
+                      </Text>
                     )}
                   </Pressable>
                 </View>

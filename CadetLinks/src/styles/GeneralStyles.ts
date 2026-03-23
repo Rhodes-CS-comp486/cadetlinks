@@ -66,6 +66,8 @@ export const generalStyles = StyleSheet.create({
     },
 
     /* COMMON TEXT STYLES */
+    titleCadet: { color: colors.accent },
+    titleLinks: { color: colors.text },
     title: { 
         fontSize: 34, 
         fontWeight: "800" 
@@ -103,6 +105,7 @@ export const generalStyles = StyleSheet.create({
         color: colors.inputPlaceholderText,
         paddingHorizontal: 12,  // ← add this
         paddingVertical: 10,    // ← add this for vertical breathing room too
+        height: 40,
         borderWidth: 2,
         borderRadius: 12,
         borderColor: colors.border,
@@ -110,6 +113,7 @@ export const generalStyles = StyleSheet.create({
      },
      inputUser: {
         color: colors.inputUserText,
+        height: 40,
         borderWidth: 2,
         borderRadius: 12,
         borderColor: colors.border,

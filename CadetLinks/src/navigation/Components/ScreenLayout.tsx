@@ -5,13 +5,11 @@ import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { generalStyles as styles } from "../../styles/GeneralStyles";
 
-export function BaseScreenLayout({ 
-  title, 
+export function BaseScreenLayout({
   children, 
   showBack = true, 
   left, 
-}: { 
-  title: string; 
+}: {
   children: React.ReactNode;
   showBack?: boolean;
   left?: React.ReactNode; 
@@ -41,7 +39,10 @@ export function BaseScreenLayout({
       <View style={[styles.header_container, { paddingTop: insets.top + 10 }]}>
         <View style={styles.header_row}>
           {leftNode}
-          <Text style={styles.header_text}>{title}</Text>
+          <Text>
+            <Text style={[styles.header_text, styles.titleCadet]}>Cadet</Text>
+            <Text style={[styles.header_text, styles.titleLinks]}>Links</Text>
+          </Text>
           <Pressable onPress={() => setMenuOpen(!menuOpen)} style={styles.header_button}>
             <Ionicons name="menu-outline" size={26} color="white" />
           </Pressable>
@@ -82,10 +83,10 @@ export function BaseScreenLayout({
   );
 }
 
-export function ScreenLayout({ title, children }: { title: string; children: React.ReactNode }) {
-  return <BaseScreenLayout title={title} children={children} showBack />;
+export function ScreenLayout({ children }: { children: React.ReactNode }) {
+  return <BaseScreenLayout children={children} showBack />;
 }
 
-export function HomeScreenLayout({ title, children }: { title: string; children: React.ReactNode }) {
-  return <BaseScreenLayout title={title} children={children} showBack={false} />;
+export function HomeScreenLayout({ children }: { children: React.ReactNode }) {
+  return <BaseScreenLayout children={children} showBack={false} />;
 }

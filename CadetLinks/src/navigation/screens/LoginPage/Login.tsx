@@ -12,76 +12,28 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context"; 
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "../index";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { ref, get } from "firebase/database";
-import { auth, db } from "../../firebase/config";
-import { loginStyles as styles } from "../../styles/LoginStyles";
+import type { RootStackParamList } from "../../index";
+import { useLoginLogic,cadetKey } from "./LoginLogic";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+// import { ref, get } from "firebase/database";
+// import { db } from "../../../firebase/config";
 
+import { loginStyles as styles } from "../../../styles/LoginStyles";
+
+//import { loginStyles as styles } from "./styles/loginStyles";
 export function Login() {
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [error, setError] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
-
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList, "Login">>();
-
-  const handleLogin = async () => {
-    const enteredEmail = email.trim().toLowerCase();
-    const enteredPassword = password.trim();
-
-    if (!enteredEmail || !enteredPassword) {
-      setError("Please enter both email and password.");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
-    try {
-      // 1. Firebase Auth validates the password
-      await signInWithEmailAndPassword(auth, enteredEmail, enteredPassword);
-
-      // 2. Derive the old email-based key the same way your sheet sync does
-      const cadetKey = enteredEmail
-        .replace(/@/g, "_")
-        .replace(/\./g, "_")
-        .replace(/-/g, "_");
-
-      // 3. Confirm cadet profile exists in database under that key
-      const profileSnap = await get(ref(db, `cadets/${cadetKey}`));
-      if (!profileSnap.exists()) {
-        setError("No cadet profile found for this account.");
-        return;
-      }
-
-      // 4. Save the email-derived key (not uid) for the rest of the app
-      await AsyncStorage.setItem("currentCadetKey", cadetKey);
-
-      navigation.replace("HomeTabs");
-    } catch (e: any) {
-      if (
-        e.code === "auth/wrong-password" ||
-        e.code === "auth/user-not-found" ||
-        e.code === "auth/invalid-credential"
-      ) {
-        setError("Incorrect email or password.");
-      } else if (e.code === "auth/too-many-requests") {
-        setError("Too many failed attempts. Try again later.");
-      } else if (e.code === "auth/invalid-email") {
-        setError("Please enter a valid email address.");
-      } else {
-        setError("Could not log in. Please try again.");
-        console.error("❌ Login error:", e);
-        //console.error("❌ Login error code:", e.code);  // add this
-        //console.error("❌ Login error message:", e.message);  // add this
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { 
+    handleLogin,
+    email,
+    setEmail,
+    password, 
+    setPassword, 
+    error, 
+    setError,
+    loading, 
+    setLoading,
+    navigation
+  } = useLoginLogic();
 
   return (
     <SafeAreaView style={styles.outer_container}>
@@ -91,8 +43,8 @@ export function Login() {
       >
         <View style={styles.body_container}>
           <Text>
-            <Text style={styles.titleCadet}>Cadet</Text>
-            <Text style={styles.titleLinks}>Links</Text>
+            <Text style={[styles.title, styles.titleCadet]}>Cadet</Text>
+            <Text style={[styles.title, styles.titleLinks]}>Links</Text>
           </Text>
 
           <Text style={styles.subtitle}>AFROTC Cadet Portal</Text>
