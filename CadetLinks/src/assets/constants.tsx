@@ -1,6 +1,6 @@
 const EVENT_MAKING_PERMISSION = "Event Making";
 const FILE_UPLOADING_PERMISSION = "File Uploading";
-const ATTENDANCE_EDITING_PERMISSION = "Attendance Editing";
+const ATTENDANCE_EDITING_PERMISSION = "Attendance";
 
 export const PERMISSIONS = {
     EVENT_MAKING: EVENT_MAKING_PERMISSION,
