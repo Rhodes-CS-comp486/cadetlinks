@@ -1,0 +1,241 @@
+import React from "react";
+import {
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  ActivityIndicator,
+  Modal,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { jobStyles as styles } from "../../../../styles/JobStyles";
+import type {
+  AttendanceStatus,
+  CadetListItem,
+  EventItem,
+} from "../AttendanceLogic";
+
+type AttendanceModalProps = {
+  visible: boolean;
+  onRequestClose: () => void;
+  loadingAttendanceTools: boolean;
+  selectedEvent?: EventItem;
+  eventDropdownOpen: boolean;
+  onToggleEventDropdown: () => void;
+  todayEvents: EventItem[];
+  onSelectEvent: (eventId: string) => void;
+  markedAbsentCount: number;
+  markedLateCount: number;
+  allCadets: CadetListItem[];
+  getCadetStatus: (cadetKey: string) => AttendanceStatus;
+  setCadetStatus: (cadetKey: string, status: AttendanceStatus) => void;
+  savingAttendance: boolean;
+  clearingAttendance: boolean;
+  onClearAttendance: () => void;
+  onSubmitAttendance: () => void;
+};
+
+export function AttendanceModal({
+  visible,
+  onRequestClose,
+  loadingAttendanceTools,
+  selectedEvent,
+  eventDropdownOpen,
+  onToggleEventDropdown,
+  todayEvents,
+  onSelectEvent,
+  markedAbsentCount,
+  markedLateCount,
+  allCadets,
+  getCadetStatus,
+  setCadetStatus,
+  savingAttendance,
+  clearingAttendance,
+  onClearAttendance,
+  onSubmitAttendance,
+}: AttendanceModalProps): React.ReactElement {
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      onRequestClose={onRequestClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalCard}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Take Attendance</Text>
+
+            <Pressable onPress={onRequestClose}>
+              <Ionicons name="close" size={24} color="white" />
+            </Pressable>
+          </View>
+
+          {loadingAttendanceTools ? (
+            <View style={styles.modalLoadingBlock}>
+              <ActivityIndicator />
+              <Text style={styles.modalLoadingText}>
+                Loading today's events and cadets…
+              </Text>
+            </View>
+          ) : (
+            <>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <Text style={styles.fieldLabel}>Select Event</Text>
+
+                <Pressable
+                  onPress={onToggleEventDropdown}
+                  style={styles.dropdownButton}
+                >
+                  <Text style={styles.dropdownButtonText}>
+                    {selectedEvent
+                      ? `${selectedEvent.eventName} (${selectedEvent.time ?? "No time"})`
+                      : "Choose today's event"}
+                  </Text>
+                </Pressable>
+
+                {eventDropdownOpen ? (
+                  <View style={styles.dropdownMenu}>
+                    {todayEvents.length === 0 ? (
+                      <Text style={styles.dropdownEmptyText}>
+                        No events found for today.
+                      </Text>
+                    ) : (
+                      todayEvents.map((event) => (
+                        <Pressable
+                          key={event.id}
+                          onPress={() => onSelectEvent(event.id)}
+                          style={styles.dropdownItem}
+                        >
+                          <Text style={styles.dropdownItemTitle}>
+                            {event.eventName}
+                          </Text>
+                          <Text style={styles.dropdownItemSubtitle}>
+                            {event.time ?? "No time"} • {event.locationId ?? "No location"}
+                          </Text>
+                        </Pressable>
+                      ))
+                    )}
+                  </View>
+                ) : null}
+
+                <View style={styles.summaryCard}>
+                  <Text style={styles.summaryTitle}>Quick Summary</Text>
+                  <Text style={styles.summaryText}>
+                    Everyone is Present by default.
+                  </Text>
+                  <Text style={styles.summaryTextSmallGap}>
+                    Absent marked: {markedAbsentCount}
+                  </Text>
+                  <Text style={styles.summaryTextSmallGap}>
+                    Late marked: {markedLateCount}
+                  </Text>
+                </View>
+
+                <Text style={styles.fieldLabel}>Cadets</Text>
+
+                <View style={styles.cadetListCard}>
+                  {allCadets.map((cadet, index) => {
+                    const status = getCadetStatus(cadet.cadetKey);
+
+                    return (
+                      <View
+                        key={cadet.cadetKey}
+                        style={[
+                          styles.cadetRow,
+                          index === allCadets.length - 1
+                            ? { borderBottomWidth: 0 }
+                            : null,
+                        ]}
+                      >
+                        <Text style={styles.cadetName}>{cadet.fullName}</Text>
+
+                        <View style={styles.statusRow}>
+                          <Pressable
+                            onPress={() => setCadetStatus(cadet.cadetKey, "P")}
+                            style={[
+                              styles.statusButton,
+                              status === "P" && styles.presentButtonActive,
+                            ]}
+                          >
+                            <Text style={styles.statusButtonText}>Present</Text>
+                          </Pressable>
+
+                          <Pressable
+                            onPress={() => setCadetStatus(cadet.cadetKey, "A")}
+                            style={[
+                              styles.statusButton,
+                              status === "A" && styles.absentButtonActive,
+                            ]}
+                          >
+                            <Text style={styles.statusButtonText}>Absent</Text>
+                          </Pressable>
+
+                          <Pressable
+                            onPress={() => setCadetStatus(cadet.cadetKey, "L")}
+                            style={[
+                              styles.statusButton,
+                              status === "L" && styles.lateButtonActive,
+                            ]}
+                          >
+                            <Text style={styles.statusButtonText}>Late</Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              </ScrollView>
+
+              <View style={styles.footerButtons}>
+                <Pressable
+                  onPress={onRequestClose}
+                  disabled={savingAttendance || clearingAttendance}
+                  style={[
+                    styles.footerButton,
+                    (savingAttendance || clearingAttendance) &&
+                      styles.footerButtonDisabled,
+                  ]}
+                >
+                  <Text style={styles.statusButtonText}>Cancel</Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={onClearAttendance}
+                  disabled={clearingAttendance || savingAttendance}
+                  style={[
+                    styles.footerButton,
+                    (clearingAttendance || savingAttendance) &&
+                      styles.footerButtonDisabled,
+                  ]}
+                >
+                  {clearingAttendance ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text style={styles.statusButtonText}>Clear Attendance</Text>
+                  )}
+                </Pressable>
+
+                <Pressable
+                  onPress={onSubmitAttendance}
+                  disabled={savingAttendance || clearingAttendance}
+                  style={[
+                    styles.footerButton,
+                    (savingAttendance || clearingAttendance) &&
+                      styles.footerButtonDisabled,
+                  ]}
+                >
+                  {savingAttendance ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text style={styles.statusButtonText}>Save Attendance</Text>
+                  )}
+                </Pressable>
+              </View>
+            </>
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+}

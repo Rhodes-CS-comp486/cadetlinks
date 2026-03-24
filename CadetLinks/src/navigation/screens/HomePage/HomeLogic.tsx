@@ -76,7 +76,7 @@ export function useHomeLogic() {
     loadCadetData();
   },[] );
 
-  console.log("Permissions map:",cadetPermissionsMap);
+  //console.log("Permissions map:",cadetPermissionsMap);
 
 
   useLayoutEffect(() => {
