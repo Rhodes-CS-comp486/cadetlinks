@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ref, get, update, remove } from "firebase/database";
+import { ref, get, update, remove, set } from "firebase/database";
 import { db } from "../../../firebase/config";
+import { useHomeLogic } from "../HomePage/HomeLogic";
+import { PERMISSIONS } from "../../../assets/constants";
+
+
 
 export type CadetProfile = {
   firstName?: string;
@@ -52,14 +56,6 @@ export type CadetListItem = {
 
 export type AttendanceStatus = "P" | "A" | "L";
 
-function parsePermissions(permissionString?: string): string[] {
-  if (!permissionString) return [];
-
-  return permissionString
-    .split(",")
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0 && item.toLowerCase() !== "n/a");
-}
 
 function normalizeAttendanceKey(input: string) {
   return input.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -83,18 +79,25 @@ function inferAttendanceBucket(eventName?: string): "PT" | "LLAB" | null {
 }
 
 export function useJobsLogic() {
+  const { cadetPermissionsMap } = useHomeLogic();
   const [cadetKey, setCadetKey] = useState<string | null>(null);
 
   const [profile, setProfile] = useState<CadetProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [permissionNames, setPermissionNames] = useState<string[]>([]);
-
-  const [isAll, setIsAll] = useState(false);
-  const [canTakeAttendance, setCanTakeAttendance] = useState(false);
-  const [canUploadFiles, setCanUploadFiles] = useState(false);
-  const [canMakeEvents, setCanMakeEvents] = useState(false);
+  const canTakeAttendance = cadetPermissionsMap.get(PERMISSIONS.ATTENDANCE_EDITING) ?? false;
+  const canUploadFiles = cadetPermissionsMap.get(PERMISSIONS.FILE_UPLOADING) ?? false;
+  const canMakeEvents = cadetPermissionsMap.get(PERMISSIONS.EVENT_MAKING) ?? false;
+  const isAll = canTakeAttendance && canUploadFiles && canMakeEvents;
+  
+  const permissionNames = useMemo(
+    () =>
+      Array.from(cadetPermissionsMap.entries())
+        .filter(([_, value]) => value === true)
+        .map(([key, _]) => key),
+    [cadetPermissionsMap]
+  );
 
   // attendance modal data
   const [todayEvents, setTodayEvents] = useState<EventItem[]>([]);
@@ -112,11 +115,6 @@ export function useJobsLogic() {
 
         if (!key) {
           setProfile(null);
-          setPermissionNames([]);
-          setIsAll(false);
-          setCanTakeAttendance(false);
-          setCanUploadFiles(false);
-          setCanMakeEvents(false);
           setError("No user is logged in.");
           return;
         }
@@ -127,11 +125,6 @@ export function useJobsLogic() {
 
         if (!profileSnap.exists()) {
           setProfile(null);
-          setPermissionNames([]);
-          setIsAll(false);
-          setCanTakeAttendance(false);
-          setCanUploadFiles(false);
-          setCanMakeEvents(false);
           setError("No profile found for this user.");
           return;
         }
@@ -139,20 +132,7 @@ export function useJobsLogic() {
         const cadetData = profileSnap.val() as CadetProfile;
         setProfile(cadetData);
 
-        // permissions come from cadets/{key}/permissions
-        const parsedPermissions = parsePermissions(cadetData.permissions);
-        setPermissionNames(parsedPermissions);
 
-        const all = parsedPermissions.includes("All");
-        const attendance =
-          all || parsedPermissions.includes("Attendance Taking");
-        const files = all || parsedPermissions.includes("File Uploading");
-        const events = all || parsedPermissions.includes("Event Making");
-
-        setIsAll(all);
-        setCanTakeAttendance(attendance);
-        setCanUploadFiles(files);
-        setCanMakeEvents(events);
       } catch (e) {
         console.error("❌ Error reading jobs/permissions:", e);
         setError("Could not load jobs & permissions.");
