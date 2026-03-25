@@ -15,11 +15,8 @@ import { UploadDocsModal } from "./Components/UploadDocsModal";
 import { useAttendanceLogic } from "./AttendanceLogic";
 import { useDocumentUploadingLogic } from "./UploadDocsLogic";
 import { PERMISSIONS } from "../../../assets/constants";
-
-import {
-  useJobsLogic,
-  JobsAction,
-} from "./JobsLogic";
+import {useJobsLogic} from "./JobsLogic";
+import{ CadetProfile, JobsAction} from "../../../assets/types";
 
 type NavAny = ReturnType<typeof useNavigation<any>>;
 
@@ -82,7 +79,7 @@ export function Jobs(): React.ReactElement {
     navigation.navigate(a.routeHint);
   };
 
-  console.log("Opening attendance modal and type:", attendance.attendanceModalVisible, typeof attendance.openAttendanceModal);
+  //console.log("Opening attendance modal and type:", attendance.attendanceModalVisible, typeof attendance.openAttendanceModal);
 
   const anyVisibleActions = actions.length > 0;
 

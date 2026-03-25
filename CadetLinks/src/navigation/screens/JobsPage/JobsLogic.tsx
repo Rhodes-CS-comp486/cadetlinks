@@ -4,29 +4,16 @@ import { ref, get } from "firebase/database";
 import { db } from "../../../firebase/config";
 import { useHomeLogic } from "../HomePage/HomeLogic";
 import { PERMISSIONS } from "../../../assets/constants";
+import { CadetProfile, JobsActionId} from "../../../assets/types";
 
 
+// export type JobsActionId =
+//   | "attendance_editing"
+//   | "file_uploading"
+//   | "create_accounts"
+//   | "event_making";
 
-export type CadetProfile = {
-  firstName?: string;
-  lastName?: string;
-  cadetRank?: string;
-  job?: string;
-  flight?: string;
-  classYear?: number;
-  permissions?: string;
-  contact?: {
-    schoolEmail?: string;
-    personalEmail?: string;
-    cellPhone?: string;
-  };
-};
 
-export type JobsActionId =
-  | "attendance_editing"
-  | "file_uploading"
-  | "create_accounts"
-  | "event_making";
 
 export type JobsAction = {
   id: JobsActionId;

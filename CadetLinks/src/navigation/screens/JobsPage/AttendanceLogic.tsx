@@ -3,7 +3,7 @@ import { Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ref, get, update, remove } from "firebase/database";
 import { db } from "../../../firebase/config";
-import type { CadetProfile } from "./JobsLogic";
+import type { CadetProfile } from "../../../assets/types";
 
 export type EventItem = {
   id: string;

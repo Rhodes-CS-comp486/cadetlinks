@@ -1,3 +1,4 @@
+import {PERMISSIONS} from "./constants";
 export type UploadDocsModalProps = {
   visible: boolean;
   onClose: () => void;
@@ -24,3 +25,24 @@ export interface Event {
   location: string;
   type: '' | 'RSVP' | 'Mandatory';
 }
+
+export type CadetProfile = {
+  firstName?: string;
+  lastName?: string;
+  cadetRank?: string;
+  job?: string;
+  flight?: string;
+  classYear?: number;
+  permissions?: string;
+  contact?: {
+    schoolEmail?: string;
+    personalEmail?: string;
+    cellPhone?: string;
+  };
+};
+
+export type JobsActionId =
+| typeof PERMISSIONS.ATTENDANCE_EDITING
+| typeof PERMISSIONS.FILE_UPLOADING
+| typeof PERMISSIONS.EVENT_MAKING
+| typeof PERMISSIONS.CREATE_ACCOUNTS;
