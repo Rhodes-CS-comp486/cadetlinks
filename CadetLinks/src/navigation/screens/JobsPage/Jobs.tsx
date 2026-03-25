@@ -15,25 +15,12 @@ import { UploadDocsModal } from "./Components/UploadDocsModal";
 import { useAttendanceLogic } from "./AttendanceLogic";
 import { useDocumentUploadingLogic } from "./UploadDocsLogic";
 import { PERMISSIONS } from "../../../assets/constants";
-import {useJobsLogic} from "./JobsLogic";
+import {useJobsLogic, iconForAction} from "./JobsLogic";
 import{ CadetProfile, JobsAction} from "../../../assets/types";
 
-type NavAny = ReturnType<typeof useNavigation<any>>;
+// type NavAny = ReturnType<typeof useNavigation<any>>;
 
-function iconForAction(id: JobsAction["id"]) { // this function maps icons to actions.
-  switch (id) {
-    case PERMISSIONS.ATTENDANCE_EDITING:
-      return "checkbox-outline";
-    case PERMISSIONS.FILE_UPLOADING:
-      return "cloud-upload-outline";
-    case PERMISSIONS.CREATE_ACCOUNTS:
-      return "person-add-outline";
-    case PERMISSIONS.EVENT_MAKING:
-      return "calendar-outline";
-    default:
-      return "briefcase-outline";
-  }
-}
+
 
 export function Jobs(): React.ReactElement {
   const navigation: NavAny = useNavigation();
@@ -45,43 +32,50 @@ export function Jobs(): React.ReactElement {
     error,
     permissionNames,
     actions,
+    onPressAction,
+    attendance,
+    documentUploading,
+    fullName,
+    jobText,
+    permissionText,
+    anyVisibleActions,
   } = useJobsLogic();
 
-  const attendance = useAttendanceLogic();
-  const documentUploading = useDocumentUploadingLogic();
+  // const attendance = useAttendanceLogic();
+  // const documentUploading = useDocumentUploadingLogic();
 
-  const fullName =
-    profile?.firstName || profile?.lastName
-      ? `${profile?.firstName ?? ""} ${profile?.lastName ?? ""}`.trim()
-      : "Cadet"; // grabs cadet name from profile (cadet if no name)
+  // const fullName =
+  //   profile?.firstName || profile?.lastName
+  //     ? `${profile?.firstName ?? ""} ${profile?.lastName ?? ""}`.trim()
+  //     : "Cadet"; // grabs cadet name from profile (cadet if no name)
 
-  const jobText = profile?.job ?? "—"; // grabs job from profile (dash if no job)
+  // const jobText = profile?.job ?? "—"; // grabs job from profile (dash if no job)
 
-  const permissionText =
-    permissionNames.length > 0 ? permissionNames.join(", ") : "None"; // gets permission names or "none"
+  // const permissionText =
+  //   permissionNames.length > 0 ? permissionNames.join(", ") : "None"; // gets permission names or "none"
 
   // when you press an action, navigate to where it should go
-  const onPressAction = async (a: JobsAction) => {
-    if (!a.allowed) return;
+  // const onPressAction = async (a: JobsAction) => {
+  //   if (!a.allowed) return;
 
-    if (a.id === PERMISSIONS.ATTENDANCE_EDITING) {
-      console.log("Opening attendance modal and type:", attendance.attendanceModalVisible, typeof attendance.openAttendanceModal);
-      attendance.openAttendanceModal();
-      return;
-    }
+  //   if (a.id === PERMISSIONS.ATTENDANCE_EDITING) {
+  //     console.log("Opening attendance modal and type:", attendance.attendanceModalVisible, typeof attendance.openAttendanceModal);
+  //     attendance.openAttendanceModal();
+  //     return;
+  //   }
 
-    if (a.id === PERMISSIONS.FILE_UPLOADING) {
-      await documentUploading.openDocumentUploadingModal();
-      return;
-    }
+  //   if (a.id === PERMISSIONS.FILE_UPLOADING) {
+  //     await documentUploading.openDocumentUploadingModal();
+  //     return;
+  //   }
 
-    if (!a.routeHint) return; 
-    navigation.navigate(a.routeHint);
-  };
+  //   if (!a.routeHint) return; 
+  //   navigation.navigate(a.routeHint);
+  // };
 
   //console.log("Opening attendance modal and type:", attendance.attendanceModalVisible, typeof attendance.openAttendanceModal);
 
-  const anyVisibleActions = actions.length > 0;
+  // const anyVisibleActions = actions.length > 0;
 
   return (
     <ScreenLayout>

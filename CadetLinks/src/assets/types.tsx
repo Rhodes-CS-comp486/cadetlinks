@@ -1,4 +1,11 @@
+import { useNavigation } from "@react-navigation/native";
 import {PERMISSIONS} from "./constants";
+import type {
+  AttendanceStatus,
+  CadetListItem,
+  EventItem,
+} from "../navigation/screens/JobsPage/AttendanceLogic";
+
 export type UploadDocsModalProps = {
   visible: boolean;
   onClose: () => void;
@@ -14,6 +21,26 @@ export type UploadDocsModalProps = {
   onPickDocument: () => Promise<void>;
   onClearDocument: () => void;
   onUploadDocument: () => Promise<void>;
+};
+
+export type AttendanceModalProps = {
+  visible: boolean;
+  onRequestClose: () => void;
+  loadingAttendanceTools: boolean;
+  selectedEvent?: EventItem;
+  eventDropdownOpen: boolean;
+  onToggleEventDropdown: () => void;
+  todayEvents: EventItem[];
+  onSelectEvent: (eventId: string) => void;
+  markedAbsentCount: number;
+  markedLateCount: number;
+  allCadets: CadetListItem[];
+  getCadetStatus: (cadetKey: string) => AttendanceStatus;
+  setCadetStatus: (cadetKey: string, status: AttendanceStatus) => void;
+  savingAttendance: boolean;
+  clearingAttendance: boolean;
+  onClearAttendance: () => void;
+  onSubmitAttendance: () => void;
 };
 
 export interface Event {
@@ -41,8 +68,18 @@ export type CadetProfile = {
   };
 };
 
-export type JobsActionId =
+type JobsActionId =
 | typeof PERMISSIONS.ATTENDANCE_EDITING
 | typeof PERMISSIONS.FILE_UPLOADING
 | typeof PERMISSIONS.EVENT_MAKING
 | typeof PERMISSIONS.CREATE_ACCOUNTS;
+
+export type JobsAction = {
+  id: JobsActionId;
+  title: string;
+  subtitle: string;
+  routeHint?: string;
+  allowed: boolean;
+};
+
+export type NavAny = ReturnType<typeof useNavigation<any>>;

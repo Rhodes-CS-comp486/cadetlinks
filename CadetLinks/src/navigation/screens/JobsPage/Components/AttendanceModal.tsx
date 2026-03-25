@@ -9,31 +9,10 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { jobStyles as styles } from "../../../../styles/JobStyles";
-import type {
-  AttendanceStatus,
-  CadetListItem,
-  EventItem,
-} from "../AttendanceLogic";
+import { AttendanceModalProps } from "../../../../assets/types";
 
-type AttendanceModalProps = {
-  visible: boolean;
-  onRequestClose: () => void;
-  loadingAttendanceTools: boolean;
-  selectedEvent?: EventItem;
-  eventDropdownOpen: boolean;
-  onToggleEventDropdown: () => void;
-  todayEvents: EventItem[];
-  onSelectEvent: (eventId: string) => void;
-  markedAbsentCount: number;
-  markedLateCount: number;
-  allCadets: CadetListItem[];
-  getCadetStatus: (cadetKey: string) => AttendanceStatus;
-  setCadetStatus: (cadetKey: string, status: AttendanceStatus) => void;
-  savingAttendance: boolean;
-  clearingAttendance: boolean;
-  onClearAttendance: () => void;
-  onSubmitAttendance: () => void;
-};
+
+
 
 export function AttendanceModal({
   visible,

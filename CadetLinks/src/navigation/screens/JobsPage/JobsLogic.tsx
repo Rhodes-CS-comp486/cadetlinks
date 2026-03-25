@@ -4,24 +4,27 @@ import { ref, get } from "firebase/database";
 import { db } from "../../../firebase/config";
 import { useHomeLogic } from "../HomePage/HomeLogic";
 import { PERMISSIONS } from "../../../assets/constants";
-import { CadetProfile, JobsActionId} from "../../../assets/types";
+import { CadetProfile, JobsAction } from "../../../assets/types";
+import { useDocumentUploadingLogic } from "./UploadDocsLogic";
+import { useAttendanceLogic } from "./AttendanceLogic";
+import { useNavigation } from "@react-navigation/core";
 
+type NavAny = ReturnType<typeof useNavigation<any>>;
 
-// export type JobsActionId =
-//   | "attendance_editing"
-//   | "file_uploading"
-//   | "create_accounts"
-//   | "event_making";
-
-
-
-export type JobsAction = {
-  id: JobsActionId;
-  title: string;
-  subtitle: string;
-  routeHint?: string;
-  allowed: boolean;
-};
+export function iconForAction(id: JobsAction["id"]) { // this function maps icons to actions.
+  switch (id) {
+    case PERMISSIONS.ATTENDANCE_EDITING:
+      return "checkbox-outline";
+    case PERMISSIONS.FILE_UPLOADING:
+      return "cloud-upload-outline";
+    case PERMISSIONS.CREATE_ACCOUNTS:
+      return "person-add-outline";
+    case PERMISSIONS.EVENT_MAKING:
+      return "calendar-outline";
+    default:
+      return "briefcase-outline";
+  }
+}
 
 export function useJobsLogic() {
   const { cadetPermissionsMap } = useHomeLogic();
@@ -35,7 +38,10 @@ export function useJobsLogic() {
   const canUploadFiles = cadetPermissionsMap.get(PERMISSIONS.FILE_UPLOADING) ?? false;
   const canMakeEvents = cadetPermissionsMap.get(PERMISSIONS.EVENT_MAKING) ?? false;
   const isAll = canTakeAttendance && canUploadFiles && canMakeEvents;
-  
+  const attendance = useAttendanceLogic();
+  const documentUploading = useDocumentUploadingLogic();
+  const navigation: NavAny = useNavigation();
+
   const permissionNames = useMemo(
     () =>
       Array.from(cadetPermissionsMap.entries())
@@ -43,6 +49,11 @@ export function useJobsLogic() {
         .map(([key, _]) => key),
     [cadetPermissionsMap]
   );
+
+  const permissionText =
+    permissionNames.length > 0 ? permissionNames.join(", ") : "None"; // gets permission names or "none"
+
+ 
 
   //loading users overview of data
   useEffect(() => {
@@ -84,6 +95,31 @@ export function useJobsLogic() {
 
     load();
   }, []);
+  
+  const onPressAction = async (a: JobsAction) => {
+      if (!a.allowed) return;
+  
+      if (a.id === PERMISSIONS.ATTENDANCE_EDITING) {
+        console.log("Opening attendance modal and type:", attendance.attendanceModalVisible, typeof attendance.openAttendanceModal);
+        attendance.openAttendanceModal();
+        return;
+      }
+  
+      if (a.id === PERMISSIONS.FILE_UPLOADING) {
+        await documentUploading.openDocumentUploadingModal();
+        return;
+      }
+  
+      if (!a.routeHint) return; 
+      navigation.navigate(a.routeHint);
+    };
+
+    const fullName =
+    profile?.firstName || profile?.lastName
+      ? `${profile?.firstName ?? ""} ${profile?.lastName ?? ""}`.trim()
+      : "Cadet"; // grabs cadet name from profile (cadet if no name)
+
+  const jobText = profile?.job ?? "—"; // grabs job from profile (dash if no job)
 
   // only show actions the cadet is actually allowed to use
   const actions: JobsAction[] = [];
@@ -127,6 +163,8 @@ export function useJobsLogic() {
     });
   }
 
+  const anyVisibleActions = actions.length > 0;
+
   return useMemo(
     () => ({
       cadetKey,
@@ -139,6 +177,14 @@ export function useJobsLogic() {
       canUploadFiles,
       canMakeEvents,
       actions,
+      onPressAction,
+      attendance,
+      documentUploading,
+      fullName,
+      jobText,
+      permissionText,
+      anyVisibleActions,
+      navigation
     }),
     [
       cadetKey,
