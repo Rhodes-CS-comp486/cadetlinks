@@ -23,8 +23,8 @@ export type CadetProfile = {
 };
 
 export type JobsActionId =
-  | "attendance"
-  | "files"
+  | "attendance_editing"
+  | "file_uploading"
   | "create_accounts"
   | "event_making";
 
@@ -57,6 +57,7 @@ export function useJobsLogic() {
     [cadetPermissionsMap]
   );
 
+  //loading users overview of data
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -102,7 +103,7 @@ export function useJobsLogic() {
 
   if (canTakeAttendance) {
     actions.push({
-      id: "attendance",
+      id: PERMISSIONS.ATTENDANCE_EDITING,
       title: "Take Attendance",
       subtitle: "Mark PT / LLAB attendance for cadets",
       allowed: true,
@@ -111,7 +112,7 @@ export function useJobsLogic() {
 
   if (canUploadFiles) {
     actions.push({
-      id: "files",
+      id: PERMISSIONS.FILE_UPLOADING,
       title: "Upload Files",
       subtitle: "Upload PDFs and other documents for cadets",
       routeHint: "Files",
@@ -121,7 +122,7 @@ export function useJobsLogic() {
 
   if (canMakeEvents) {
     actions.push({
-      id: "event_making",
+      id: PERMISSIONS.EVENT_MAKING,
       title: "Event Making",
       subtitle: "Create and publish events to the wing calendar",
       routeHint: "Events",
@@ -132,7 +133,7 @@ export function useJobsLogic() {
   // Create Accounts = All only
   if (isAll) {
     actions.push({
-      id: "create_accounts",
+      id: PERMISSIONS.CREATE_ACCOUNTS,
       title: "Create Accounts",
       subtitle: "Create new cadet accounts (admin-only)",
       allowed: true,

@@ -17,7 +17,6 @@ export function HomePage() {
   //const navigation = useNavigation();
   const{
     cadetPermissionsMap,
-    cadetPermissions,
     hasPermission,
     announcements,
     navigation
