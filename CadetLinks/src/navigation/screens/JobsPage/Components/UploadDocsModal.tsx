@@ -8,25 +8,11 @@ import {
   Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { generalStyles } from "../../../../styles/GeneralStyles";
+import { generalStyles as g_styles, generalStyles } from "../../../../styles/GeneralStyles";
 import { DarkColors as colors } from "../../../../styles/colors";
-
-type UploadDocsModalProps = {
-  visible: boolean;
-  onClose: () => void;
-  selectedDocument: {
-    name: string;
-    mimeType: string;
-    size: number;
-  } | null;
-  isPickingDocument: boolean;
-  isUploadingDocument: boolean;
-  uploadError: string | null;
-  uploadSuccessMessage: string | null;
-  onPickDocument: () => Promise<void>;
-  onClearDocument: () => void;
-  onUploadDocument: () => Promise<void>;
-};
+import { jobStyles as styles } from "../../../../styles/JobStyles";
+import { eventsStyles } from "../../../../styles/EventsStyles";
+import { UploadDocsModalProps } from "../../../../assets/types";
 
 function formatBytes(sizeBytes: number): string {
   if (!sizeBytes) return "0 B";
@@ -56,21 +42,28 @@ export function UploadDocsModal({
       animationType="slide"
       onRequestClose={onClose}
     >
+      {/*container for entire modal*/}
       <View style={styles.modalOverlay}>
         <View style={styles.modalCard}>
+
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Upload Documents</Text>
-            <Pressable onPress={onClose} style={styles.iconButton}>
+            
+            {/* close button in header */}
+            <Pressable onPress={onClose} style={g_styles.avatar_container}>
               <Ionicons name="close" size={22} color={colors.text} />
             </Pressable>
+
           </View>
 
-          <Text style={styles.helperText}>
+          {/* instructions and file picking section */}
+          <Text style={g_styles.text}>
             Choose a local file, then upload it to Firebase.
           </Text>
 
+          {/*file picking button and status -> calls onPickDocument in logic portion*/}
           <Pressable
-            style={styles.primaryButton}
+            style={eventsStyles.mandatoryButton}
             onPress={() => {
               void onPickDocument();
             }}
@@ -79,23 +72,24 @@ export function UploadDocsModal({
             {isPickingDocument ? (
               <ActivityIndicator color={colors.text} />
             ) : (
-              <Text style={styles.primaryButtonText}>Choose Local File</Text>
+              <Text style={g_styles.text}>Choose Local File</Text>
             )}
           </Pressable>
 
+          {/* selected document details -> shows nothing if nothing is selected */}
           {selectedDocument ? (
-            <View style={styles.infoCard}>
-              <Text style={styles.infoTitle}>Selected File</Text>
-              <Text style={styles.infoText}>{selectedDocument.name}</Text>
-              <Text style={styles.infoText}>Type: {selectedDocument.mimeType}</Text>
-              <Text style={styles.infoText}>Size: {formatBytes(selectedDocument.size)}</Text>
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryTitle}>Selected File</Text>
+              <Text style={styles.summaryText}>File Name: {selectedDocument.name}</Text>
+              <Text style={styles.summaryText}>Type: {selectedDocument.mimeType}</Text>
+              <Text style={styles.summaryText}>Size: {formatBytes(selectedDocument.size)}</Text>
 
               <Pressable
-                style={styles.secondaryButton}
+                style={styles.footerButton}
                 onPress={onClearDocument}
                 disabled={isUploadingDocument}
               >
-                <Text style={styles.secondaryButtonText}>Clear Selection</Text>
+                <Text style={styles.errorText}>Clear Selection</Text>
               </Pressable>
             </View>
           ) : null}
@@ -106,7 +100,7 @@ export function UploadDocsModal({
           ) : null}
 
           <Pressable
-            style={styles.primaryButton}
+            style={eventsStyles.mandatoryButton}
             onPress={() => {
               void onUploadDocument();
             }}
@@ -115,7 +109,7 @@ export function UploadDocsModal({
             {isUploadingDocument ? (
               <ActivityIndicator color={colors.text} />
             ) : (
-              <Text style={styles.primaryButtonText}>Upload to Firebase</Text>
+              <Text style={styles.dropdownItemText}>Upload to Firebase</Text>
             )}
           </Pressable>
         </View>
@@ -123,87 +117,3 @@ export function UploadDocsModal({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  ...generalStyles,
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-    padding: 16,
-  },
-  modalCard: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 16,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  modalTitle: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  iconButton: {
-    padding: 6,
-  },
-  helperText: {
-    color: colors.muted,
-    fontSize: 14,
-  },
-  primaryButton: {
-    backgroundColor: colors.accent,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  primaryButtonText: {
-    color: colors.text,
-    fontWeight: "700",
-    fontSize: 15,
-  },
-  secondaryButton: {
-    marginTop: 8,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 8,
-    alignItems: "center",
-  },
-  secondaryButtonText: {
-    color: colors.text,
-    fontWeight: "600",
-  },
-  infoCard: {
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  infoTitle: {
-    color: colors.text,
-    fontWeight: "700",
-    marginBottom: 6,
-  },
-  infoText: {
-    color: colors.text,
-    fontSize: 13,
-    marginBottom: 2,
-  },
-  errorText: {
-    color: "#F87171",
-    fontWeight: "600",
-  },
-  successText: {
-    color: "#4ADE80",
-    fontWeight: "600",
-  },
-});
-

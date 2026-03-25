@@ -3,25 +3,12 @@ import { Alert } from 'react-native';
 import { eventsStyles as styles } from '../../../styles/EventStyles';
 import { getDatabase, ref, onValue, set, get } from "firebase/database";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-export interface Event {
-  id: string
-  title: string;
-  date: Date;
-  time: Date;
-  description: string;
-  location: string;
-  type: '' | 'RSVP' | 'Mandatory';
-}
-/*
-TODO: 
-- Get user-specific ID to update EventRSVP status in DB when user RSVPs to an event
-- Add ability to edit/delete events (optional)
-*/
-
+import { Event } from '../../../assets/types';
+import { cadetObject } from '../HomePage/HomeLogic';
 
 export function useEvents() {
 
+  //AI gen cuz i hate formatting date and time. needs to be tested. 
   const formatLocalDateKey = (input: Date | string): string => {
     if (typeof input === "string" && /^\d{4}-\d{2}-\d{2}$/.test(input)) {
       return input;
@@ -312,7 +299,7 @@ export function useEvents() {
     await writeToEventsDB(newEvent); // Write the new event to the database
     if (newEvent.title === "PT" || newEvent.title === "LLAB") {
       Alert.alert('Event Added', 'PT/LLAB events must be added through the attendance section to properly track attendance.');
-      await addAttendanceForNewEvent(newEvent.title, newEvent.date); // If it's a PT/LLAB event, also add it to the attendance tracking in the DB
+      await addAttendanceForNewEvent(newEvent.title, newEvent.date,cadetObject.lastName); // If it's a PT/LLAB event, also add it to the attendance tracking in the DB
     }
 
 
@@ -349,11 +336,11 @@ export function useEvents() {
     console.log("Wrote to Events DB with ID:", event.id);
   };
 
-  const addAttendanceForNewEvent = async (eventTitle: string, eventDate: Date) => {
+  const addAttendanceForNewEvent = async (eventTitle: string, eventDate: Date, lastName: string) => {
       const db = getDatabase();
       try {
         const title = eventTitle.trim().toUpperCase();
-        const attendanceRef = ref(db, `attendance/${title}/${formatLocalDateKey(eventDate)}`);
+        const attendanceRef = ref(db, `attendance/${title}/${formatLocalDateKey(eventDate)}/${lastName}`);
         await set (attendanceRef, {
           status: "."
          });
