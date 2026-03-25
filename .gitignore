@@ -210,3 +210,4 @@ __marimo__/
 #Firebase 
 serviceAccountKey.json
 .env
+CadetLinks/src/firebase/config.ts

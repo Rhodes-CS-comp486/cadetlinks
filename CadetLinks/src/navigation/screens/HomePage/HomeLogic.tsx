@@ -48,11 +48,26 @@ export function useHomeLogic() {
 
         //console.log("Initial permissions map:", cadetPermissionsMap);   
 
-        const permissions = cadetData?.permissions 
-          ? cadetData.permissions.split(","):[];
-        for (const perm of permissions) {
-            setCadetPermissionsMap(prev => new Map(prev).set(perm, true));
+        const job = cadetData.job;
+
+        const permissionsRef = ref(db,"indexes/permissions/" + job);
+        const permissionsSnap = await get(permissionsRef);
+
+        console.log("Permissions for: ",job, "are: ", permissionsSnap.val());
+
+        if (!permissionsSnap.exists()) {
+            return;
         }
+        //const permissionsList: string[] = permissionsSnap.val();
+        const permEntries = Object.entries(permissionsSnap.val());
+        
+        setCadetPermissionsMap(prev => {
+            const newMap = new Map(prev);
+            permEntries.forEach(([perm, value]) => {
+                newMap.set(perm, value === true); // Ensure value is boolean
+            });
+            return newMap;
+        });
         
       } catch (error) {
         console.error("Error fetching cadet data:", error);
@@ -61,7 +76,7 @@ export function useHomeLogic() {
     loadCadetData();
   },[] );
 
-  console.log("Permissions map:",cadetPermissionsMap);
+  //console.log("Permissions map:",cadetPermissionsMap);
 
 
   useLayoutEffect(() => {
