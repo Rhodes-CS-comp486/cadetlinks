@@ -1,4 +1,4 @@
-// LoginLogic.ts
+
 import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { ref, get } from "firebase/database";
