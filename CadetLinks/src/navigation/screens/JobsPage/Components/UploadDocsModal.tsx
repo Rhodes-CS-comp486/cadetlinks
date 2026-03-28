@@ -6,6 +6,7 @@ import {
   Pressable,
   ActivityIndicator,
   Modal,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { generalStyles as g_styles, generalStyles } from "../../../../styles/GeneralStyles";
@@ -42,31 +43,23 @@ export function UploadDocsModal({
       animationType="slide"
       onRequestClose={onClose}
     >
-      {/*container for entire modal*/}
       <View style={styles.modalOverlay}>
         <View style={styles.modalCard}>
 
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Upload Documents</Text>
-            
-            {/* close button in header */}
             <Pressable onPress={onClose} style={g_styles.avatar_container}>
               <Ionicons name="close" size={22} color={colors.text} />
             </Pressable>
-
           </View>
 
-          {/* instructions and file picking section */}
           <Text style={g_styles.text}>
             Choose a local file, then upload it to Firebase.
           </Text>
 
-          {/*file picking button and status -> calls onPickDocument in logic portion*/}
           <Pressable
             style={eventsStyles.mandatoryButton}
-            onPress={() => {
-              void onPickDocument();
-            }}
+            onPress={() => { void onPickDocument(); }}
             disabled={isPickingDocument || isUploadingDocument}
           >
             {isPickingDocument ? (
@@ -76,7 +69,6 @@ export function UploadDocsModal({
             )}
           </Pressable>
 
-          {/* selected document details -> shows nothing if nothing is selected */}
           {selectedDocument ? (
             <View style={styles.summaryCard}>
               <Text style={styles.summaryTitle}>Selected File</Text>
@@ -94,6 +86,26 @@ export function UploadDocsModal({
             </View>
           ) : null}
 
+          {/* document name input — only shown after a file is picked */}
+          {selectedDocument ? (
+            <TextInput
+              placeholder="Enter document name"
+              placeholderTextColor={colors.text}
+              editable={!isUploadingDocument}
+              style={[
+                g_styles.text,
+                {
+                  borderWidth: 1,
+                  borderColor: colors.border ?? "#ccc",
+                  borderRadius: 8,
+                  padding: 10,
+                  marginVertical: 10,
+                  color: colors.text,
+                },
+              ]}
+            />
+          ) : null}
+
           {uploadError ? <Text style={styles.errorText}>{uploadError}</Text> : null}
           {uploadSuccessMessage ? (
             <Text style={styles.successText}>{uploadSuccessMessage}</Text>
@@ -101,9 +113,7 @@ export function UploadDocsModal({
 
           <Pressable
             style={eventsStyles.mandatoryButton}
-            onPress={() => {
-              void onUploadDocument();
-            }}
+            onPress={() => { void onUploadDocument(); }}
             disabled={isUploadingDocument || isPickingDocument}
           >
             {isUploadingDocument ? (
@@ -112,6 +122,7 @@ export function UploadDocsModal({
               <Text style={styles.dropdownItemText}>Upload to Firebase</Text>
             )}
           </Pressable>
+
         </View>
       </View>
     </Modal>

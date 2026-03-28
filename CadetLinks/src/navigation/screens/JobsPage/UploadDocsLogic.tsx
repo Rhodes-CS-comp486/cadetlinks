@@ -161,8 +161,6 @@ export function useDocumentUploadingLogic() {
         openDocumentUploadingModal,
         closeDocumentUploadingModal,
         selectedDocument,
-        documentName,
-        setDocumentName,
         isPickingDocument,
         isUploadingDocument,
         uploadError,

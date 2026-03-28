@@ -13,6 +13,7 @@ export type UploadDocsModalProps = {
     name: string;
     mimeType: string;
     size: number;
+    //documentName: string; // custom name for the document
   } | null;
   isPickingDocument: boolean;
   isUploadingDocument: boolean;
@@ -21,8 +22,6 @@ export type UploadDocsModalProps = {
   onPickDocument: () => Promise<void>;
   onClearDocument: () => void;
   onUploadDocument: () => Promise<void>;
-  //documentName: string;  #to add name input for uploaded document
-  //onChangeDocumentName: (name: string) => void;
 };
 
 export type AttendanceModalProps = {
