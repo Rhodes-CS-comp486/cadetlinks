@@ -21,6 +21,8 @@ export type UploadDocsModalProps = {
   onPickDocument: () => Promise<void>;
   onClearDocument: () => void;
   onUploadDocument: () => Promise<void>;
+  //documentName: string;  #to add name input for uploaded document
+  //onChangeDocumentName: (name: string) => void;
 };
 
 export type AttendanceModalProps = {

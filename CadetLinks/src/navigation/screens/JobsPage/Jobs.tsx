@@ -16,7 +16,7 @@ import { useAttendanceLogic } from "./AttendanceLogic";
 import { useDocumentUploadingLogic } from "./UploadDocsLogic";
 import { PERMISSIONS } from "../../../assets/constants";
 import {useJobsLogic, iconForAction} from "./JobsLogic";
-import{ CadetProfile, JobsAction} from "../../../assets/types";
+import{ CadetProfile, JobsAction, NavAny} from "../../../assets/types";
 
 // type NavAny = ReturnType<typeof useNavigation<any>>;
 
@@ -197,6 +197,9 @@ export function Jobs(): React.ReactElement {
         onPickDocument={documentUploading.pickDocument}
         onClearDocument={documentUploading.clearSelectedDocument}
         onUploadDocument={documentUploading.uploadSelectedDocument}
+        
+       // documentName={documentUploading.documentName}
+        //onChangeDocumentName={documentUploading.setDocumentName}
       />
     </ScreenLayout>
   );
