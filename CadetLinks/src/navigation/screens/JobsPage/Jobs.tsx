@@ -14,16 +14,17 @@ import { AttendanceModal } from "./Components/AttendanceModal";
 import { UploadDocsModal } from "./Components/UploadDocsModal";
 import { useAttendanceLogic } from "./AttendanceLogic";
 import { useDocumentUploadingLogic } from "./UploadDocsLogic";
+import { ViewDocumentLogic } from "./ViewDocumentLogic";
 import { PERMISSIONS } from "../../../assets/constants";
-import {useJobsLogic, iconForAction} from "./JobsLogic";
-import{ CadetProfile, JobsAction, NavAny} from "../../../assets/types";
-
-// type NavAny = ReturnType<typeof useNavigation<any>>;
-
-
+import { useJobsLogic, iconForAction } from "./JobsLogic";
+import { CadetProfile, JobsAction, NavAny } from "../../../assets/types";
+import { ViewDocumentModal } from "../JobsPage/Components/ViewDocumentModal";
 
 export function Jobs(): React.ReactElement {
   const navigation: NavAny = useNavigation();
+
+  const [docListVisible, setDocListVisible] = React.useState(false);
+  const documentList = ViewDocumentLogic();
 
   const {
     cadetKey,
@@ -39,43 +40,8 @@ export function Jobs(): React.ReactElement {
     jobText,
     permissionText,
     anyVisibleActions,
+    canUploadFiles,
   } = useJobsLogic();
-
-  // const attendance = useAttendanceLogic();
-  // const documentUploading = useDocumentUploadingLogic();
-
-  // const fullName =
-  //   profile?.firstName || profile?.lastName
-  //     ? `${profile?.firstName ?? ""} ${profile?.lastName ?? ""}`.trim()
-  //     : "Cadet"; // grabs cadet name from profile (cadet if no name)
-
-  // const jobText = profile?.job ?? "—"; // grabs job from profile (dash if no job)
-
-  // const permissionText =
-  //   permissionNames.length > 0 ? permissionNames.join(", ") : "None"; // gets permission names or "none"
-
-  // when you press an action, navigate to where it should go
-  // const onPressAction = async (a: JobsAction) => {
-  //   if (!a.allowed) return;
-
-  //   if (a.id === PERMISSIONS.ATTENDANCE_EDITING) {
-  //     console.log("Opening attendance modal and type:", attendance.attendanceModalVisible, typeof attendance.openAttendanceModal);
-  //     attendance.openAttendanceModal();
-  //     return;
-  //   }
-
-  //   if (a.id === PERMISSIONS.FILE_UPLOADING) {
-  //     await documentUploading.openDocumentUploadingModal();
-  //     return;
-  //   }
-
-  //   if (!a.routeHint) return; 
-  //   navigation.navigate(a.routeHint);
-  // };
-
-  //console.log("Opening attendance modal and type:", attendance.attendanceModalVisible, typeof attendance.openAttendanceModal);
-
-  // const anyVisibleActions = actions.length > 0;
 
   return (
     <ScreenLayout>
@@ -97,7 +63,7 @@ export function Jobs(): React.ReactElement {
                   <ActivityIndicator />
                   <Text style={styles.userinfo_sub}>Loading jobs…</Text>
                 </View>
-              ) : error ? ( 
+              ) : error ? (
                 <>
                   <Text style={styles.userinfo_sub}>{error}</Text>
                   {cadetKey ? (
@@ -110,12 +76,10 @@ export function Jobs(): React.ReactElement {
               ) : (
                 <>
                   <Text style={styles.userinfo_name}>{fullName}</Text>
-
                   <Text style={styles.userinfo_sub}>
                     <Text style={styles.label_bold}>Job: </Text>
                     {jobText}
                   </Text>
-
                   <Text style={styles.userinfo_sub}>
                     <Text style={styles.label_bold}>Permissions: </Text>
                     {permissionText}
@@ -129,7 +93,6 @@ export function Jobs(): React.ReactElement {
           {!loading && !error && anyVisibleActions ? (
             <>
               <Text style={styles.sectionTitle}>Actions</Text>
-
               {actions.map((a) => (
                 <Pressable
                   key={a.id}
@@ -144,24 +107,38 @@ export function Jobs(): React.ReactElement {
                         color="white"
                       />
                     </View>
-
                     <View style={styles.flexOne}>
                       <Text style={styles.action_title}>{a.title}</Text>
                       <Text style={styles.action_subtitle}>{a.subtitle}</Text>
                     </View>
                   </View>
-
                   <View style={styles.action_right}>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={22}
-                      color="white"
-                    />
+                    <Ionicons name="chevron-forward" size={22} color="white" />
                   </View>
                 </Pressable>
               ))}
             </>
           ) : null}
+
+          {/* VIEW DOCUMENTS BUTTON */}
+          <Pressable
+            style={styles.action_card}
+            onPress={() => setDocListVisible(true)}
+          >
+            <View style={styles.action_left}>
+              <View style={styles.action_icon_circle}>
+                <Ionicons name="document-text-outline" size={22} color="white" />
+              </View>
+              <View style={styles.flexOne}>
+                <Text style={styles.action_title}>View Documents</Text>
+                <Text style={styles.action_subtitle}>Browse and manage uploaded files</Text>
+              </View>
+            </View>
+            <View style={styles.action_right}>
+              <Ionicons name="chevron-forward" size={22} color="white" />
+            </View>
+          </Pressable>
+
         </ScrollView>
       </View>
 
@@ -185,6 +162,7 @@ export function Jobs(): React.ReactElement {
         onClearAttendance={attendance.clearSelectedAttendance}
         onSubmitAttendance={attendance.submitAttendance}
       />
+
       {/* DOCUMENT UPLOADING MODAL */}
       <UploadDocsModal
         visible={documentUploading.documentUploadingModalVisible}
@@ -197,10 +175,21 @@ export function Jobs(): React.ReactElement {
         onPickDocument={documentUploading.pickDocument}
         onClearDocument={documentUploading.clearSelectedDocument}
         onUploadDocument={documentUploading.uploadSelectedDocument}
-        
-       // documentName={documentUploading.documentName}
-        //onChangeDocumentName={documentUploading.setDocumentName}
+  
       />
+
+      {/* VIEW DOCUMENTS MODAL */}
+      <ViewDocumentModal
+        visible={docListVisible}
+        onClose={() => setDocListVisible(false)}
+        documents={documentList.documents}
+        isLoading={documentList.isLoading}
+        deleteError={documentList.deleteError}
+        deletingKey={documentList.deletingKey}
+        onDelete={documentList.deleteDocument}
+        canEditFiles={canUploadFiles}
+      />
+
     </ScreenLayout>
   );
 }
