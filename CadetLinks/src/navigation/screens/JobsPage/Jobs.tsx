@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { jobStyles as styles } from "../../../styles/JobStyles";
 import { ScreenLayout } from "../../Components/ScreenLayout";
+<<<<<<< Search
 
 import {
   useJobsLogic,
@@ -35,9 +36,23 @@ function iconForAction(id: JobsAction["id"]) { // this function maps icons to ac
       return "briefcase-outline";
   }
 }
+=======
+import { AttendanceModal } from "./Components/AttendanceModal";
+import { UploadDocsModal } from "./Components/UploadDocsModal";
+import { useAttendanceLogic } from "./AttendanceLogic";
+import { useDocumentUploadingLogic } from "./UploadDocsLogic";
+import { ViewDocumentLogic } from "./ViewDocumentLogic";
+import { PERMISSIONS } from "../../../assets/constants";
+import { useJobsLogic, iconForAction } from "./JobsLogic";
+import { CadetProfile, JobsAction, NavAny } from "../../../assets/types";
+import { ViewDocumentModal } from "../JobsPage/Components/ViewDocumentModal";
+>>>>>>> main
 
 export function Jobs(): React.ReactElement {
   const navigation: NavAny = useNavigation();
+
+  const [docListVisible, setDocListVisible] = React.useState(false);
+  const documentList = ViewDocumentLogic();
 
   const {
     cadetKey,
@@ -46,6 +61,7 @@ export function Jobs(): React.ReactElement {
     error,
     permissionNames,
     actions,
+<<<<<<< Search
 
     todayEvents,
     allCadets,
@@ -205,6 +221,18 @@ export function Jobs(): React.ReactElement {
 
   const anyVisibleActions = actions.length > 0;
 
+=======
+    onPressAction,
+    attendance,
+    documentUploading,
+    fullName,
+    jobText,
+    permissionText,
+    anyVisibleActions,
+    canUploadFiles,
+  } = useJobsLogic();
+
+>>>>>>> main
   return (
     <ScreenLayout>
       <View style={styles.body_container}>
@@ -225,7 +253,7 @@ export function Jobs(): React.ReactElement {
                   <ActivityIndicator />
                   <Text style={styles.userinfo_sub}>Loading jobs…</Text>
                 </View>
-              ) : error ? ( 
+              ) : error ? (
                 <>
                   <Text style={styles.userinfo_sub}>{error}</Text>
                   {cadetKey ? (
@@ -238,12 +266,10 @@ export function Jobs(): React.ReactElement {
               ) : (
                 <>
                   <Text style={styles.userinfo_name}>{fullName}</Text>
-
                   <Text style={styles.userinfo_sub}>
                     <Text style={styles.label_bold}>Job: </Text>
                     {jobText}
                   </Text>
-
                   <Text style={styles.userinfo_sub}>
                     <Text style={styles.label_bold}>Permissions: </Text>
                     {permissionText}
@@ -257,7 +283,6 @@ export function Jobs(): React.ReactElement {
           {!loading && !error && anyVisibleActions ? (
             <>
               <Text style={styles.sectionTitle}>Actions</Text>
-
               {actions.map((a) => (
                 <Pressable
                   key={a.id}
@@ -272,28 +297,43 @@ export function Jobs(): React.ReactElement {
                         color="white"
                       />
                     </View>
-
                     <View style={styles.flexOne}>
                       <Text style={styles.action_title}>{a.title}</Text>
                       <Text style={styles.action_subtitle}>{a.subtitle}</Text>
                     </View>
                   </View>
-
                   <View style={styles.action_right}>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={22}
-                      color="white"
-                    />
+                    <Ionicons name="chevron-forward" size={22} color="white" />
                   </View>
                 </Pressable>
               ))}
             </>
           ) : null}
+
+          {/* VIEW DOCUMENTS BUTTON */}
+          <Pressable
+            style={styles.action_card}
+            onPress={() => setDocListVisible(true)}
+          >
+            <View style={styles.action_left}>
+              <View style={styles.action_icon_circle}>
+                <Ionicons name="document-text-outline" size={22} color="white" />
+              </View>
+              <View style={styles.flexOne}>
+                <Text style={styles.action_title}>View Documents</Text>
+                <Text style={styles.action_subtitle}>Browse and manage uploaded files</Text>
+              </View>
+            </View>
+            <View style={styles.action_right}>
+              <Ionicons name="chevron-forward" size={22} color="white" />
+            </View>
+          </Pressable>
+
         </ScrollView>
       </View>
 
       {/* ATTENDANCE MODAL */}
+<<<<<<< Search
       <Modal
         visible={attendanceModalVisible}
         animationType="slide"
@@ -493,6 +533,55 @@ export function Jobs(): React.ReactElement {
           </View>
         </View>
       </Modal>
+=======
+      <AttendanceModal
+        visible={attendance.attendanceModalVisible}
+        onRequestClose={attendance.closeAttendanceModal}
+        loadingAttendanceTools={attendance.loadingAttendanceTools}
+        selectedEvent={attendance.selectedEvent}
+        eventDropdownOpen={attendance.eventDropdownOpen}
+        onToggleEventDropdown={attendance.toggleEventDropdown}
+        todayEvents={attendance.todayEvents}
+        onSelectEvent={attendance.selectEvent}
+        markedAbsentCount={attendance.markedAbsentCount}
+        markedLateCount={attendance.markedLateCount}
+        allCadets={attendance.allCadets}
+        getCadetStatus={attendance.getCadetStatus}
+        setCadetStatus={attendance.setCadetStatus}
+        savingAttendance={attendance.savingAttendance}
+        clearingAttendance={attendance.clearingAttendance}
+        onClearAttendance={attendance.clearSelectedAttendance}
+        onSubmitAttendance={attendance.submitAttendance}
+      />
+
+      {/* DOCUMENT UPLOADING MODAL */}
+      <UploadDocsModal
+        visible={documentUploading.documentUploadingModalVisible}
+        onClose={documentUploading.closeDocumentUploadingModal}
+        selectedDocument={documentUploading.selectedDocument}
+        isPickingDocument={documentUploading.isPickingDocument}
+        isUploadingDocument={documentUploading.isUploadingDocument}
+        uploadError={documentUploading.uploadError}
+        uploadSuccessMessage={documentUploading.uploadSuccessMessage}
+        onPickDocument={documentUploading.pickDocument}
+        onClearDocument={documentUploading.clearSelectedDocument}
+        onUploadDocument={documentUploading.uploadSelectedDocument}
+  
+      />
+
+      {/* VIEW DOCUMENTS MODAL */}
+      <ViewDocumentModal
+        visible={docListVisible}
+        onClose={() => setDocListVisible(false)}
+        documents={documentList.documents}
+        isLoading={documentList.isLoading}
+        deleteError={documentList.deleteError}
+        deletingKey={documentList.deletingKey}
+        onDelete={documentList.deleteDocument}
+        canEditFiles={canUploadFiles}
+      />
+
+>>>>>>> main
     </ScreenLayout>
   );
 }
