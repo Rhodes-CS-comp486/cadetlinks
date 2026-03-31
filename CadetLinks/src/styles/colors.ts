@@ -12,8 +12,7 @@ export const LightColors = {
 
   // text
   text: '#333333',
-  inputPlaceholderText: '#ffffff',
-  inputUserText: '#333333',
+  inputText: '#ffffff',
   muted: '#999999',
 
   // primary/brand
@@ -39,8 +38,7 @@ export const DarkColors: typeof LightColors = {
   shadow: "#1e1e1e",
 
   text: '#FFFFFF',
-  inputPlaceholderText: '#333333',
-  inputUserText: '#000000',
+  inputText: '#000000',
   muted: "#9AA3B2",
 
   primary: '#1e90ff',
