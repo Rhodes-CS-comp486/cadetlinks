@@ -15,7 +15,7 @@ export type PublicCadetProfile = { // only public info for search results/profil
   };
 };
 
-export function usePublicProfileLogic(cadetKey: string) { // takes cadetKey to load that cadet's public profile info
+export function usePublicProfileLogic(cadetKey: string) { // takes cadetKey to load that cadet's public profile info.
   const [profile, setProfile] = useState<PublicCadetProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);

@@ -20,7 +20,7 @@ export type SearchCadetProfile = {
   };
 };
 
-function matchesQuery(cadet: SearchCadetProfile, query: string) { // checks if the cadet matches the search query by looking for the query as a substring in their name, rank, job, flight, class year, or school email. case-insensitive.
+function matchesQuery(cadet: SearchCadetProfile, query: string) { // dchecks if the cadet matches the search query by looking for the query as a substring in their name, rank, job, flight, class year, or school email. case-insensitive.
   const q = query.trim().toLowerCase();
   if (!q) return true;
 

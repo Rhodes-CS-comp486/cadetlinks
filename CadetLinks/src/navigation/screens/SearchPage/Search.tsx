@@ -54,7 +54,7 @@ export function Search(): React.ReactElement {
           ) : null}
         </View>
 
-        {/* show loading state, error, or "no results". otherwise show search results as a list of cards. */}
+        {/* show loading state, error, or "no results". otherwise show search results as a list of cards. a*/}
         {loadingCadets ? (
           <View style={styles.stateCard}>
             <ActivityIndicator />
