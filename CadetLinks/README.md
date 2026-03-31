@@ -44,8 +44,11 @@ It includes the following:
   # or
   npm run android
   ```
-
 - In the terminal running the development server, press `i` to open the iOS simulator, `a` to open the Android device or emulator, or `w` to open the web browser.
+
+## Firebase Downloads
+- For uploading and previewing documents
+  npx expo install expo-image-viewer react-native-webview
 
 ## Notes
 
