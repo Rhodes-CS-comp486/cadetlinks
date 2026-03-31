@@ -121,6 +121,7 @@ export const generalStyles = StyleSheet.create({
         borderRadius: 12,
         borderColor: colors.border,
         backgroundColor: colors.inputBackground,
+        paddingHorizontal: 12,
      },
      inputUser: {
         color: colors.inputText,
@@ -129,6 +130,7 @@ export const generalStyles = StyleSheet.create({
         borderRadius: 12,
         borderColor: colors.border,
         backgroundColor: colors.inputBackground,
+        paddingHorizontal: 12,
      },
 
     /* USER INFO CARD */
