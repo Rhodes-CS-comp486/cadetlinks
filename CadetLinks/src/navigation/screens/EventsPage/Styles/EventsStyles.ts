@@ -1,43 +1,35 @@
 import { StyleSheet } from 'react-native';
-import { generalStyles } from './GeneralStyles';
-import {DarkColors as colors } from './colors';
-
-export const calendarTheme = {
-  calendarBackground: colors.overlay,
-  textSectionTitleColor: colors.text,
-  dayTextColor: colors.text,
-  textDisabledColor: colors.muted,
-  monthTextColor: colors.text,
-}
 
 export const eventsStyles = StyleSheet.create({
-  ...generalStyles, //inherit general styles for container and others
-
-  calendar: {
-    borderWidth: 2,
-    borderColor: colors.border,
-    borderRadius: 8,
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
   },
-  
   eventsContainer: {
     maxHeight: 300,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: colors.background,
+    backgroundColor: '#f9f9f9',
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: '#e0e0e0',
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: '#333',
   },
   eventRow: {
     flexDirection: 'row',
-    backgroundColor: colors.card,
+    backgroundColor: '#fff',
     padding: 12,
     marginBottom: 8,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'space-between',
     borderLeftWidth: 4,
-    borderLeftColor: colors.secondary,
-    shadowColor: colors.border,
+    borderLeftColor: '#1e90ff',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
@@ -49,17 +41,17 @@ export const eventsStyles = StyleSheet.create({
   eventTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: colors.text,
+    color: '#333',
     marginBottom: 4,
   },
   eventTime: {
     fontSize: 13,
-    color: colors.muted,
+    color: '#666',
     marginBottom: 4,
   },
   eventLocation: {
     fontSize: 12,
-    color: colors.muted,
+    color: '#999',
   },
   eventTypeContainer: {
     marginLeft: 12,
@@ -72,12 +64,12 @@ export const eventsStyles = StyleSheet.create({
     borderRadius: 4,
   },
   rsvpLabel: {
-    color: colors.text,
-    backgroundColor: colors.primary,
+    color: '#fff',
+    backgroundColor: '#2196F3',
   },
   mandatoryLabel: {
-    color: colors.text,
-    backgroundColor: colors.accent,
+    color: '#fff',
+    backgroundColor: '#FF9800',
   },
   noEventsContainer: {
     flex: 1,
@@ -87,40 +79,50 @@ export const eventsStyles = StyleSheet.create({
   },
   noEventsText: {
     fontSize: 14,
-    color: colors.muted,
+    color: '#999',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: colors.overlay,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: colors.background,
+    backgroundColor: '#fff',
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     padding: 20,
     maxHeight: '85%',
   },
+  closeButton: {
+    alignSelf: 'flex-end',
+    padding: 8,
+    marginBottom: 12,
+  },
+  closeButtonText: {
+    fontSize: 24,
+    color: '#333',
+    fontWeight: 'bold',
+  },
   modalTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: colors.text,
+    color: '#333',
     marginBottom: 16,
   },
   modalLabel: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: colors.primary,
+    color: '#1e90ff',
     marginTop: 12,
     marginBottom: 4,
   },
   modalText: {
     fontSize: 14,
-    color: colors.muted,
+    color: '#666',
     lineHeight: 20,
   },
   rsvpButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#2196F3',
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
@@ -128,12 +130,8 @@ export const eventsStyles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 20,
   },
-  buttonPressed: {
-    backgroundColor: colors.muted,
-    borderColor: colors.border,
-  },
-  mandatoryButton: {
-    backgroundColor: colors.accent,
+  rsvpButtonConfirm: {
+    backgroundColor: '#4CAF50',
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
@@ -141,26 +139,8 @@ export const eventsStyles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 20,
   },
-  mandatoryButtonPressed: {
-    backgroundColor: colors.muted,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  confirmButton: {
-    backgroundColor: colors.success,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  declineButton: {
-    backgroundColor: colors.danger,
+  rsvpButtonDecline: {
+    backgroundColor: '#ff3a3a',
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
@@ -169,48 +149,23 @@ export const eventsStyles = StyleSheet.create({
     marginBottom: 20,
   },
   rsvpButtonText: {
-    color: colors.text,
+    color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
   },
   mandatoryContainer: {
-    backgroundColor: colors.background,
+    backgroundColor: '#FFF3CD',
     padding: 12,
     borderRadius: 8,
     marginTop: 20,
     marginBottom: 20,
     borderLeftWidth: 4,
-    borderLeftColor: colors.accent,
+    borderLeftColor: '#FFC107',
   },
   mandatoryText: {
-    color: colors.muted,
+    color: '#856404',
     fontWeight: 'bold',
     fontSize: 14,
-  },
-  addEventButtonDisabled:{
-    
-
-  },
-  addEventButton: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-    shadowColor: colors.border,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  addEventButtonText: {
-    fontSize: 40,
-    color: colors.text,
-    fontWeight: 'bold'
   },
   scrollWheelIOS: {
     color: '#000000',
@@ -232,5 +187,7 @@ export const eventsStyles = StyleSheet.create({
     backgroundColor: '#f9f9f9',
     fontSize: 16,
     // fontFamily: 'System',
-  },
+  }
+
+  
 });

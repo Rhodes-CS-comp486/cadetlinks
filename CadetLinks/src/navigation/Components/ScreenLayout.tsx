@@ -4,9 +4,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { generalStyles as styles } from "../../styles/GeneralStyles";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { signOut } from "firebase/auth";
-import { auth } from "../../firebase/config";
 
 export function BaseScreenLayout({
   children, 
@@ -22,24 +19,11 @@ export function BaseScreenLayout({
 
   const [menuOpen, setMenuOpen] = React.useState(false);
 
-  const handleLogout = async () => {
-  try {
-    await AsyncStorage.removeItem("cadetKey");
-    await signOut(auth);
-
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "Login" }],
-    });
-  } catch (error) {
-    console.error("Logout failed:", error);
-  }
-};
-
   const menuItems = [
-    {label: "Settings", onPress: () => navigation.navigate('Settings')},
-    {label: "Logout", onPress: handleLogout},
-  ]
+  { label: "Profile Search", onPress: () => navigation.navigate("Search") },
+  { label: "Settings", onPress: () => navigation.navigate("Settings") },
+  { label: "Logout", onPress: () => console.log("Logging out...") },
+  ];
 
   const leftNode = left ?? (
     showBack ? (
