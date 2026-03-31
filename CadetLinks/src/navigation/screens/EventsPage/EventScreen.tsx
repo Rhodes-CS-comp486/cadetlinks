@@ -7,6 +7,8 @@ import TimePicker from './Components/timePicker';
 import DatePicker from './Components/datePicker';
 import { DarkColors as colors } from '../../../styles/colors';
 import { ScreenLayout } from '../../Components/ScreenLayout';
+import { PERMISSIONS } from '../../../assets/constants';
+import { useHomeLogic } from '../HomePage/HomeLogic';
 
 export function Events(): React.ReactElement {
   const {
@@ -29,6 +31,8 @@ export function Events(): React.ReactElement {
     handleCancelAddEvent,
     getLabelTextAndStyle
   } = useEvents();
+
+  const{cadetPermissionsMap} = useHomeLogic();
 
   return (
     <ScreenLayout>
@@ -90,12 +94,14 @@ export function Events(): React.ReactElement {
         )}
 
         {/* Add Event Button */}
-        <TouchableOpacity
-          style={styles.addEventButton}
-          onPress={handleAddEvent}
-        >
-          <Text style={styles.addEventButtonText}>+</Text>
-        </TouchableOpacity>
+        {cadetPermissionsMap.get(PERMISSIONS.EVENT_MAKING) && (
+          <TouchableOpacity
+            style={styles.addEventButton}
+            onPress={handleAddEvent}
+          >
+            <Text style={styles.addEventButtonText}>+</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Event Info Modal */}
         <Modal
@@ -226,7 +232,7 @@ export function Events(): React.ReactElement {
                   ]}
                 />
 
-                {/* 🔥 NEW TOGGLE */}
+                {/* NEW TOGGLE */}
                 <Text style={styles.modalLabel}>Event Type:</Text>
 
                 <View

@@ -21,7 +21,7 @@ import {
 
 type NavAny = ReturnType<typeof useNavigation<any>>;
 
-function iconForAction(id: JobsAction["id"]) {
+function iconForAction(id: JobsAction["id"]) { // this function maps icons to actions.
   switch (id) {
     case "attendance":
       return "checkbox-outline";
@@ -55,12 +55,12 @@ export function Jobs(): React.ReactElement {
     clearAttendanceForEvent,
   } = useJobsLogic();
 
-  const [attendanceModalVisible, setAttendanceModalVisible] = useState(false);
-  const [selectedEventId, setSelectedEventId] = useState<string>("");
-  const [eventDropdownOpen, setEventDropdownOpen] = useState(false);
+  const [attendanceModalVisible, setAttendanceModalVisible] = useState(false); // attendance modal state
+  const [selectedEventId, setSelectedEventId] = useState<string>(""); // selected event ID for attendance modal
+  const [eventDropdownOpen, setEventDropdownOpen] = useState(false); // whether the event dropdown in the attendance modal is open
 
-  const [savingAttendance, setSavingAttendance] = useState(false);
-  const [clearingAttendance, setClearingAttendance] = useState(false);
+  const [savingAttendance, setSavingAttendance] = useState(false); // whether we're currently saving attendance (disables buttons and shows spinner)
+  const [clearingAttendance, setClearingAttendance] = useState(false); // whether we're currently clearing attendance (disables buttons and shows spinner)
 
   // only stores cadets who are NOT present
   const [attendanceOverrides, setAttendanceOverrides] = useState<
@@ -70,18 +70,19 @@ export function Jobs(): React.ReactElement {
   const fullName =
     profile?.firstName || profile?.lastName
       ? `${profile?.firstName ?? ""} ${profile?.lastName ?? ""}`.trim()
-      : "Cadet";
+      : "Cadet"; // grabs cadet name from profile (cadet if no name)
 
-  const jobText = profile?.job ?? "—";
+  const jobText = profile?.job ?? "—"; // grabs job from profile (dash if no job)
 
   const permissionText =
-    permissionNames.length > 0 ? permissionNames.join(", ") : "None";
+    permissionNames.length > 0 ? permissionNames.join(", ") : "None"; // gets permission names or "none"
 
   const selectedEvent = useMemo(
     () => todayEvents.find((event) => event.id === selectedEventId),
     [todayEvents, selectedEventId]
   );
 
+  // counting absent and late
   const markedAbsentCount = useMemo(
     () =>
       Object.values(attendanceOverrides).filter((status) => status === "A")
@@ -96,18 +97,21 @@ export function Jobs(): React.ReactElement {
     [attendanceOverrides]
   );
 
+  // opens attendance modal and loads data
   const openAttendanceModal = async () => {
     try {
       await loadAttendanceModalData();
-      setAttendanceModalVisible(true);
-      setSelectedEventId("");
-      setAttendanceOverrides({});
-      setEventDropdownOpen(false);
-    } catch {
+      setAttendanceModalVisible(true); // opens modal
+      setSelectedEventId(""); // resets selected event
+      setAttendanceOverrides({}); // resets overrides (A or L status)
+      setEventDropdownOpen(false); // closes event dropdown
+    } 
+    catch {
       Alert.alert("Error", "Could not load attendance tools.");
     }
   };
 
+  // helper to set attendance status for a cadet in the overrides state
   const setCadetStatus = (
     cadetKeyToUpdate: string,
     status: AttendanceStatus
@@ -115,10 +119,11 @@ export function Jobs(): React.ReactElement {
     setAttendanceOverrides((prev) => {
       const next = { ...prev };
 
-      // Present is default, so remove override
+      // Present is default, so remove it from overrides if set to P
       if (status === "P") {
         delete next[cadetKeyToUpdate];
-      } else {
+      } 
+      else {
         next[cadetKeyToUpdate] = status;
       }
 
@@ -127,27 +132,29 @@ export function Jobs(): React.ReactElement {
   };
 
   const getCadetStatus = (cadetKeyToCheck: string): AttendanceStatus => {
-    return attendanceOverrides[cadetKeyToCheck] ?? "P";
+    return attendanceOverrides[cadetKeyToCheck] ?? "P"; // if a cadet name isn't in the override list then they're present
   };
 
+  // when you press "save attendance" in the attendance modal (saves attendance to FB and closes modal if successful, shows alert if error)
   const submitAttendance = async () => {
-    if (!selectedEventId) {
+    if (!selectedEventId) { // if no event is selected, show an alert
       Alert.alert("Select an event", "Please choose today's event first.");
       return;
     }
-
     try {
       setSavingAttendance(true);
-      await saveAttendanceForEvent(selectedEventId, attendanceOverrides);
+      await saveAttendanceForEvent(selectedEventId, attendanceOverrides); // saves attendance to FB
       setAttendanceModalVisible(false);
       Alert.alert("Success", "Attendance was saved.");
-    } catch (e: any) {
+    } 
+    catch (e: any) {
       Alert.alert("Could not save attendance", e?.message ?? "Unknown error.");
-    } finally {
+    } 
+    finally {
       setSavingAttendance(false);
     }
   };
-
+  // when you press "clear attendance" in the attendance modal (clears attendance in FB and closes modal if successful, shows alert if error)
   const onClearAttendance = () => {
     if (!selectedEventId) {
       Alert.alert("Select an event", "Please choose an event first.");
@@ -183,6 +190,7 @@ export function Jobs(): React.ReactElement {
     );
   };
 
+  // when you press an action, navigate to where it should go. no routes for files, event making, or account creation yet.
   const onPressAction = async (a: JobsAction) => {
     if (!a.allowed) return;
 
@@ -191,12 +199,7 @@ export function Jobs(): React.ReactElement {
       return;
     }
 
-    if (a.id === "create_accounts") {
-      Alert.alert("Coming soon", "Account creation will be added later.");
-      return;
-    }
-
-    if (!a.routeHint) return;
+    if (!a.routeHint) return; 
     navigation.navigate(a.routeHint);
   };
 
@@ -218,11 +221,11 @@ export function Jobs(): React.ReactElement {
 
             <View style={styles.userinfo_text_container}>
               {loading ? (
-                <View style={{ marginTop: 4 }}>
+                <View style={styles.loadingBlock}>
                   <ActivityIndicator />
                   <Text style={styles.userinfo_sub}>Loading jobs…</Text>
                 </View>
-              ) : error ? (
+              ) : error ? ( 
                 <>
                   <Text style={styles.userinfo_sub}>{error}</Text>
                   {cadetKey ? (
@@ -250,7 +253,7 @@ export function Jobs(): React.ReactElement {
             </View>
           </View>
 
-          {/* ACTIONS */}
+          {/* ACTION CARDS */}
           {!loading && !error && anyVisibleActions ? (
             <>
               <Text style={styles.sectionTitle}>Actions</Text>
@@ -270,7 +273,7 @@ export function Jobs(): React.ReactElement {
                       />
                     </View>
 
-                    <View style={{ flex: 1 }}>
+                    <View style={styles.flexOne}>
                       <Text style={styles.action_title}>{a.title}</Text>
                       <Text style={styles.action_subtitle}>{a.subtitle}</Text>
                     </View>
@@ -297,42 +300,11 @@ export function Jobs(): React.ReactElement {
         transparent
         onRequestClose={() => setAttendanceModalVisible(false)}
       >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.55)",
-            justifyContent: "center",
-            padding: 18,
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: "#1E2430",
-              borderRadius: 18,
-              padding: 18,
-              maxHeight: "90%",
-              borderWidth: 1,
-              borderColor: "#31394A",
-            }}
-          >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
             {/* HEADER */}
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 14,
-              }}
-            >
-              <Text
-                style={{
-                  color: "white",
-                  fontSize: 20,
-                  fontWeight: "700",
-                }}
-              >
-                Take Attendance
-              </Text>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Take Attendance</Text>
 
               <Pressable onPress={() => setAttendanceModalVisible(false)}>
                 <Ionicons name="close" size={24} color="white" />
@@ -340,15 +312,9 @@ export function Jobs(): React.ReactElement {
             </View>
 
             {loadingAttendanceTools ? (
-              <View style={{ paddingVertical: 24 }}>
+              <View style={styles.modalLoadingBlock}>
                 <ActivityIndicator />
-                <Text
-                  style={{
-                    color: "#C9D1D9",
-                    textAlign: "center",
-                    marginTop: 10,
-                  }}
-                >
+                <Text style={styles.modalLoadingText}>
                   Loading today's events and cadets…
                 </Text>
               </View>
@@ -356,29 +322,13 @@ export function Jobs(): React.ReactElement {
               <>
                 <ScrollView showsVerticalScrollIndicator={false}>
                   {/* EVENT DROPDOWN */}
-                  <Text
-                    style={{
-                      color: "white",
-                      fontWeight: "700",
-                      marginBottom: 8,
-                      marginTop: 4,
-                    }}
-                  >
-                    Select Event
-                  </Text>
+                  <Text style={styles.fieldLabel}>Select Event</Text>
 
                   <Pressable
                     onPress={() => setEventDropdownOpen((prev) => !prev)}
-                    style={{
-                      backgroundColor: "#2A3140",
-                      borderRadius: 12,
-                      padding: 14,
-                      borderWidth: 1,
-                      borderColor: "#3A4357",
-                      marginBottom: 8,
-                    }}
+                    style={styles.dropdownButton}
                   >
-                    <Text style={{ color: "white" }}>
+                    <Text style={styles.dropdownButtonText}>
                       {selectedEvent
                         ? `${selectedEvent.eventName} (${selectedEvent.time ?? "No time"})`
                         : "Choose today's event"}
@@ -386,18 +336,9 @@ export function Jobs(): React.ReactElement {
                   </Pressable>
 
                   {eventDropdownOpen ? (
-                    <View
-                      style={{
-                        backgroundColor: "#151A22",
-                        borderRadius: 12,
-                        borderWidth: 1,
-                        borderColor: "#3A4357",
-                        marginBottom: 16,
-                        overflow: "hidden",
-                      }}
-                    >
+                    <View style={styles.dropdownMenu}>
                       {todayEvents.length === 0 ? (
-                        <Text style={{ color: "#C9D1D9", padding: 14 }}>
+                        <Text style={styles.dropdownEmptyText}>
                           No events found for today.
                         </Text>
                       ) : (
@@ -408,16 +349,12 @@ export function Jobs(): React.ReactElement {
                               setSelectedEventId(event.id);
                               setEventDropdownOpen(false);
                             }}
-                            style={{
-                              padding: 14,
-                              borderBottomWidth: 1,
-                              borderBottomColor: "#2A3140",
-                            }}
+                            style={styles.dropdownItem}
                           >
-                            <Text style={{ color: "white", fontWeight: "600" }}>
+                            <Text style={styles.dropdownItemTitle}>
                               {event.eventName}
                             </Text>
-                            <Text style={{ color: "#B9C2CF", marginTop: 2 }}>
+                            <Text style={styles.dropdownItemSubtitle}>
                               {event.time ?? "No time"} •{" "}
                               {event.locationId ?? "No location"}
                             </Text>
@@ -428,141 +365,71 @@ export function Jobs(): React.ReactElement {
                   ) : null}
 
                   {/* SUMMARY */}
-                  <View
-                    style={{
-                      backgroundColor: "#151A22",
-                      borderRadius: 12,
-                      padding: 12,
-                      marginBottom: 14,
-                      borderWidth: 1,
-                      borderColor: "#31394A",
-                    }}
-                  >
-                    <Text style={{ color: "white", fontWeight: "700" }}>
-                      Quick Summary
-                    </Text>
-                    <Text style={{ color: "#C9D1D9", marginTop: 4 }}>
+                  <View style={styles.summaryCard}>
+                    <Text style={styles.summaryTitle}>Quick Summary</Text>
+                    <Text style={styles.summaryText}>
                       Everyone is Present by default.
                     </Text>
-                    <Text style={{ color: "#C9D1D9", marginTop: 2 }}>
+                    <Text style={styles.summaryTextSmallGap}>
                       Absent marked: {markedAbsentCount}
                     </Text>
-                    <Text style={{ color: "#C9D1D9", marginTop: 2 }}>
+                    <Text style={styles.summaryTextSmallGap}>
                       Late marked: {markedLateCount}
                     </Text>
                   </View>
 
                   {/* CADET LIST */}
-                  <Text
-                    style={{
-                      color: "white",
-                      fontWeight: "700",
-                      marginBottom: 10,
-                    }}
-                  >
-                    Cadets
-                  </Text>
+                  <Text style={styles.fieldLabel}>Cadets</Text>
 
-                  <View
-                    style={{
-                      backgroundColor: "#151A22",
-                      borderRadius: 12,
-                      borderWidth: 1,
-                      borderColor: "#31394A",
-                      overflow: "hidden",
-                      marginBottom: 16,
-                    }}
-                  >
+                  <View style={styles.cadetListCard}>
                     {allCadets.map((cadet, index) => {
                       const status = getCadetStatus(cadet.cadetKey);
 
                       return (
                         <View
                           key={cadet.cadetKey}
-                          style={{
-                            padding: 12,
-                            borderBottomWidth:
-                              index === allCadets.length - 1 ? 0 : 1,
-                            borderBottomColor: "#2A3140",
-                          }}
+                          style={[
+                            styles.cadetRow,
+                            index === allCadets.length - 1
+                              ? { borderBottomWidth: 0 }
+                              : null,
+                          ]}
                         >
-                          <Text
-                            style={{
-                              color: "white",
-                              fontWeight: "600",
-                              marginBottom: 10,
-                            }}
-                          >
-                            {cadet.fullName}
-                          </Text>
+                          <Text style={styles.cadetName}>{cadet.fullName}</Text>
 
-                          <View
-                            style={{
-                              flexDirection: "row",
-                              gap: 8,
-                            }}
-                          >
+                          <View style={styles.statusRow}>
                             <Pressable
                               onPress={() => setCadetStatus(cadet.cadetKey, "P")}
-                              style={{
-                                flex: 1,
-                                backgroundColor:
-                                  status === "P" ? "#2E7D32" : "#2A3140",
-                                paddingVertical: 10,
-                                borderRadius: 10,
-                                alignItems: "center",
-                              }}
+                              style={[
+                                styles.statusButton,
+                                status === "P" && styles.presentButtonActive,
+                              ]}
                             >
-                              <Text
-                                style={{
-                                  color: "white",
-                                  fontWeight: "700",
-                                }}
-                              >
+                              <Text style={styles.statusButtonText}>
                                 Present
                               </Text>
                             </Pressable>
 
                             <Pressable
                               onPress={() => setCadetStatus(cadet.cadetKey, "A")}
-                              style={{
-                                flex: 1,
-                                backgroundColor:
-                                  status === "A" ? "#A63D40" : "#2A3140",
-                                paddingVertical: 10,
-                                borderRadius: 10,
-                                alignItems: "center",
-                              }}
+                              style={[
+                                styles.statusButton,
+                                status === "A" && styles.absentButtonActive,
+                              ]}
                             >
-                              <Text
-                                style={{
-                                  color: "white",
-                                  fontWeight: "700",
-                                }}
-                              >
+                              <Text style={styles.statusButtonText}>
                                 Absent
                               </Text>
                             </Pressable>
 
                             <Pressable
                               onPress={() => setCadetStatus(cadet.cadetKey, "L")}
-                              style={{
-                                flex: 1,
-                                backgroundColor:
-                                  status === "L" ? "#C78B2A" : "#2A3140",
-                                paddingVertical: 10,
-                                borderRadius: 10,
-                                alignItems: "center",
-                              }}
+                              style={[
+                                styles.statusButton,
+                                status === "L" && styles.lateButtonActive,
+                              ]}
                             >
-                              <Text
-                                style={{
-                                  color: "white",
-                                  fontWeight: "700",
-                                }}
-                              >
-                                Late
-                              </Text>
+                              <Text style={styles.statusButtonText}>Late</Text>
                             </Pressable>
                           </View>
                         </View>
@@ -572,50 +439,32 @@ export function Jobs(): React.ReactElement {
                 </ScrollView>
 
                 {/* FOOTER BUTTONS */}
-                                {/* FOOTER BUTTONS */}
-                <View
-                  style={{
-                    marginTop: 10,
-                    gap: 10,
-                  }}
-                >
+                <View style={styles.footerButtons}>
                   <Pressable
                     onPress={() => setAttendanceModalVisible(false)}
                     disabled={savingAttendance || clearingAttendance}
-                    style={{
-                      backgroundColor: "#2A3140",
-                      paddingVertical: 14,
-                      borderRadius: 12,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      borderWidth: 1,
-                      borderColor: "#3A4357",
-                      opacity: savingAttendance || clearingAttendance ? 0.7 : 1,
-                    }}
+                    style={[
+                      styles.footerButton,
+                      (savingAttendance || clearingAttendance) &&
+                        styles.footerButtonDisabled,
+                    ]}
                   >
-                    <Text style={{ color: "white", fontWeight: "700" }}>
-                      Cancel
-                    </Text>
+                    <Text style={styles.statusButtonText}>Cancel</Text>
                   </Pressable>
 
                   <Pressable
                     onPress={onClearAttendance}
                     disabled={clearingAttendance || savingAttendance}
-                    style={{
-                      backgroundColor: "#2A3140",
-                      paddingVertical: 14,
-                      borderRadius: 12,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      borderWidth: 1,
-                      borderColor: "#3A4357",
-                      opacity: clearingAttendance || savingAttendance ? 0.7 : 1,
-                    }}
+                    style={[
+                      styles.footerButton,
+                      (clearingAttendance || savingAttendance) &&
+                        styles.footerButtonDisabled,
+                    ]}
                   >
                     {clearingAttendance ? (
                       <ActivityIndicator color="white" />
                     ) : (
-                      <Text style={{ color: "white", fontWeight: "700" }}>
+                      <Text style={styles.statusButtonText}>
                         Clear Attendance
                       </Text>
                     )}
@@ -624,21 +473,16 @@ export function Jobs(): React.ReactElement {
                   <Pressable
                     onPress={submitAttendance}
                     disabled={savingAttendance || clearingAttendance}
-                    style={{
-                      backgroundColor: "#2A3140",
-                      paddingVertical: 14,
-                      borderRadius: 12,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      borderWidth: 1,
-                      borderColor: "#3A4357",
-                      opacity: savingAttendance || clearingAttendance ? 0.7 : 1,
-                    }}
+                    style={[
+                      styles.footerButton,
+                      (savingAttendance || clearingAttendance) &&
+                        styles.footerButtonDisabled,
+                    ]}
                   >
                     {savingAttendance ? (
                       <ActivityIndicator color="white" />
                     ) : (
-                      <Text style={{ color: "white", fontWeight: "700" }}>
+                      <Text style={styles.statusButtonText}>
                         Save Attendance
                       </Text>
                     )}
