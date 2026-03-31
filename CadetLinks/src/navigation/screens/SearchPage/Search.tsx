@@ -1,97 +1,113 @@
-import React, { useMemo, useState } from "react";
+import React from "react";
 import {
   View,
   Text,
+  ScrollView,
   TextInput,
   Pressable,
-  ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { searchStyles as styles } from "../../../styles/SearchStyles";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ScreenLayout } from "../../Components/ScreenLayout";
-
-// something like this to capture the structure in the database
-type SearchCadet = {
-  firstName: string;
-  lastName: string;
-  rank: string;
-  flight: string;
-  job: string;
-};
-
-// maybe a filtering system? idk.
-const filterOptions = ["All", "Flight", "Rank", "Job"] as const;
-type FilterOption = (typeof filterOptions)[number];
+import { searchStyles as styles } from "../../../styles/SearchStyles";
+import { DarkColors as colors } from "../../../styles/colors";
+import { useSearchLogic } from "./SearchLogic";
+import type { RootStackParamList } from "../../index";
 
 export function Search(): React.ReactElement {
-  const [query, setQuery] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState<FilterOption>("All");
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-
+  const { query, setQuery, filteredCadets, loadingCadets, searchError } =
+    useSearchLogic();
 
   return (
-    <ScreenLayout title="Profile Search">
+    <ScreenLayout>
       <ScrollView
         style={styles.body_container}
         contentContainerStyle={{ paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>
-          <Text style={styles.titleCadet}>Cadet</Text>
-          <Text style={styles.titleLinks}> Search</Text>
-        </Text>
+        <Text style={styles.sectionTitle}>Search Cadets</Text>
 
-        <Text style={styles.subtitle}>
-          Search for cadets by name, rank, flight, or job.
-        </Text>
-
-        {/* Search bar */}
         <View style={styles.searchBar}>
           <Ionicons
             name="search"
             size={18}
-            color="#9AA3B2"
+            color={colors.muted}
             style={styles.searchIcon}
           />
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Search cadets..."
-            placeholderTextColor="#9AA3B2"
+            placeholder="Search by name, rank, job, flight..."
+            placeholderTextColor={colors.muted}
             style={styles.searchInput}
           />
+          {/* if there's text in the search bar, show an "X" button to clear it. */}
+          {query.length > 0 ? (
+            <Pressable onPress={() => setQuery("")}>
+              <Ionicons name="close-circle" size={18} color={colors.muted} />
+            </Pressable>
+          ) : null}
         </View>
 
-        {/* Filter chips */}
-        <Text style={styles.sectionTitle}>Filter By</Text>
-        <View style={styles.filterRow}>
-          {filterOptions.map((option) => {
-            const isSelected = selectedFilter === option;
+        {/* show loading state, error, or "no results". otherwise show search results as a list of cards. */}
+        {loadingCadets ? (
+          <View style={styles.stateCard}>
+            <ActivityIndicator />
+            <Text style={styles.stateText}>Loading cadets…</Text>
+          </View>
+        ) : searchError ? (
+          <View style={styles.stateCard}>
+            <Text style={styles.stateText}>{searchError}</Text>
+          </View>
+        ) : filteredCadets.length === 0 ? (
+          <View style={styles.stateCard}>
+            <Text style={styles.stateText}>No cadets found.</Text>
+          </View>
+        ) : (
+          filteredCadets.map((cadet) => (
+            <Pressable
+              key={cadet.cadetKey}
+              style={styles.resultCard}
+              onPress={() =>
+                navigation.navigate("PublicProfile", {
+                  cadetKey: cadet.cadetKey,
+                })
+              }
+            >
+              {/* for each search result, show their name, rank, job, flight, class year. Clicking it goes to their public profile page. */}
+              <View style={styles.resultLeft}>
+                <View style={styles.avatar_container}>
+                  <Ionicons name="person" size={22} color="white" />
+                </View>
 
-            return (
-              <Pressable
-                key={option}
-                onPress={() => setSelectedFilter(option)}
-                style={[
-                  styles.filterChip,
-                  isSelected && styles.filterChipSelected,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    isSelected && styles.filterChipTextSelected,
-                  ]}
-                >
-                  {option}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+                <View style={styles.resultTextContainer}>
+                  <Text style={styles.resultName}>
+                    {cadet.firstName ?? "First"} {cadet.lastName ?? "Last"}
+                  </Text>
 
-        {/* Results */}
-        <Text style={styles.sectionTitle}>Results</Text>
+                  <Text style={styles.resultSub}>
+                    {cadet.cadetRank ?? "—"} • {cadet.job ?? "—"}
+                  </Text>
+
+                  <Text style={styles.resultSub}>
+                    {cadet.flight ?? "—"} • {cadet.classYear ?? "—"}
+                  </Text>
+                </View>
+              </View>
+
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={colors.muted}
+              />
+            </Pressable>
+          ))
+        )}
       </ScrollView>
     </ScreenLayout>
   );

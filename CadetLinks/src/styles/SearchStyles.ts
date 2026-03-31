@@ -5,6 +5,7 @@ import { DarkColors as colors } from "./colors";
 export const searchStyles = StyleSheet.create({
   ...generalStyles,
 
+  /* SEARCH BAR */
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -13,8 +14,8 @@ export const searchStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     paddingHorizontal: 12,
-    height: 52,
-    marginBottom: 14,
+    height: 50,
+    marginBottom: 12,
   },
   searchIcon: {
     marginRight: 8,
@@ -24,82 +25,101 @@ export const searchStyles = StyleSheet.create({
     color: colors.text,
     fontSize: 16,
   },
-  clearButton: {
-    paddingLeft: 8,
-    paddingVertical: 4,
-  },
 
-  filterRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    marginBottom: 8,
-  },
-  filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  filterChipSelected: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
-  },
-  filterChipText: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  filterChipTextSelected: {
-    color: colors.background,
-  },
-
-  resultCard: {
+  /* STATE / EMPTY / ERROR CARDS */
+  stateCard: {
     backgroundColor: colors.card,
     borderRadius: 18,
     padding: 16,
-    marginBottom: 12,
+    marginTop: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stateText: {
+    color: colors.muted,
+    fontSize: 15,
+    textAlign: "center",
+  },
+
+  /* SEARCH RESULTS */
+  resultCard: {
+    backgroundColor: colors.card,
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 10,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+  },
+  resultLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
   },
   resultTextContainer: {
     flex: 1,
-    marginLeft: 14,
+    marginLeft: 12,
   },
   resultName: {
     color: colors.text,
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "700",
-    marginBottom: 4,
   },
   resultSub: {
     color: colors.muted,
-    fontSize: 14,
-    marginTop: 2,
+    fontSize: 13,
+    marginTop: 3,
   },
 
-  emptyStateCard: {
+  /* PUBLIC PROFILE CARD */
+  publicProfileCard: {
     backgroundColor: colors.card,
     borderRadius: 18,
-    padding: 24,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 16,
+  },
+  publicInfoColumn: {
+    flex: 1,
+  },
+  publicImagePlaceholder: {
+    width: 110,
+    height: 130,
+    borderRadius: 16,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: "center",
-    marginTop: 8,
+    justifyContent: "center",
   },
-  emptyStateTitle: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: "700",
-    marginTop: 10,
-  },
-  emptyStateText: {
+  publicImagePlaceholderText: {
     color: colors.muted,
-    fontSize: 14,
-    textAlign: "center",
-    marginTop: 6,
+    fontSize: 13,
+    marginTop: 8,
+    fontWeight: "600",
+  },
+  publicPhoto: {
+    width: 110,
+    height: 130,
+    borderRadius: 16,
+    backgroundColor: colors.background,
   },
 
+  /* BIO */
+  bioCard: {
+    backgroundColor: colors.card,
+    borderRadius: 18,
+    padding: 16,
+  },
+  bioText: {
+    color: colors.text,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+
+  /* TEXT HELPERS */
   label_bold: {
     fontWeight: "700",
     color: colors.text,

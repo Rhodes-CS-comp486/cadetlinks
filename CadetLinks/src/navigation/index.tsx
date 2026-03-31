@@ -11,6 +11,7 @@ import { Settings } from './screens/Settings';
 import { Events } from './screens/EventsPage/EventScreen';
 import { NotFound } from './screens/NotFound';
 import { Search } from "./screens/SearchPage/Search";
+import { PublicProfile } from "./screens/SearchPage/PublicProfiles";
 import { DarkColors as colors } from '../styles/colors';
 
 import calendar from '../assets/calendar.png';
@@ -111,6 +112,13 @@ const RootStack = createNativeStackNavigator({
         headerShown: false,
       },
     },
+    PublicProfile: {
+      screen: PublicProfile,
+      options: {
+        title: "Public Profile",
+        headerShown: false,
+      },
+    },
     ChangePassword: {
       screen: ChangePasswordScreen,
       options: { title: "Change Password" },
@@ -124,7 +132,15 @@ const RootStack = createNativeStackNavigator({
 });
 
 export const Navigation = createStaticNavigation(RootStack);
-export type RootStackParamList = StaticParamList<typeof RootStack>;
+export type RootStackParamList = {
+  Login: undefined;
+  HomeTabs: undefined;
+  Settings: undefined;
+  Search: undefined;
+  PublicProfile: { cadetKey: string };
+  ChangePassword: undefined;
+  NotFound: undefined;
+};
 
 declare global {
   namespace ReactNavigation {
