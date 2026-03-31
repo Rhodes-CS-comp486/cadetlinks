@@ -20,9 +20,10 @@ export function BaseScreenLayout({
   const [menuOpen, setMenuOpen] = React.useState(false);
 
   const menuItems = [
-    {label: "Settings", onPress: () => navigation.navigate('Settings')},
-    {label: "Logout", onPress: () => console.log("Logging out...")},
-  ]
+  { label: "Profile Search", onPress: () => navigation.navigate("Search") },
+  { label: "Settings", onPress: () => navigation.navigate("Settings") },
+  { label: "Logout", onPress: () => console.log("Logging out...") },
+  ];
 
   const leftNode = left ?? (
     showBack ? (
