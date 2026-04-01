@@ -9,13 +9,13 @@ export type PublicCadetProfile = { // only public info for search results/profil
   job?: string;
   classYear?: number;
   bio?: string;
-  photoUrl?: string; // optional photo URL for public profile in db maybe?
+  photoUrl?: string; // optional photo URL for public profile in db maybe
   contact?: {
     schoolEmail?: string;
   };
 };
 
-export function usePublicProfileLogic(cadetKey: string) { // takes cadetKey to load that cadet's public profile info.
+export function usePublicProfileLogic(cadetKey: string) { // takes cadetKey to load that cadet's public profile info
   const [profile, setProfile] = useState<PublicCadetProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);

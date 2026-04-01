@@ -5,7 +5,7 @@ import { DarkColors as colors } from "./colors";
 export const searchStyles = StyleSheet.create({
   ...generalStyles,
 
-  /* SEARCH BAR. */
+  /* SEARCH BAR */
   searchBar: {
     flexDirection: "row",
     alignItems: "center",

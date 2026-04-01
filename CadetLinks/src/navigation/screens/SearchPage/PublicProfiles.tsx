@@ -19,7 +19,7 @@ import type { RootStackParamList } from "../../index";
 
 type PublicProfileRouteProp = RouteProp<RootStackParamList, "PublicProfile">;
 
-export function PublicProfile(): React.ReactElement { // escreen for showing a cadet's public profile when their search result is clicked, takes cadetKey as route param
+export function PublicProfile(): React.ReactElement { 
   const route = useRoute<PublicProfileRouteProp>();
   const { cadetKey } = route.params;
 
