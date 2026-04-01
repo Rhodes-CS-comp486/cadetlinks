@@ -13,6 +13,7 @@ export type UploadDocsModalProps = {
     name: string;
     mimeType: string;
     size: number;
+    //documentName: string; // custom name for the document
   } | null;
   isPickingDocument: boolean;
   isUploadingDocument: boolean;
