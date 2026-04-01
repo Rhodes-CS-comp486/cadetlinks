@@ -185,11 +185,8 @@ export function Events(): React.ReactElement {
                   value={newEvent.title}
                   onChangeText={(text) => setNewEvent({ ...newEvent, title: text })}
                   placeholder='Enter Event Title'
-                  placeholderTextColor={styles.inputPlaceholder.color}
-                  style={[
-                    styles.inputPlaceholder,
-                    newEvent.title.length > 0 ? styles.inputUser : styles.inputPlaceholder
-                  ]}
+                  placeholderTextColor={styles.inputBox.color}
+                  style={[ styles.inputBox ]}
                 />
 
                 <DatePicker
@@ -211,11 +208,8 @@ export function Events(): React.ReactElement {
                   value={newEvent.location}
                   onChangeText={(text) => setNewEvent({ ...newEvent, location: text })}
                   placeholder='Enter Location'
-                  placeholderTextColor={styles.inputPlaceholder.color}
-                  style={[
-                    styles.inputPlaceholder,
-                    newEvent.location.length > 0 ? styles.inputUser : styles.inputPlaceholder
-                  ]}
+                  placeholderTextColor={styles.inputBox.color}
+                  style={[ styles.inputBox ]}
                 />
 
                 {/* Description */}
@@ -224,12 +218,8 @@ export function Events(): React.ReactElement {
                   onChangeText={(text) => setNewEvent({ ...newEvent, description: text })}
                   multiline
                   placeholder='Enter Event Description'
-                  placeholderTextColor={styles.inputPlaceholder.color}
-                  style={[
-                    styles.inputPlaceholder,
-                    newEvent.description.length > 0 ? styles.inputUser : styles.inputPlaceholder,
-                    { height: 80 }
-                  ]}
+                  placeholderTextColor={styles.inputBox.color}
+                  style={[ styles.inputBox, { height: 80 } ]}
                 />
 
                 {/* NEW TOGGLE */}

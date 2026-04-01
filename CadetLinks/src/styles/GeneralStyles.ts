@@ -115,7 +115,7 @@ export const generalStyles = StyleSheet.create({
         fontWeight: 'bold',
     },
     inputPlaceholder: { 
-        color: colors.inputPlaceholderText,
+        color: colors.inputText,
         height: 40,
         borderWidth: 2,
         borderRadius: 12,
@@ -123,7 +123,7 @@ export const generalStyles = StyleSheet.create({
         backgroundColor: colors.inputBackground,
      },
      inputUser: {
-        color: colors.inputUserText,
+        color: colors.inputText,
         height: 40,
         borderWidth: 2,
         borderRadius: 12,
