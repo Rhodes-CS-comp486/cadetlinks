@@ -1,0 +1,35 @@
+query ListAllBooks @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public as it only lists books.") {
+  books(limit: 10, orderBy: [{createdAt: DESC}]) {
+    id
+    title
+    author
+    status
+  }
+}
+
+mutation CreateJournalEntryForCurrentUser($title: String!, $content: String!, $entryDate: Date!, $tags: [String!]) @auth(level: USER) {
+  journalEntry_insert(data: {
+    userId_expr: "auth.uid",
+    title: $title,
+    content: $content,
+    entryDate: $entryDate,
+    tags: $tags
+  })
+}
+
+query GetCurrentUserProfile @auth(level: USER) {
+  user(key: {id_expr: "auth.uid"}) {
+    id
+    username
+    email
+    displayName
+    profilePictureUrl
+    createdAt
+  }
+}
+
+mutation UpdateTaskStatus($id: UUID!, $status: String!) @auth(level: USER) {
+  task_update(key: {id: $id, userId_expr: "auth.uid"}, data: {
+    status: $status
+  })
+}

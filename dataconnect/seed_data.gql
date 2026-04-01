@@ -1,0 +1,73 @@
+mutation SeedData @transaction @auth(level: USER, insecureReason: "Seed data is for development and testing purposes only and should not be accessible in production without proper authorization.") {
+  user1: user_insert(data: {
+    id: "a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1",
+    username: "userone",
+    email: "userone@example.com",
+    createdAt: "2023-01-01T10:00:00Z",
+    displayName: "User One",
+    profilePictureUrl: "https://example.com/pfp1.jpg"
+  })
+  user2: user_insert(data: {
+    id: "b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2",
+    username: "usertwo",
+    email: "usertwo@example.com",
+    createdAt: "2023-01-02T11:00:00Z",
+    displayName: "User Two",
+    profilePictureUrl: "https://example.com/pfp2.jpg"
+  })
+  book1: book_insert(data: {
+    id: "c3c3c3c3-c3c3-c3c3-c3c3-c3c3c3c3c3c3",
+    userId: "a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1",
+    title: "The Great Adventure",
+    author: "Author A",
+    status: "READING",
+    currentPage: 50,
+    totalPages: 200,
+    startDate: "2023-01-05",
+    createdAt: "2023-01-05T12:00:00Z",
+    rating: 4
+  })
+  book2: book_insert(data: {
+    id: "d4d4d4d4-d4d4-d4d4-d4d4-d4d4d4d4d4d4",
+    userId: "b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2",
+    title: "Mystery of the Old House",
+    author: "Author B",
+    status: "COMPLETED",
+    currentPage: 250,
+    totalPages: 250,
+    startDate: "2022-11-10",
+    finishDate: "2022-12-15",
+    createdAt: "2022-11-10T09:30:00Z",
+    rating: 5
+  })
+  task1: task_insert(data: {
+    id: "e5e5e5e5-e5e5-e5e5-e5e5-e5e5e5e5e5e5",
+    userId: "a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1",
+    title: "Finish project report",
+    status: "IN_PROGRESS",
+    dueDate: "2023-01-15",
+    priority: "HIGH",
+    project: "Work",
+    description: "Complete the Q1 project report for review.",
+    createdAt: "2023-01-03T14:00:00Z"
+  })
+  journal1: journalEntry_insert(data: {
+    id: "f6f6f6f6-f6f6-f6f6-f6f6-f6f6f6f6f6f6",
+    userId: "a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1",
+    title: "Morning Reflections",
+    content: "Started the day with a walk and some journaling. Feeling refreshed and ready.",
+    entryDate: "2023-01-04",
+    tags: ["morning", "thoughts", "wellbeing"],
+    createdAt: "2023-01-04T08:00:00Z"
+  })
+  transaction1: financialTransaction_insert(data: {
+    id: "g7g7g7g7-g7g7-g7g7-g7g7-g7g7g7g7g7g7",
+    userId: "a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1",
+    amount: 50.75,
+    type: "EXPENSE",
+    category: "Groceries",
+    transactionDate: "2023-01-06",
+    description: "Weekly grocery shopping at SuperMart",
+    createdAt: "2023-01-06T18:00:00Z"
+  })
+}
