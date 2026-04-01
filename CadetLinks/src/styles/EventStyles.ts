@@ -187,6 +187,10 @@ export const eventsStyles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 14,
   },
+  addEventButtonDisabled:{
+    
+
+  },
   addEventButton: {
     position: 'absolute',
     bottom: 20,

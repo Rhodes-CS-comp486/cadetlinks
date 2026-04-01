@@ -3,13 +3,15 @@ import { HeaderButton, Text } from '@react-navigation/elements';
 import { createStaticNavigation, StaticParamList } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Image } from 'react-native';
-import { Home } from './screens/Home';
-import { Login } from "./screens/Login";
+import { HomePage } from './screens/HomePage/Home';
+import { Login } from "./screens/LoginPage/Login";
 import { Profile } from './screens/ProfilePage/Profile';
 import { Jobs } from './screens/JobsPage/Jobs';
 import { Settings } from './screens/Settings';
 import { Events } from './screens/EventsPage/EventScreen';
 import { NotFound } from './screens/NotFound';
+import { Search } from "./screens/SearchPage/Search";
+import { PublicProfile } from "./screens/SearchPage/PublicProfiles";
 import { DarkColors as colors } from '../styles/colors';
 
 import calendar from '../assets/calendar.png';
@@ -38,7 +40,7 @@ const HomeTabs = createBottomTabNavigator({
     },
   screens: {
     Home: {
-      screen: Home,
+      screen: HomePage,
       options: {
         title: 'Home',
         headerShown: false,
@@ -103,6 +105,20 @@ const RootStack = createNativeStackNavigator({
         ),
       }),
     },
+    Search: {
+      screen: Search,
+      options: {
+        title: "Profile Search",
+        headerShown: false,
+      },
+    },
+    PublicProfile: {
+      screen: PublicProfile,
+      options: {
+        title: "Public Profile",
+        headerShown: false,
+      },
+    },
     ChangePassword: {
       screen: ChangePasswordScreen,
       options: { title: "Change Password" },
@@ -116,7 +132,15 @@ const RootStack = createNativeStackNavigator({
 });
 
 export const Navigation = createStaticNavigation(RootStack);
-export type RootStackParamList = StaticParamList<typeof RootStack>;
+export type RootStackParamList = {
+  Login: undefined;
+  HomeTabs: undefined;
+  Settings: undefined;
+  Search: undefined;
+  PublicProfile: { cadetKey: string };
+  ChangePassword: undefined;
+  NotFound: undefined;
+};
 
 declare global {
   namespace ReactNavigation {
