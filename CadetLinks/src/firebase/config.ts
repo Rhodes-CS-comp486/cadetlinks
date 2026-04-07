@@ -1,5 +1,6 @@
 // firebase/config.ts
 import { initializeApp } from "firebase/app";
+import { isSupported, getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getDatabase } from "firebase/database";
 import { getStorage } from "firebase/storage";
@@ -17,6 +18,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+isSupported().then((supported) => { if (supported) getAnalytics(app); });
 export const db = getDatabase(app);
 export const auth = getAuth(app);
 export const storage = getStorage(app, "gs://cadetlinks.firebasestorage.app"); 
