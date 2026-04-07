@@ -19,6 +19,7 @@ export function HomePage() {
     cadetPermissionsMap,
     hasPermission,
     announcements,
+    upcomingEvents,
     navigation
   } = useHomeLogic();
 
@@ -43,7 +44,27 @@ export function HomePage() {
         </View>
 
         <View style={styles.eventsContainer}>
-        <Text style={styles.sectionTitle}> Upcoming Events </Text>
+          <Text style={styles.sectionTitle}> Upcoming Events </Text>
+
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingBottom: 10 }}
+            persistentScrollbar={true}
+          >
+            {upcomingEvents.length === 0 && (
+              <Text style={styles.noEventsText}>No events in the next 3 days.</Text>
+            )}
+
+            {upcomingEvents.map((event) => (
+              <View key={event.id} style={styles.eventCard}>
+                <Text style={styles.eventTitle}>{event.title}</Text>
+                <Text style={styles.eventMeta}>
+                  {event.time.toLocaleDateString()} at {event.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </Text>
+                <Text style={styles.eventMeta}>{event.location}</Text>
+              </View>
+            ))}
+          </ScrollView>
         </View>
 
       </View>
