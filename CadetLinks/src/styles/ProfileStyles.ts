@@ -27,6 +27,7 @@ export const profileStyles = StyleSheet.create({
         backgroundColor: colors.background,
     },
     circle_good: { borderColor: colors.success },
+    circle_warning: { borderColor: colors.warning },
     circle_bad: { borderColor: colors.danger },
     attendance_percent_text: {
         color: colors.text,
@@ -46,6 +47,7 @@ export const profileStyles = StyleSheet.create({
         borderRadius: 999,
     },
     pill_good: { backgroundColor: colors.success },
+    pill_warning: { backgroundColor: colors.warning },
     pill_bad: { backgroundColor: colors.danger },
     standing_pill_text: { 
         color: colors.text, 
