@@ -187,6 +187,7 @@ export function useProfileLogic() {
         );
       } catch (error) {
         console.error("❌ Error reading profile/attendance (Profile):", error);
+        console.log(error);
         setProfileError("Could not load profile.");
         setAttendanceError("Could not load attendance.");
         setLoadingAttendance(false);
