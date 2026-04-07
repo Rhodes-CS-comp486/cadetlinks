@@ -4,34 +4,34 @@ import {
   Text,
   TextInput,
   Pressable,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../index";
-import { useLoginLogic,cadetKey } from "./LoginLogic";
+import { useLoginLogic } from "./LoginLogic";
 // import AsyncStorage from "@react-native-async-storage/async-storage";
 // import { ref, get } from "firebase/database";
 // import { db } from "../../../firebase/config";
 
+
 import { loginStyles as styles } from "../../../styles/LoginStyles";
+
 
 //import { loginStyles as styles } from "./styles/loginStyles";
 export function Login() {
-  const { 
+  const {
     handleLogin,
     email,
     setEmail,
-    password, 
-    setPassword, 
-    error, 
+    password,
+    setPassword,
+    error,
     setError,
-    loading, 
+    loading,
     setLoading,
     navigation
   } = useLoginLogic();
@@ -48,30 +48,44 @@ export function Login() {
             <Text style={[styles.title, styles.titleLinks]}>Links</Text>
           </Text>
 
+
           <Text style={styles.subtitle}>AFROTC Cadet Portal</Text>
 
+
           <View style={styles.card}>
-            <Text style={styles.text}>Username</Text>
+            <Text style={styles.text}>Email</Text>
             <TextInput
               value={email}
               onChangeText={setEmail}
-              placeholder="Email or cadet key"
+              placeholder=" Cadet Email"
               placeholderTextColor={styles.inputPlaceholder.color}
               autoCapitalize="none"
-              style={[styles.inputPlaceholder, email.length > 0 ? styles.inputUser : styles.inputPlaceholder]}
+              keyboardType="email-address"
+              style={[
+                styles.inputPlaceholder,
+                email.length > 0 ? styles.inputUser : styles.inputPlaceholder,
+              ]}
             />
+
 
             <Text style={styles.text}>Password</Text>
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder="••••••••"
+              placeholder=" ••••••••"
               placeholderTextColor={styles.inputPlaceholder.color}
               secureTextEntry
-              style={[styles.inputPlaceholder,password.length > 0 ? styles.inputUser : styles.inputPlaceholder]}
+              style={[
+                styles.inputPlaceholder,
+                password.length > 0
+                  ? styles.inputUser
+                  : styles.inputPlaceholder,
+              ]}
             />
 
+
             {error !== "" && <Text style={styles.errorText}>{error}</Text>}
+
 
             <Pressable
               style={[styles.primaryBtn, loading && { opacity: 0.8 }]}

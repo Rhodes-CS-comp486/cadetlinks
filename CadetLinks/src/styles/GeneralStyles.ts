@@ -58,6 +58,19 @@ export const generalStyles = StyleSheet.create({
             backgroundColor: colors.background,
     },
 
+    successText: {
+        color: colors.success,
+        marginTop: 8,
+        fontSize: 14,
+    },
+
+    errorText: {
+        color: colors.danger,
+        marginTop: 8,
+        fontSize: 14,
+    },
+    
+
     /* Wrap everything in a screens returned view in a ScreenLayout, then in a body_container to apply the same header, padding and background color to all screens */
     body_container: {
         flex: 1,
@@ -102,7 +115,7 @@ export const generalStyles = StyleSheet.create({
         fontWeight: 'bold',
     },
     inputPlaceholder: { 
-        color: colors.inputPlaceholderText,
+        color: colors.inputText,
         height: 40,
         borderWidth: 2,
         borderRadius: 12,
@@ -110,7 +123,7 @@ export const generalStyles = StyleSheet.create({
         backgroundColor: colors.inputBackground,
      },
      inputUser: {
-        color: colors.inputUserText,
+        color: colors.inputText,
         height: 40,
         borderWidth: 2,
         borderRadius: 12,
