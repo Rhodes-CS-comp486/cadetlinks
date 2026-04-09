@@ -37,9 +37,10 @@ export function BaseScreenLayout({
 };
 
   const menuItems = [
-    {label: "Settings", onPress: () => navigation.navigate('Settings')},
-    {label: "Logout", onPress: handleLogout},
-  ]
+  { label: "Profile Search", onPress: () => navigation.navigate("Search") },
+  { label: "Settings", onPress: () => navigation.navigate("Settings") },
+  { label: "Logout", onPress: () => handleLogout() },
+  ];
 
   const leftNode = left ?? (
     showBack ? (
