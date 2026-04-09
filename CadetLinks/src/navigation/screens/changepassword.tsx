@@ -1,137 +1,123 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, Alert, StyleSheet, Pressable } from "react-native";
-import {
-  getAuth,
-  updatePassword,
-  reauthenticateWithCredential,
-  EmailAuthProvider
-} from "firebase/auth";
+import { View, Text, TextInput, Alert, StyleSheet, Pressable, ActivityIndicator } from "react-native";
+import { getAuth, sendPasswordResetEmail } from "firebase/auth";
 
-export default function ChangePasswordScreen() {
+export default function ResetPasswordScreen() {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [oldPasswordVisible, setOldPasswordVisible] = useState(false);
-  const [newPasswordVisible, setNewPasswordVisible] = useState(false);
-
-  const auth = getAuth();
-  const user = auth.currentUser;
-
-  const changePassword = async () => {
-
-    if (!oldPassword || !newPassword) {
-      Alert.alert("Error", "Please fill all fields");
+  const handleResetPassword = async () => {
+    if (!email.trim()) {
+      Alert.alert("Error", "Please enter your email address");
       return;
     }
 
-    if (!user || !user.email) {
-      Alert.alert("Error", "User not logged in");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      Alert.alert("Error", "Please enter a valid email address");
       return;
     }
+
+    const auth = getAuth();
+    setLoading(true);
 
     try {
-
-      const credential = EmailAuthProvider.credential(
-        user.email,
-        oldPassword
+      await sendPasswordResetEmail(auth, email.trim());
+      Alert.alert(
+        "Email Sent",
+        "If this email is registered, you'll receive a password reset link shortly.",
+        [{ text: "OK", onPress: () => setEmail("") }]
       );
-
-      await reauthenticateWithCredential(user, credential);
-
-      await updatePassword(user, newPassword);
-
-      Alert.alert("Success", "Password updated");
-
-      setOldPassword("");
-      setNewPassword("");
-
     } catch (error: any) {
-
-      console.log("Password change error:", error);
-
-      Alert.alert("Error", "Password change failed");
-
+      console.log("Reset error:", error);
+      Alert.alert(
+        "Email Sent",
+        "If this email is registered, you'll receive a password reset link shortly."
+      );
+    } finally {
+      setLoading(false);
     }
-
   };
 
   return (
-
     <View style={styles.container}>
+      <Text style={styles.title}>Reset Password</Text>
 
-      <Text style={styles.title}>Change Password</Text>
+      <Text style={styles.subtitle}>
+        Enter your email address and we'll send you a link to reset your password.
+      </Text>
 
-      <View style={styles.passwordContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Old Password"
-          secureTextEntry={!oldPasswordVisible}
-          value={oldPassword}
-          onChangeText={setOldPassword}
-        />
-        <Pressable onPress={() => setOldPasswordVisible(!oldPasswordVisible)}>
-          <Text style={styles.toggleText}>{oldPasswordVisible ? "Hide" : "Show"}</Text>
-        </Pressable>
-      </View>
+      <TextInput
+        style={styles.input}
+        placeholder="Email Address"
+        placeholderTextColor="#888"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        autoCorrect={false}
+        value={email}
+        onChangeText={setEmail}
+      />
 
-      <View style={styles.passwordContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="New Password"
-          secureTextEntry={!newPasswordVisible}
-          value={newPassword}
-          onChangeText={setNewPassword}
-        />
-        <Pressable onPress={() => setNewPasswordVisible(!newPasswordVisible)}>
-          <Text style={styles.toggleText}>{newPasswordVisible ? "Hide" : "Show"}</Text>
-        </Pressable>
-      </View>
-
-      <Button title="Change Password" onPress={changePassword} />
-
+      <Pressable
+        style={({ pressed }) => [styles.button, pressed && styles.buttonPressed, loading && styles.buttonDisabled]}
+        onPress={handleResetPassword}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#0B1220" />
+        ) : (
+          <Text style={styles.buttonText}>Send Reset Link</Text>
+        )}
+      </Pressable>
     </View>
-
   );
 }
 
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
     backgroundColor: "#0B1220",
     justifyContent: "center",
-    padding: 20
+    padding: 20,
   },
-
   title: {
     fontSize: 24,
     marginBottom: 20,
     textAlign: "center",
     color: "#FFFFFF",
-    fontWeight: "800"
+    fontWeight: "800",
   },
-
-  passwordContainer: {
+  subtitle: {
+    fontSize: 14,
+    color: "#888",
+    textAlign: "center",
     marginBottom: 15,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10
+    lineHeight: 20,
   },
-
   input: {
-    flex: 1,
     borderWidth: 1,
     borderColor: "#ccc",
     padding: 10,
     borderRadius: 5,
     backgroundColor: "#111B2E",
-    color: "#FFFFFF"
+    color: "#FFFFFF",
+    marginBottom: 15,
   },
-
-  toggleText: {
-    color: "#FB9E50",
+  button: {
+    backgroundColor: "#FB9E50",
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+  },
+  buttonPressed: {
+    opacity: 0.85,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  buttonText: {
+    color: "#0B1220",
     fontWeight: "600",
-    paddingHorizontal: 8
-  }
-
+    fontSize: 15,
+  },
 });
