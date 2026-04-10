@@ -20,7 +20,7 @@ export function HomePage() {
     hasPermission,
     announcements,
     upcomingEvents,
-    navigation
+    navigation,
   } = useHomeLogic();
 
   return (

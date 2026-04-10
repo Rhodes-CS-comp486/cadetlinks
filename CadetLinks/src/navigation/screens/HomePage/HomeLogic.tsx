@@ -1,7 +1,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { onValue, ref, get } from 'firebase/database';
+import { ref, onValue, get } from "firebase/database";
 import { db } from '../../../firebase/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PERMISSIONS } from '../../../assets/constants';
@@ -13,6 +13,21 @@ import { Event } from '../../../assets/types';
 
 export let cadetObject: any = null;
 
+export interface Announcement {
+  id: string;
+  title: string;
+  body: string;
+  importance: string;
+  retirementDate: Date;
+}
+
+type AnnouncementDbValue = {
+  title: string;
+  body: string;
+  importance: string;
+  retirementDate: string;
+};
+
 
 export function useHomeLogic() {
   const navigation = useNavigation();
@@ -23,7 +38,7 @@ export function useHomeLogic() {
         [PERMISSIONS.FILE_UPLOADING, false],
         [PERMISSIONS.ATTENDANCE_EDITING, false]
     ])
-);
+  );
 
   const parseLocalDateTime = (dateStr: string, timeStr: string): Date | null => {
     const [year, month, day] = String(dateStr).split('-').map(Number);
@@ -164,14 +179,45 @@ export function useHomeLogic() {
     });
   }, [navigation]); 
 
-  //Announcements
-  const announcements = [
-  { id: '1', title: 'LLAB Uniform', body: 'OCPs required this Thursday.' },
-  { id: '2', title: 'PT Location Change', body: 'Meet at gym instead of track this week.' },
-  { id: '3', title: 'LLAB Uniform', body: 'Dress Blues required next Thursday.' },
-  { id: '4', title: 'PT Cancellation', body: 'PT on 23 Feb has been cancelled.' },
-  { id: '5', title: 'Upcoming PFD', body: 'The next PFD is scheduled for 28 Feb.' },
-  ];
+  /** Announcements */
+  // Loading announcements and listening for changes in real-time
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  useEffect(() => {
+    const announcementsRef = ref(db, 'announcements');
+
+    const unsubscribe = onValue(announcementsRef, (snapshot) => {
+      const announcementsData = snapshot.val() as Record<string, AnnouncementDbValue> | null;
+      if (!announcementsData) {
+        setAnnouncements([]);
+        return;
+      }
+      const announcementsList: Announcement[] = Object.entries(announcementsData).map(([id, value]) => {
+        const parsedDate = parseLocalDateTime(value.retirementDate, '00:00:00');
+        if (!parsedDate) return null;
+
+        return {
+          id,
+          title: value.title,
+          body: value.body,
+          importance: value.importance,
+          retirementDate: parsedDate,
+        };
+      }).filter((a): a is Announcement => a !== null);
+
+      // Sorting announcements by importance (High > Medium > Low)
+      const importanceOrder: Record<string, number> = {
+        'High': 3,
+        'Medium': 2,
+        'Low': 1,
+      };
+      announcementsList.sort((a, b) => importanceOrder[b.importance] - importanceOrder[a.importance]);
+
+      setAnnouncements(announcementsList);
+      console.log("Loaded announcements:", announcementsList);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const hasPermission = (permission: string): boolean => {
     return cadetPermissionsMap.get(permission) || false;
@@ -186,3 +232,4 @@ export function useHomeLogic() {
   };
   
 }
+
