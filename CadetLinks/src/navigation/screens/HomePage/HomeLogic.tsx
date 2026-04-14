@@ -1,11 +1,11 @@
 
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { ref, onValue, get } from "firebase/database";
+import { ref, onValue, get, set } from "firebase/database";
 import { db } from '../../../firebase/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PERMISSIONS } from '../../../assets/constants';
-import {TouchableOpacity} from 'react-native';
+import {TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Event } from '../../../assets/types';
 // import { ca } from 'react-native-paper-dates';
@@ -182,6 +182,15 @@ export function useHomeLogic() {
   /** Announcements */
   // Loading announcements and listening for changes in real-time
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [addAnnouncementModalVisible, setAddAnnouncementModalVisible] = useState(false);
+  const [newAnnouncement, setNewAnnouncement] = useState<Announcement>({
+    id: '',
+    title: '',
+    body: '',
+    importance: 'Low',
+    retirementDate: new Date(),
+  });
+  
   useEffect(() => {
     const announcementsRef = ref(db, 'announcements');
 
@@ -219,6 +228,68 @@ export function useHomeLogic() {
     return () => unsubscribe();
   }, []);
 
+  const handleAddAnnouncement = () => {
+    setNewAnnouncement({
+      id: '',
+      title: '',
+      body: '',
+      importance: 'Low',
+      retirementDate: new Date(),
+    });
+    setAddAnnouncementModalVisible(true);
+  }
+
+  const handleCancelAddAnnouncement = () => {
+    setAddAnnouncementModalVisible(false);
+  }
+
+  const handleConfirmAddAnnouncement = async () => {
+    if (!newAnnouncement.title || !newAnnouncement.body || !newAnnouncement.importance || !newAnnouncement.retirementDate) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+    
+    await writeToAnnouncementsdb(newAnnouncement);
+    setAddAnnouncementModalVisible(false);
+  }
+
+  const formatDateOnly = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const generateUniqueId = (): string => {
+    return `announcement-${Date.now()}`;
+  };
+
+  const writeToAnnouncementsdb = async (announcement: Announcement) => {
+
+    announcement = reformatAnnouncementforDB(announcement); // This will set the ID and reformat the date for DB storage
+
+    try {
+      await set(ref(db, 'announcements/' + announcement.id), {
+        title: announcement.title,
+        retirementDate: formatDateOnly(announcement.retirementDate),
+        body: announcement.body,
+        importance: announcement.importance,
+      });
+      console.log("Announcement written to DB:", announcement);
+    } catch (error) {
+      console.error("Error writing announcement to DB:", error);
+    }
+  }
+
+  const reformatAnnouncementforDB = (announcement: Announcement): Announcement => {
+    const id = announcement.id || generateUniqueId();
+    return {
+      ...announcement,
+      id,
+    };
+  }
+
+
   const hasPermission = (permission: string): boolean => {
     return cadetPermissionsMap.get(permission) || false;
   };
@@ -228,7 +299,12 @@ export function useHomeLogic() {
     cadetPermissionsMap,
     hasPermission,
     announcements,
+    newAnnouncement,
+    setNewAnnouncement,
     upcomingEvents,
+    addAnnouncementModalVisible,
+    handleAddAnnouncement,
+    handleCancelAddAnnouncement,
   };
   
 }
