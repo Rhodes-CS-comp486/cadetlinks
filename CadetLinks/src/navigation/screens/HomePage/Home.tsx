@@ -13,6 +13,7 @@ import { useHomeLogic, Announcement } from './HomeLogic';
 import { PERMISSIONS } from '../../../assets/constants';
 import { TextInput } from 'react-native-gesture-handler';
 import DatePicker from '../EventsPage/Components/datePicker';
+import { Ionicons } from "@expo/vector-icons";
 
 
 export function HomePage() {
@@ -29,6 +30,9 @@ export function HomePage() {
     handleAddAnnouncement,
     handleConfirmAddAnnouncement,
     handleCancelAddAnnouncement,
+    deleteAnnouncementModalVisible,
+    handleDeleteAnnouncement,
+    confirmDeleteAnnouncement,
   } = useHomeLogic();
 
   return (
@@ -54,7 +58,12 @@ export function HomePage() {
           >
             {announcements.map(item => (
               <View key={item.id} style={styles.announcementCard}>
-                <Text style={styles.announcementTitle}>{item.title}</Text>
+                <View style={{ flexDirection: 'row'}}>
+                  <Text style={styles.announcementTitle}>{item.title}</Text>
+                  <TouchableOpacity onPress={() => handleDeleteAnnouncement(item.id)} style={{ marginLeft: 'auto' }}>
+                    <Ionicons name="trash" size={20} color="white" />
+                  </TouchableOpacity>
+                </View>
                 <Text style={styles.announcementBody}>{item.body}</Text>
               </View>
             ))}
