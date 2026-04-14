@@ -25,6 +25,33 @@ export const homeStyles = StyleSheet.create({
         color: colors.muted,
         marginTop: 4,
     },
+    addAnnouncementButton: {
+        backgroundColor: colors.primary,
+        height: 25,
+        width: 140,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 4,
+        marginLeft: 'auto',
+        marginTop: 'auto',
+        marginBottom: 'auto',
+    },
+    addAnnouncementButtonText: {
+        color: colors.text,
+    },
+    importanceButton: {
+        backgroundColor: colors.primary,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 4,
+        marginRight: 8,
+    },
+    importanceButtonSelected: {
+        backgroundColor: colors.accent,
+    },
+    importanceButtonText: {
+        color: colors.text,
+    },
     eventsContainer: {
         backgroundColor: colors.overlay,
         borderRadius: 18,

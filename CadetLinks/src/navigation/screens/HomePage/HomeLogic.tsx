@@ -1,17 +1,32 @@
 
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { onValue, ref, get } from 'firebase/database';
+import { ref, onValue, get, set } from "firebase/database";
 import { db } from '../../../firebase/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PERMISSIONS } from '../../../assets/constants';
-import {TouchableOpacity} from 'react-native';
+import {TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Event } from '../../../assets/types';
 // import { ca } from 'react-native-paper-dates';
 
 
 export let cadetObject: any = null;
+
+export interface Announcement {
+  id: string;
+  title: string;
+  body: string;
+  importance: string;
+  retirementDate: Date;
+}
+
+type AnnouncementDbValue = {
+  title: string;
+  body: string;
+  importance: string;
+  retirementDate: string;
+};
 
 
 export function useHomeLogic() {
@@ -23,7 +38,7 @@ export function useHomeLogic() {
         [PERMISSIONS.FILE_UPLOADING, false],
         [PERMISSIONS.ATTENDANCE_EDITING, false]
     ])
-);
+  );
 
   const parseLocalDateTime = (dateStr: string, timeStr: string): Date | null => {
     const [year, month, day] = String(dateStr).split('-').map(Number);
@@ -164,14 +179,116 @@ export function useHomeLogic() {
     });
   }, [navigation]); 
 
-  //Announcements
-  const announcements = [
-  { id: '1', title: 'LLAB Uniform', body: 'OCPs required this Thursday.' },
-  { id: '2', title: 'PT Location Change', body: 'Meet at gym instead of track this week.' },
-  { id: '3', title: 'LLAB Uniform', body: 'Dress Blues required next Thursday.' },
-  { id: '4', title: 'PT Cancellation', body: 'PT on 23 Feb has been cancelled.' },
-  { id: '5', title: 'Upcoming PFD', body: 'The next PFD is scheduled for 28 Feb.' },
-  ];
+  {/** Announcements */}
+  // Loading announcements and listening for changes in real-time
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [addAnnouncementModalVisible, setAddAnnouncementModalVisible] = useState(false);
+  const [newAnnouncement, setNewAnnouncement] = useState<Announcement>({
+    id: '',
+    title: '',
+    body: '',
+    importance: 'Low',
+    retirementDate: new Date(),
+  });
+  
+  useEffect(() => {
+    const announcementsRef = ref(db, 'announcements');
+
+    const unsubscribe = onValue(announcementsRef, (snapshot) => {
+      const announcementsData = snapshot.val() as Record<string, AnnouncementDbValue> | null;
+      if (!announcementsData) {
+        setAnnouncements([]);
+        return;
+      }
+      const announcementsList: Announcement[] = Object.entries(announcementsData).map(([id, value]) => {
+        const parsedDate = parseLocalDateTime(value.retirementDate, '00:00:00');
+        if (!parsedDate) return null;
+
+        return {
+          id,
+          title: value.title,
+          body: value.body,
+          importance: value.importance,
+          retirementDate: parsedDate,
+        };
+      }).filter((a): a is Announcement => a !== null);
+
+      // Sorting announcements by importance (High > Medium > Low)
+      const importanceOrder: Record<string, number> = {
+        'High': 3,
+        'Medium': 2,
+        'Low': 1,
+      };
+      announcementsList.sort((a, b) => importanceOrder[b.importance] - importanceOrder[a.importance]);
+
+      setAnnouncements(announcementsList);
+      console.log("Loaded announcements:", announcementsList);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleAddAnnouncement = () => {
+    setNewAnnouncement({
+      id: '',
+      title: '',
+      body: '',
+      importance: 'Low',
+      retirementDate: new Date(),
+    });
+    setAddAnnouncementModalVisible(true);
+  }
+
+  const handleCancelAddAnnouncement = () => {
+    setAddAnnouncementModalVisible(false);
+  }
+
+  const handleConfirmAddAnnouncement = async () => {
+    if (!newAnnouncement.title || !newAnnouncement.body || !newAnnouncement.importance || !newAnnouncement.retirementDate) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+    
+    await writeToAnnouncementsdb(newAnnouncement);
+    setAddAnnouncementModalVisible(false);
+  }
+
+  const formatDateOnly = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const generateUniqueId = (): string => {
+    return `announcement-${Date.now()}`;
+  };
+
+  const writeToAnnouncementsdb = async (announcement: Announcement) => {
+
+    announcement = reformatAnnouncementforDB(announcement); // This will set the ID and reformat the date for DB storage
+
+    try {
+      await set(ref(db, 'announcements/' + announcement.id), {
+        title: announcement.title,
+        retirementDate: formatDateOnly(announcement.retirementDate),
+        body: announcement.body,
+        importance: announcement.importance,
+      });
+      console.log("Announcement written to DB:", announcement);
+    } catch (error) {
+      console.error("Error writing announcement to DB:", error);
+    }
+  }
+
+  const reformatAnnouncementforDB = (announcement: Announcement): Announcement => {
+    const id = announcement.id || generateUniqueId();
+    return {
+      ...announcement,
+      id,
+    };
+  }
+
 
   const hasPermission = (permission: string): boolean => {
     return cadetPermissionsMap.get(permission) || false;
@@ -182,7 +299,14 @@ export function useHomeLogic() {
     cadetPermissionsMap,
     hasPermission,
     announcements,
+    newAnnouncement,
+    setNewAnnouncement,
     upcomingEvents,
+    addAnnouncementModalVisible,
+    handleAddAnnouncement,
+    handleConfirmAddAnnouncement,
+    handleCancelAddAnnouncement,
   };
   
 }
+

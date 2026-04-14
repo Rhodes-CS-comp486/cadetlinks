@@ -114,6 +114,16 @@ export const generalStyles = StyleSheet.create({
         color: colors.muted,
         fontWeight: 'bold',
     },
+    inputBox: { 
+        paddingStart: 12,
+        color: colors.inputText,
+        height: 40,
+        borderWidth: 2,
+        borderRadius: 6,
+        marginBottom: 12,
+        borderColor: colors.border,
+        backgroundColor: colors.text,
+    },
     inputPlaceholder: { 
         color: colors.inputText,
         height: 40,
@@ -132,6 +142,45 @@ export const generalStyles = StyleSheet.create({
         backgroundColor: colors.inputBackground,
         paddingHorizontal: 12,
      },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: colors.overlay,
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: colors.background,
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+        padding: 20,
+        maxHeight: '85%',
+    },
+    modalTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: colors.text,
+        marginBottom: 16,
+    },
+    modalLabel: {
+        fontSize: 13,
+        fontWeight: 'bold',
+        color: colors.primary,
+        marginTop: 12,
+        marginBottom: 4,
+    },
+    modalText: {
+        fontSize: 14,
+        color: colors.muted,
+        lineHeight: 20,
+    },
+    confirmButton: {
+        backgroundColor: colors.success,
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginTop: 20,
+        marginBottom: 20,
+    },
 
     /* USER INFO CARD */
     userinfo_card: {

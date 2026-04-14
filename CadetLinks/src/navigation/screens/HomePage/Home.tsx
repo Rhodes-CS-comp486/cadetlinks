@@ -6,11 +6,13 @@
 //import { db } from '../../../firebase/config';
 //import { PERMISSIONS } from '../../../assets/constants';
 //import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useHomeLogic } from './HomeLogic';
-import { useNavigation } from '@react-navigation/native';
+import { ScrollView, Text, View, TouchableOpacity, Modal, Keyboard, KeyboardAvoidingView, Platform, Touchable } from 'react-native';
 import { homeStyles as styles } from '../../../styles/HomeStyles';
 import { HomeScreenLayout } from '../../Components/ScreenLayout';
-import { View, Text, ScrollView} from 'react-native';
+import { useHomeLogic, Announcement } from './HomeLogic';
+import { PERMISSIONS } from '../../../assets/constants';
+import { TextInput } from 'react-native-gesture-handler';
+import DatePicker from '../EventsPage/Components/datePicker';
 
 
 export function HomePage() {
@@ -19,8 +21,14 @@ export function HomePage() {
     cadetPermissionsMap,
     hasPermission,
     announcements,
+    newAnnouncement,
+    setNewAnnouncement,
     upcomingEvents,
-    navigation
+    navigation,
+    addAnnouncementModalVisible,
+    handleAddAnnouncement,
+    handleConfirmAddAnnouncement,
+    handleCancelAddAnnouncement,
   } = useHomeLogic();
 
   return (
@@ -28,7 +36,17 @@ export function HomePage() {
       <View style={styles.body_container}>
         
         <View style={styles.announcementContainer}>
-          <Text style={styles.sectionTitle}>Announcements</Text>
+          <View style={{ flexDirection: 'row' }}>
+            <Text style={styles.sectionTitle}>Announcements</Text>
+            {/**cadetPermissionsMap.get(PERMISSIONS.ADMIN) && */(
+              <TouchableOpacity
+                style={styles.addAnnouncementButton}
+                onPress={handleAddAnnouncement}
+              >
+                <Text style={styles.addAnnouncementButtonText}>Add Announcement</Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
           <ScrollView 
           style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 10 }}
@@ -67,6 +85,79 @@ export function HomePage() {
           </ScrollView>
         </View>
 
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={addAnnouncementModalVisible}
+          onRequestClose={handleCancelAddAnnouncement}
+        >
+          <KeyboardAvoidingView 
+            style={{ flex: 1 }} 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={[styles.modalContent, { flex: 1 }]}>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={handleCancelAddAnnouncement}
+                  >
+                  <Text style={styles.closeButtonText}>X</Text>
+                  </TouchableOpacity>
+                <Text style={styles.modalTitle}>Add Announcement</Text>
+
+                {/* Title */}
+                <TextInput
+                  value = {newAnnouncement.title}
+                  onChangeText={(text) => setNewAnnouncement({ ...newAnnouncement, title: text })}
+                  placeholder="Title"
+                  placeholderTextColor={styles.inputPlaceholder.color}
+                  style={styles.inputBox}
+                />
+
+                <TextInput
+                  value = {newAnnouncement.body}
+                  onChangeText={(text) => setNewAnnouncement({ ...newAnnouncement, body: text })}
+                  placeholder="Announcement details"
+                  placeholderTextColor={styles.inputPlaceholder.color}
+                  style={[styles.inputBox, { height: 80 }]}
+                  multiline
+                />
+
+                <Text style={styles.modalLabel}> Expiration Date: </Text>
+
+                <DatePicker
+                  value={newAnnouncement.retirementDate}
+                  onChange={(date) => setNewAnnouncement({ ...newAnnouncement, retirementDate: date })}
+                />
+
+                {/* Importance selector */}
+                <Text style={styles.modalLabel}> Importance: </Text>
+                <View style={{ flexDirection: 'row', marginBottom: 12 }}>
+                  {['Low', 'Medium', 'High'].map((level) => (
+                    <TouchableOpacity
+                      key={level}
+                      onPress={() => setNewAnnouncement({ ...newAnnouncement, importance: level as Announcement['importance'] })}
+                      style={[
+                        styles.importanceButton,
+                        newAnnouncement.importance === level && styles.importanceButtonSelected,
+                      ]}
+                    >
+                      <Text style={styles.importanceButtonText}>{level}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <TouchableOpacity
+                  onPress={handleConfirmAddAnnouncement}
+                  style={styles.confirmButton}
+                >
+                  <Text style={styles.addAnnouncementButtonText}>Submit</Text>
+                </TouchableOpacity>
+
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </Modal>
       </View>
     </HomeScreenLayout>
   );
