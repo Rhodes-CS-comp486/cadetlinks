@@ -179,7 +179,7 @@ export function useHomeLogic() {
     });
   }, [navigation]); 
 
-  /** Announcements */
+  {/** Announcements */}
   // Loading announcements and listening for changes in real-time
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [addAnnouncementModalVisible, setAddAnnouncementModalVisible] = useState(false);
@@ -304,6 +304,7 @@ export function useHomeLogic() {
     upcomingEvents,
     addAnnouncementModalVisible,
     handleAddAnnouncement,
+    handleConfirmAddAnnouncement,
     handleCancelAddAnnouncement,
   };
   

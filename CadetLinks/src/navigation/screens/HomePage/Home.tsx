@@ -27,6 +27,7 @@ export function HomePage() {
     navigation,
     addAnnouncementModalVisible,
     handleAddAnnouncement,
+    handleConfirmAddAnnouncement,
     handleCancelAddAnnouncement,
   } = useHomeLogic();
 
@@ -129,7 +130,7 @@ export function HomePage() {
                   onChange={(date) => setNewAnnouncement({ ...newAnnouncement, retirementDate: date })}
                 />
 
-                /* Importance selector */
+                {/* Importance selector */}
                 <Text style={styles.modalLabel}> Importance: </Text>
                 <View style={{ flexDirection: 'row', marginBottom: 12 }}>
                   {['Low', 'Medium', 'High'].map((level) => (
@@ -147,7 +148,7 @@ export function HomePage() {
                 </View>
 
                 <TouchableOpacity
-                  onPress={handleAddAnnouncement}
+                  onPress={handleConfirmAddAnnouncement}
                   style={styles.confirmButton}
                 >
                   <Text style={styles.addAnnouncementButtonText}>Submit</Text>
