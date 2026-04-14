@@ -11,9 +11,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { jobStyles as styles } from "../../../../styles/JobStyles";
 import { AttendanceModalProps } from "../../../../assets/types";
 
-
-
-
 export function AttendanceModal({
   visible,
   onRequestClose,
@@ -29,8 +26,6 @@ export function AttendanceModal({
   getCadetStatus,
   setCadetStatus,
   savingAttendance,
-  clearingAttendance,
-  onClearAttendance,
   onSubmitAttendance,
 }: AttendanceModalProps): React.ReactElement {
   return (
@@ -90,7 +85,8 @@ export function AttendanceModal({
                             {event.eventName}
                           </Text>
                           <Text style={styles.dropdownItemSubtitle}>
-                            {event.time ?? "No time"} • {event.locationId ?? "No location"}
+                            {event.time ?? "No time"} •{" "}
+                            {event.locationId ?? "No location"}
                           </Text>
                         </Pressable>
                       ))
@@ -101,7 +97,7 @@ export function AttendanceModal({
                 <View style={styles.summaryCard}>
                   <Text style={styles.summaryTitle}>Quick Summary</Text>
                   <Text style={styles.summaryText}>
-                    Everyone is Present by default.
+                    Everyone is Absent by default.
                   </Text>
                   <Text style={styles.summaryTextSmallGap}>
                     Absent marked: {markedAbsentCount}
@@ -168,46 +164,19 @@ export function AttendanceModal({
 
               <View style={styles.footerButtons}>
                 <Pressable
-                  onPress={onRequestClose}
-                  disabled={savingAttendance || clearingAttendance}
-                  style={[
-                    styles.footerButton,
-                    (savingAttendance || clearingAttendance) &&
-                      styles.footerButtonDisabled,
-                  ]}
-                >
-                  <Text style={styles.statusButtonText}>Cancel</Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={onClearAttendance}
-                  disabled={clearingAttendance || savingAttendance}
-                  style={[
-                    styles.footerButton,
-                    (clearingAttendance || savingAttendance) &&
-                      styles.footerButtonDisabled,
-                  ]}
-                >
-                  {clearingAttendance ? (
-                    <ActivityIndicator color="white" />
-                  ) : (
-                    <Text style={styles.statusButtonText}>Clear Attendance</Text>
-                  )}
-                </Pressable>
-
-                <Pressable
                   onPress={onSubmitAttendance}
-                  disabled={savingAttendance || clearingAttendance}
+                  disabled={savingAttendance}
                   style={[
                     styles.footerButton,
-                    (savingAttendance || clearingAttendance) &&
-                      styles.footerButtonDisabled,
+                    savingAttendance && styles.footerButtonDisabled,
                   ]}
                 >
                   {savingAttendance ? (
                     <ActivityIndicator color="white" />
                   ) : (
-                    <Text style={styles.statusButtonText}>Save Attendance</Text>
+                    <Text style={styles.statusButtonText}>
+                      Confirm Attendance
+                    </Text>
                   )}
                 </Pressable>
               </View>
