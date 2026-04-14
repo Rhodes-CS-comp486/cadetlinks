@@ -89,36 +89,6 @@ export const eventsStyles = StyleSheet.create({
     fontSize: 14,
     color: colors.muted,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: colors.background,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    padding: 20,
-    maxHeight: '85%',
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: 16,
-  },
-  modalLabel: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: colors.primary,
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  modalText: {
-    fontSize: 14,
-    color: colors.muted,
-    lineHeight: 20,
-  },
   rsvpButton: {
     backgroundColor: colors.primary,
     paddingVertical: 12,
@@ -143,15 +113,6 @@ export const eventsStyles = StyleSheet.create({
   },
   mandatoryButtonPressed: {
     backgroundColor: colors.muted,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  confirmButton: {
-    backgroundColor: colors.success,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
@@ -232,15 +193,5 @@ export const eventsStyles = StyleSheet.create({
     backgroundColor: '#f9f9f9',
     fontSize: 16,
     // fontFamily: 'System',
-  },
-  inputBox: { 
-    paddingStart: 12,
-    color: colors.inputText,
-    height: 40,
-    borderWidth: 2,
-    borderRadius: 6,
-    marginBottom: 12,
-    borderColor: colors.border,
-    backgroundColor: colors.text,
   },
 });
