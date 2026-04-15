@@ -32,7 +32,9 @@ export function HomePage() {
     handleCancelAddAnnouncement,
     deleteAnnouncementModalVisible,
     handleDeleteAnnouncement,
-    confirmDeleteAnnouncement,
+    handleConfirmDeleteAnnouncement,
+    handleCancelDeleteAnnouncement,
+    selectedAnnouncementId,
   } = useHomeLogic();
 
   return (
@@ -167,6 +169,42 @@ export function HomePage() {
             </View>
           </KeyboardAvoidingView>
         </Modal>
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={deleteAnnouncementModalVisible}
+          onRequestClose={handleCancelDeleteAnnouncement}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { flex: 1 }]}>
+              <Text style={styles.modalTitle}>Delete Announcement?</Text>
+              {(() => {
+                const announcement = announcements.find(a => a.id === selectedAnnouncementId);
+                return announcement ? (
+                  <>
+                    <Text style={styles.modalLabel}>Title:</Text>
+                    <Text style={styles.announcementBody}>{announcement.title}</Text>
+                    <Text style={styles.modalLabel}>Expiration Date:</Text>
+                    <Text style={styles.announcementBody}>{announcement.retirementDate.toLocaleDateString()}</Text>
+                  </>
+                ) : null;
+              })()}
+              <TouchableOpacity
+                onPress={() => handleConfirmDeleteAnnouncement()}
+                style={styles.confirmButton}
+              >
+                <Text style={styles.addAnnouncementButtonText}> Delete </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleCancelDeleteAnnouncement}
+                style={styles.cancelButton}
+              >
+                <Text style={styles.addAnnouncementButtonText}> Cancel </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
       </View>
     </HomeScreenLayout>
   );
