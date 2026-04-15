@@ -211,6 +211,8 @@ export function useHomeLogic() {
   // Loading announcements and listening for changes in real-time
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [addAnnouncementModalVisible, setAddAnnouncementModalVisible] = useState(false);
+  const [deleteAnnouncementModalVisible, setDeleteAnnouncementModalVisible] = useState(false);
+  const [selectedAnnouncementId, setSelectedAnnouncementId] = useState<string>('');
   const [newAnnouncement, setNewAnnouncement] = useState<Announcement>({
     id: '',
     title: '',
@@ -309,6 +311,27 @@ export function useHomeLogic() {
     }
   }
 
+  const handleDeleteAnnouncement = async (announcementId: string) => {
+    setSelectedAnnouncementId(announcementId);
+    setDeleteAnnouncementModalVisible(true);
+  }
+
+  const handleCancelDeleteAnnouncement = () => {
+    setSelectedAnnouncementId('');
+    setDeleteAnnouncementModalVisible(false);
+  }
+
+  const handleConfirmDeleteAnnouncement = async () => {
+    try {
+      await set(ref(db, 'announcements/' + selectedAnnouncementId), null);
+      console.log("Announcement deleted from DB:", selectedAnnouncementId);
+      setSelectedAnnouncementId('');
+      setDeleteAnnouncementModalVisible(false);
+    } catch (error) {
+      console.error("Error deleting announcement from DB:", error);
+    }
+  }
+
   const reformatAnnouncementforDB = (announcement: Announcement): Announcement => {
     const id = announcement.id || generateUniqueId();
     return {
@@ -334,6 +357,11 @@ export function useHomeLogic() {
     handleAddAnnouncement,
     handleConfirmAddAnnouncement,
     handleCancelAddAnnouncement,
+    deleteAnnouncementModalVisible,
+    handleDeleteAnnouncement,
+    handleConfirmDeleteAnnouncement,
+    handleCancelDeleteAnnouncement,
+    selectedAnnouncementId,
   };
   
 }
