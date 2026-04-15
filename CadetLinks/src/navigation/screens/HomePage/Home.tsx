@@ -13,6 +13,7 @@ import { useHomeLogic, Announcement } from './HomeLogic';
 import { PERMISSIONS } from '../../../assets/constants';
 import { TextInput } from 'react-native-gesture-handler';
 import DatePicker from '../EventsPage/Components/datePicker';
+import { Ionicons } from "@expo/vector-icons";
 
 
 export function HomePage() {
@@ -29,6 +30,11 @@ export function HomePage() {
     handleAddAnnouncement,
     handleConfirmAddAnnouncement,
     handleCancelAddAnnouncement,
+    deleteAnnouncementModalVisible,
+    handleDeleteAnnouncement,
+    handleConfirmDeleteAnnouncement,
+    handleCancelDeleteAnnouncement,
+    selectedAnnouncementId,
   } = useHomeLogic();
 
   return (
@@ -54,7 +60,12 @@ export function HomePage() {
           >
             {announcements.map(item => (
               <View key={item.id} style={styles.announcementCard}>
-                <Text style={styles.announcementTitle}>{item.title}</Text>
+                <View style={{ flexDirection: 'row'}}>
+                  <Text style={styles.announcementTitle}>{item.title}</Text>
+                  <TouchableOpacity onPress={() => handleDeleteAnnouncement(item.id)} style={{ marginLeft: 'auto' }}>
+                    <Ionicons name="trash" size={20} color="white" />
+                  </TouchableOpacity>
+                </View>
                 <Text style={styles.announcementBody}>{item.body}</Text>
               </View>
             ))}
@@ -158,6 +169,42 @@ export function HomePage() {
             </View>
           </KeyboardAvoidingView>
         </Modal>
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={deleteAnnouncementModalVisible}
+          onRequestClose={handleCancelDeleteAnnouncement}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { flex: 1 }]}>
+              <Text style={styles.modalTitle}>Delete Announcement?</Text>
+              {(() => {
+                const announcement = announcements.find(a => a.id === selectedAnnouncementId);
+                return announcement ? (
+                  <>
+                    <Text style={styles.modalLabel}>Title:</Text>
+                    <Text style={styles.announcementBody}>{announcement.title}</Text>
+                    <Text style={styles.modalLabel}>Expiration Date:</Text>
+                    <Text style={styles.announcementBody}>{announcement.retirementDate.toLocaleDateString()}</Text>
+                  </>
+                ) : null;
+              })()}
+              <TouchableOpacity
+                onPress={() => handleConfirmDeleteAnnouncement()}
+                style={styles.confirmButton}
+              >
+                <Text style={styles.addAnnouncementButtonText}> Delete </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleCancelDeleteAnnouncement}
+                style={styles.cancelButton}
+              >
+                <Text style={styles.addAnnouncementButtonText}> Cancel </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
       </View>
     </HomeScreenLayout>
   );
