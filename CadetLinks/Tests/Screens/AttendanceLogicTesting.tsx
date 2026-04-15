@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as firebaseDatabase from 'firebase/database';
 import {
   useAttendanceLogic,
   type AttendanceStatus,
@@ -289,6 +290,715 @@ describe('useAttendanceLogic - unit', () => {
 
     expect(getDbValue('attendance/LLAB/2026-04-14')).toBeUndefined();
     expect(Alert.alert).toHaveBeenCalledWith('Cleared', 'Attendance was cleared for that event.');
+  });
+
+  it('openAttendanceModal shows an error alert when attendance data load fails', async () => {
+    jest
+      .mocked(firebaseDatabase.get)
+      .mockRejectedValueOnce(new Error('events read failed'));
+
+    const { result } = renderHook(() => useAttendanceLogic());
+
+    await act(async () => {
+      await result.current.openAttendanceModal();
+    });
+
+    expect(result.current.attendanceModalVisible).toBe(false);
+    expect(result.current.loadingAttendanceTools).toBe(false);
+    expect(Alert.alert).toHaveBeenCalledWith('Error', 'Could not load attendance tools.');
+  });
+
+  it('submitAttendance requires a selected event before saving', async () => {
+    const { result } = renderHook(() => useAttendanceLogic());
+
+    await act(async () => {
+      await result.current.submitAttendance();
+    });
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Select an event',
+      "Please choose today's event first."
+    );
+    expect(result.current.savingAttendance).toBe(false);
+  });
+
+  it('submitAttendance shows a save error when the event name does not map to PT or LLAB', async () => {
+    seedDb('events', {
+      e1: {
+        eventName: 'Wing Staff Meeting',
+        date: '2026-04-14',
+        time: '12:00:00',
+      },
+    });
+
+    seedDb('cadets', {
+      [STEVENSON_KEY]: { firstName: 'Camren', lastName: 'Stevenson' },
+    });
+
+    const { result } = renderHook(() => useAttendanceLogic());
+
+    await act(async () => {
+      await result.current.openAttendanceModal();
+    });
+
+    act(() => {
+      result.current.selectEvent('e1');
+    });
+
+    await act(async () => {
+      await result.current.submitAttendance();
+    });
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Could not save attendance',
+      'Could not tell whether this event is PT or LLAB. Add "PT" or "LLAB" to the event name, or add an attendanceType field.'
+    );
+    expect(result.current.savingAttendance).toBe(false);
+  });
+
+  it('submitAttendance shows a save error when the selected event is no longer available', async () => {
+    seedDb('events', {
+      e1: {
+        eventName: 'PT Morning Session',
+        date: '2026-04-14',
+        time: '08:00:00',
+      },
+    });
+
+    seedDb('cadets', {
+      [STEVENSON_KEY]: { firstName: 'Camren', lastName: 'Stevenson' },
+    });
+
+    const { result } = renderHook(() => useAttendanceLogic());
+
+    await act(async () => {
+      await result.current.openAttendanceModal();
+    });
+
+    act(() => {
+      result.current.selectEvent('missing-event');
+    });
+
+    await act(async () => {
+      await result.current.submitAttendance();
+    });
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Could not save attendance',
+      'Please select an event.'
+    );
+  });
+
+  it('submitAttendance shows an underlying persistence error when update fails', async () => {
+    seedDb('events', {
+      e1: {
+        eventName: 'PT Morning Session',
+        date: '2026-04-14',
+        time: '08:00:00',
+      },
+    });
+
+    seedDb('cadets', {
+      [STEVENSON_KEY]: { firstName: 'Camren', lastName: 'Stevenson' },
+    });
+
+    jest
+      .mocked(firebaseDatabase.update)
+      .mockRejectedValueOnce(new Error('Attendance update failed'));
+
+    const { result } = renderHook(() => useAttendanceLogic());
+
+    await act(async () => {
+      await result.current.openAttendanceModal();
+    });
+
+    act(() => {
+      result.current.selectEvent('e1');
+      result.current.setCadetStatus(STEVENSON_KEY, 'A');
+    });
+
+    await act(async () => {
+      await result.current.submitAttendance();
+    });
+
+    expect(result.current.attendanceModalVisible).toBe(true);
+    expect(result.current.savingAttendance).toBe(false);
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Could not save attendance',
+      'Attendance update failed'
+    );
+  });
+
+  it('clearSelectedAttendance requires a selected event before confirming', () => {
+    const { result } = renderHook(() => useAttendanceLogic());
+
+    act(() => {
+      result.current.clearSelectedAttendance();
+    });
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Select an event',
+      'Please choose an event first.'
+    );
+    expect(result.current.clearingAttendance).toBe(false);
+  });
+
+  it('clearSelectedAttendance shows an error when the selected event cannot be bucketed', async () => {
+    seedDb('events', {
+      e1: {
+        eventName: 'Wing Staff Meeting',
+        date: '2026-04-14',
+        time: '10:00:00',
+      },
+    });
+
+    seedDb('cadets', {
+      [STEVENSON_KEY]: { firstName: 'Camren', lastName: 'Stevenson' },
+    });
+
+    const { result } = renderHook(() => useAttendanceLogic());
+
+    await act(async () => {
+      await result.current.openAttendanceModal();
+    });
+
+    act(() => {
+      result.current.selectEvent('e1');
+    });
+
+    await waitFor(() => {
+      expect(result.current.selectedEventId).toBe('e1');
+    });
+
+    act(() => {
+      result.current.clearSelectedAttendance();
+    });
+
+    const clearCall = (Alert.alert as jest.Mock).mock.calls.find(
+      (call) => call[0] === 'Clear Attendance'
+    );
+    expect(clearCall).toBeDefined();
+    const buttons = clearCall?.[2] as Array<{ text: string; onPress?: () => void }>;
+    const clearButton = buttons.find((button) => button.text === 'Clear');
+
+    await act(async () => {
+      await clearButton?.onPress?.();
+    });
+
+    expect(result.current.clearingAttendance).toBe(false);
+    expect(result.current.attendanceModalVisible).toBe(true);
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Could not clear attendance',
+      'Could not tell whether this event is PT or LLAB. Add "PT" or "LLAB" to the event name, or add an attendanceType field.'
+    );
+  });
+
+  it('closeAttendanceModal closes the modal and resets dropdown state', async () => {
+    seedDb('events', {
+      e1: {
+        eventName: 'PT Session',
+        date: '2026-04-14',
+        time: '08:00:00',
+      },
+    });
+
+    seedDb('cadets', {
+      [STEVENSON_KEY]: { firstName: 'Camren', lastName: 'Stevenson' },
+    });
+
+    const { result } = renderHook(() => useAttendanceLogic());
+
+    await act(async () => {
+      await result.current.openAttendanceModal();
+    });
+
+    expect(result.current.attendanceModalVisible).toBe(true);
+
+    act(() => {
+      result.current.closeAttendanceModal();
+    });
+
+    expect(result.current.attendanceModalVisible).toBe(false);
+    expect(result.current.eventDropdownOpen).toBe(false);
+  });
+
+  it('toggleEventDropdown toggles the dropdown visibility', async () => {
+    seedDb('events', {
+      e1: {
+        eventName: 'PT Session',
+        date: '2026-04-14',
+        time: '08:00:00',
+      },
+    });
+
+    seedDb('cadets', {
+      [STEVENSON_KEY]: { firstName: 'Camren', lastName: 'Stevenson' },
+    });
+
+    const { result } = renderHook(() => useAttendanceLogic());
+
+    await act(async () => {
+      await result.current.openAttendanceModal();
+    });
+
+    expect(result.current.eventDropdownOpen).toBe(false);
+
+    act(() => {
+      result.current.toggleEventDropdown();
+    });
+
+    expect(result.current.eventDropdownOpen).toBe(true);
+
+    act(() => {
+      result.current.toggleEventDropdown();
+    });
+
+    expect(result.current.eventDropdownOpen).toBe(false);
+  });
+
+  it('setCadetStatus with "P" status removes the cadet from overrides', async () => {
+    seedDb('events', {
+      e1: {
+        eventName: 'PT Session',
+        date: '2026-04-14',
+        time: '08:00:00',
+      },
+    });
+
+    seedDb('cadets', {
+      [STEVENSON_KEY]: { firstName: 'Camren', lastName: 'Stevenson' },
+    });
+
+    const { result } = renderHook(() => useAttendanceLogic());
+
+    await act(async () => {
+      await result.current.openAttendanceModal();
+    });
+
+    act(() => {
+      result.current.selectEvent('e1');
+      result.current.setCadetStatus(STEVENSON_KEY, 'A');
+    });
+
+    expect(result.current.getCadetStatus(STEVENSON_KEY)).toBe('A');
+    expect(result.current.markedAbsentCount).toBe(1);
+
+    act(() => {
+      result.current.setCadetStatus(STEVENSON_KEY, 'P');
+    });
+
+    expect(result.current.getCadetStatus(STEVENSON_KEY)).toBe('P');
+    expect(result.current.markedAbsentCount).toBe(0);
+  });
+
+  it('clearSelectedAttendance confirms cancel action and keeps modal open', async () => {
+    seedDb('events', {
+      e1: {
+        eventName: 'PT Session',
+        date: '2026-04-14',
+        time: '08:00:00',
+      },
+    });
+
+    seedDb('cadets', {
+      [STEVENSON_KEY]: { firstName: 'Camren', lastName: 'Stevenson' },
+    });
+
+    seedDb('attendance/PT/2026-04-14/stevenson', { status: 'A' });
+
+    const { result } = renderHook(() => useAttendanceLogic());
+
+    await act(async () => {
+      await result.current.openAttendanceModal();
+    });
+
+    act(() => {
+      result.current.selectEvent('e1');
+    });
+
+    await waitFor(() => {
+      expect(result.current.selectedEventId).toBe('e1');
+    });
+
+    act(() => {
+      result.current.clearSelectedAttendance();
+    });
+
+    const clearCall = (Alert.alert as jest.Mock).mock.calls.find(
+      (call) => call[0] === 'Clear Attendance'
+    );
+    const buttons = clearCall?.[2] as Array<{ text: string; style?: string }>;
+    const cancelButton = buttons.find((b) => b.text === 'Cancel');
+
+    expect(cancelButton?.style).toBe('cancel');
+    expect(getDbValue('attendance/PT/2026-04-14/stevenson')).toEqual({ status: 'A' });
+    expect(result.current.attendanceModalVisible).toBe(true);
+  });
+
+  it('clearSelectedAttendance shows an error when remove fails', async () => {
+    seedDb('events', {
+      e1: {
+        eventName: 'LLAB Leadership',
+        date: '2026-04-14',
+        time: '14:00:00',
+      },
+    });
+
+    seedDb('cadets', {
+      [STEVENSON_KEY]: { firstName: 'Camren', lastName: 'Stevenson' },
+    });
+
+    seedDb('attendance/LLAB/2026-04-14/stevenson', { status: 'P' });
+
+    jest
+      .mocked(firebaseDatabase.remove)
+      .mockRejectedValueOnce(new Error('Remove failed'));
+
+    const { result } = renderHook(() => useAttendanceLogic());
+
+    await act(async () => {
+      await result.current.openAttendanceModal();
+    });
+
+    act(() => {
+      result.current.selectEvent('e1');
+    });
+
+    await waitFor(() => {
+      expect(result.current.selectedEventId).toBe('e1');
+    });
+
+    act(() => {
+      result.current.clearSelectedAttendance();
+    });
+
+    const clearCall = (Alert.alert as jest.Mock).mock.calls.find(
+      (call) => call[0] === 'Clear Attendance'
+    );
+    const buttons = clearCall?.[2] as Array<{ text: string; onPress?: () => void }>;
+    const clearButton = buttons.find((b) => b.text === 'Clear');
+
+    await act(async () => {
+      await clearButton?.onPress?.();
+    });
+
+    expect(result.current.clearingAttendance).toBe(false);
+    expect(result.current.attendanceModalVisible).toBe(true);
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Could not clear attendance',
+      'Remove failed'
+    );
+  });
+
+  it('toggleEventDropdown closes dropdown when selecting an event', async () => {
+    seedDb('events', {
+      e1: {
+        eventName: 'PT Session',
+        date: '2026-04-14',
+        time: '08:00:00',
+      },
+      e2: {
+        eventName: 'LLAB Leadership',
+        date: '2026-04-14',
+        time: '14:00:00',
+      },
+    });
+
+    seedDb('cadets', {
+      [STEVENSON_KEY]: { firstName: 'Camren', lastName: 'Stevenson' },
+    });
+
+    const { result } = renderHook(() => useAttendanceLogic());
+
+    await act(async () => {
+      await result.current.openAttendanceModal();
+    });
+
+    act(() => {
+      result.current.toggleEventDropdown();
+    });
+
+    expect(result.current.eventDropdownOpen).toBe(true);
+
+    act(() => {
+      result.current.selectEvent('e1');
+    });
+
+    expect(result.current.eventDropdownOpen).toBe(false);
+    expect(result.current.selectedEventId).toBe('e1');
+  });
+
+  it('normalizeAttendanceKey handles special characters and uppercase', async () => {
+    seedDb('events', {
+      e1: {
+        eventName: 'PT Session',
+        date: '2026-04-14',
+        time: '08:00:00',
+      },
+    });
+
+    seedDb('cadets', {
+      special_key: { firstName: 'John', lastName: "O'Neill-Smith" },
+    });
+
+    const { result } = renderHook(() => useAttendanceLogic());
+
+    await act(async () => {
+      await result.current.openAttendanceModal();
+    });
+
+    expect(result.current.allCadets).toContainEqual(
+      expect.objectContaining({
+        attendanceKey: 'oneillsmith',
+      })
+    );
+  });
+
+  it('inferAttendanceBucket handles "lab" keyword in event name', async () => {
+    seedDb('events', {
+      e1: {
+        eventName: 'Leadership Lab',
+        date: '2026-04-14',
+        time: '08:00:00',
+      },
+    });
+
+    seedDb('cadets', {
+      [STEVENSON_KEY]: { firstName: 'Camren', lastName: 'Stevenson' },
+    });
+
+    const { result } = renderHook(() => useAttendanceLogic());
+
+    await act(async () => {
+      await result.current.openAttendanceModal();
+    });
+
+    act(() => {
+      result.current.selectEvent('e1');
+      result.current.setCadetStatus(STEVENSON_KEY, 'A');
+    });
+
+    await act(async () => {
+      await result.current.submitAttendance();
+    });
+
+    expect(getDbValue('attendance/LLAB/2026-04-14/stevenson')).toEqual({ status: 'A' });
+  });
+
+  it('openAttendanceModal resets state correctly when opened multiple times', async () => {
+    seedDb('events', {
+      e1: {
+        eventName: 'PT Session',
+        date: '2026-04-14',
+        time: '08:00:00',
+      },
+    });
+
+    seedDb('cadets', {
+      [STEVENSON_KEY]: { firstName: 'Camren', lastName: 'Stevenson' },
+    });
+
+    const { result } = renderHook(() => useAttendanceLogic());
+
+    await act(async () => {
+      await result.current.openAttendanceModal();
+    });
+
+    act(() => {
+      result.current.selectEvent('e1');
+      result.current.toggleEventDropdown();
+      result.current.setCadetStatus(STEVENSON_KEY, 'A');
+    });
+
+    expect(result.current.selectedEventId).toBe('e1');
+    expect(result.current.eventDropdownOpen).toBe(true);
+    expect(result.current.markedAbsentCount).toBe(1);
+
+    act(() => {
+      result.current.closeAttendanceModal();
+    });
+
+    await act(async () => {
+      await result.current.openAttendanceModal();
+    });
+
+    expect(result.current.selectedEventId).toBe('');
+    expect(result.current.eventDropdownOpen).toBe(false);
+    expect(result.current.markedAbsentCount).toBe(0);
+  });
+
+  it('selectedEvent memo returns undefined when no event selected', async () => {
+    seedDb('events', {
+      e1: {
+        eventName: 'PT Session',
+        date: '2026-04-14',
+        time: '08:00:00',
+      },
+    });
+
+    seedDb('cadets', {
+      [STEVENSON_KEY]: { firstName: 'Camren', lastName: 'Stevenson' },
+    });
+
+    const { result } = renderHook(() => useAttendanceLogic());
+
+    await act(async () => {
+      await result.current.openAttendanceModal();
+    });
+
+    expect(result.current.selectedEvent).toBeUndefined();
+
+    act(() => {
+      result.current.selectEvent('e1');
+    });
+
+    expect(result.current.selectedEvent).toBeDefined();
+    expect(result.current.selectedEvent?.eventName).toBe('PT Session');
+  });
+
+  it('getCadetStatus returns P by default for cadets not in overrides', async () => {
+    seedDb('events', {
+      e1: {
+        eventName: 'PT Session',
+        date: '2026-04-14',
+        time: '08:00:00',
+      },
+    });
+
+    seedDb('cadets', {
+      [STEVENSON_KEY]: { firstName: 'Camren', lastName: 'Stevenson' },
+      [GRAY_KEY]: { firstName: 'Sadie', lastName: 'Gray' },
+    });
+
+    const { result } = renderHook(() => useAttendanceLogic());
+
+    await act(async () => {
+      await result.current.openAttendanceModal();
+    });
+
+    act(() => {
+      result.current.selectEvent('e1');
+      result.current.setCadetStatus(STEVENSON_KEY, 'L');
+    });
+
+    expect(result.current.getCadetStatus(STEVENSON_KEY)).toBe('L');
+    expect(result.current.getCadetStatus(GRAY_KEY)).toBe('P');
+  });
+
+  it('loading states are managed correctly during operations', async () => {
+    seedDb('events', {
+      e1: {
+        eventName: 'PT Session',
+        date: '2026-04-14',
+        time: '08:00:00',
+      },
+    });
+
+    seedDb('cadets', {
+      [STEVENSON_KEY]: { firstName: 'Camren', lastName: 'Stevenson' },
+    });
+
+    const { result } = renderHook(() => useAttendanceLogic());
+
+    expect(result.current.loadingAttendanceTools).toBe(false);
+    expect(result.current.savingAttendance).toBe(false);
+    expect(result.current.clearingAttendance).toBe(false);
+
+    await act(async () => {
+      await result.current.openAttendanceModal();
+    });
+
+    expect(result.current.loadingAttendanceTools).toBe(false);
+
+    act(() => {
+      result.current.selectEvent('e1');
+    });
+
+    await act(async () => {
+      await result.current.submitAttendance();
+    });
+
+    expect(result.current.savingAttendance).toBe(false);
+  });
+
+  it('submitAttendance shows error when event has no date', async () => {
+    seedDb('events', {
+      e1: {
+        eventName: 'PT Session',
+        time: '08:00:00',
+      },
+    });
+
+    seedDb('cadets', {
+      [STEVENSON_KEY]: { firstName: 'Camren', lastName: 'Stevenson' },
+    });
+
+    const { result } = renderHook(() => useAttendanceLogic());
+
+    await act(async () => {
+      await result.current.openAttendanceModal();
+    });
+
+    act(() => {
+      result.current.selectEvent('e1');
+      result.current.setCadetStatus(STEVENSON_KEY, 'A');
+    });
+
+    await act(async () => {
+      await result.current.submitAttendance();
+    });
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Could not save attendance',
+      'Selected event does not have a valid date.'
+    );
+    expect(result.current.savingAttendance).toBe(false);
+  });
+
+  it('clearSelectedAttendance shows error when event has no date for bucketing', async () => {
+    seedDb('events', {
+      e1: {
+        eventName: 'PT Session',
+      },
+    });
+
+    seedDb('cadets', {
+      [STEVENSON_KEY]: { firstName: 'Camren', lastName: 'Stevenson' },
+    });
+
+    const { result } = renderHook(() => useAttendanceLogic());
+
+    await act(async () => {
+      await result.current.openAttendanceModal();
+    });
+
+    act(() => {
+      result.current.selectEvent('e1');
+    });
+
+    await waitFor(() => {
+      expect(result.current.selectedEventId).toBe('e1');
+    });
+
+    act(() => {
+      result.current.clearSelectedAttendance();
+    });
+
+    const clearCall = (Alert.alert as jest.Mock).mock.calls.find(
+      (call) => call[0] === 'Clear Attendance'
+    );
+    const buttons = clearCall?.[2] as Array<{ text: string; onPress?: () => void }>;
+    const clearButton = buttons.find((b) => b.text === 'Clear');
+
+    await act(async () => {
+      await clearButton?.onPress?.();
+    });
+
+    expect(result.current.clearingAttendance).toBe(false);
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Could not clear attendance',
+      expect.stringContaining('attendance/${bucket}/${date}')
+    );
   });
 });
 

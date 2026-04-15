@@ -252,6 +252,14 @@ describe('useHomeLogic', () => {
 		});
 
 		const eventsUnsub = listeners.events[0].unsubscribe;
+		const setOptionsArg = (mockSetOptions as jest.Mock).mock.calls[0][0];
+		const headerRightElement = setOptionsArg.headerRight();
+
+		act(() => {
+			headerRightElement.props.onPress();
+		});
+
+		expect(mockNavigate).toHaveBeenCalledWith('Settings');
 		unmount();
 		expect(eventsUnsub).toHaveBeenCalledTimes(1);
 	});
@@ -286,5 +294,72 @@ describe('useHomeLogic', () => {
 		});
 
 		jest.useRealTimers();
+	});
+
+	it('handles missing stored cadet key by warning and skipping profile load', async () => {
+		const warnSpy = jest.spyOn(console, 'warn').mockImplementation(jest.fn());
+		(AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(null);
+
+		const { result } = renderHook(() => useHomeLogic());
+
+		await waitFor(() => {
+			expect(warnSpy).toHaveBeenCalledWith('No cadetKey found in AsyncStorage');
+		});
+
+		expect(result.current.hasPermission(PERMISSIONS.EVENT_MAKING)).toBe(false);
+		expect(result.current.hasPermission(PERMISSIONS.FILE_UPLOADING)).toBe(false);
+		expect(result.current.hasPermission(PERMISSIONS.ATTENDANCE_EDITING)).toBe(false);
+		expect(firebaseDatabase.get).not.toHaveBeenCalledWith({ path: expect.stringMatching(/^cadets\//) });
+
+		warnSpy.mockRestore();
+	});
+
+	it('sets empty permission map when cadet profile snapshot does not exist', async () => {
+		getResponses[`cadets/${STEVENSON_KEY}`] = { exists: false };
+
+		const { result } = renderHook(() => useHomeLogic());
+
+		await waitFor(() => {
+			expect(firebaseDatabase.get).toHaveBeenCalledWith({ path: `cadets/${STEVENSON_KEY}` });
+		});
+
+		expect(result.current.cadetPermissionsMap.size).toBe(0);
+		expect(result.current.hasPermission(PERMISSIONS.EVENT_MAKING)).toBe(false);
+		expect(result.current.hasPermission(PERMISSIONS.FILE_UPLOADING)).toBe(false);
+		expect(result.current.hasPermission(PERMISSIONS.ATTENDANCE_EDITING)).toBe(false);
+	});
+
+	it('logs error when cadet data fetch throws', async () => {
+		const errorSpy = jest.spyOn(console, 'error').mockImplementation(jest.fn());
+		(AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(STEVENSON_KEY);
+		jest.mocked(firebaseDatabase.get).mockRejectedValueOnce(new Error('db unavailable'));
+
+		renderHook(() => useHomeLogic());
+
+		await waitFor(() => {
+			expect(errorSpy).toHaveBeenCalledWith(
+				'Error fetching cadet data:',
+				expect.any(Error)
+			);
+		});
+
+		errorSpy.mockRestore();
+	});
+
+	it('returns early from layout effect when navigation.setOptions is not a function', async () => {
+		(useNavigation as jest.Mock).mockReturnValue({
+			navigate: mockNavigate,
+		});
+
+		renderHook(() => useHomeLogic());
+
+		await waitFor(() => {
+			expect(firebaseDatabase.onValue).toHaveBeenCalledWith(
+				{ path: 'events' },
+				expect.any(Function)
+			);
+		});
+
+		expect(mockSetOptions).not.toHaveBeenCalled();
 	});
 });
