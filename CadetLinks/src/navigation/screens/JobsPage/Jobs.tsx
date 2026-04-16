@@ -156,6 +156,10 @@ export function Jobs(): React.ReactElement {
         onSelectEvent={attendance.selectEvent}
         markedAbsentCount={attendance.markedAbsentCount}
         markedLateCount={attendance.markedLateCount}
+        onToggleFlightDropdown={attendance.toggleFlightDropdown}
+        selectedFlight={attendance.selectedFlight}
+        flightDropdownOpen={attendance.flightDropdownOpen}
+        onSelectFlight={attendance.selectFlight}
         allCadets={attendance.allCadets}
         getCadetStatus={attendance.getCadetStatus}
         setCadetStatus={attendance.setCadetStatus}
