@@ -77,7 +77,7 @@ type JobsActionId =
 | typeof PERMISSIONS.ATTENDANCE_EDITING
 | typeof PERMISSIONS.FILE_UPLOADING
 | typeof PERMISSIONS.EVENT_MAKING
-| typeof PERMISSIONS.CREATE_ACCOUNTS;
+| typeof PERMISSIONS.ADMIN;
 
 export type JobsAction = {
   id: JobsActionId;

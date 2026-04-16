@@ -17,7 +17,7 @@ export function iconForAction(id: JobsAction["id"]) { // this function maps icon
       return "checkbox-outline";
     case PERMISSIONS.FILE_UPLOADING:
       return "cloud-upload-outline";
-    case PERMISSIONS.CREATE_ACCOUNTS:
+    case PERMISSIONS.ADMIN:
       return "person-add-outline";
     case PERMISSIONS.EVENT_MAKING:
       return "calendar-outline";
@@ -156,7 +156,7 @@ export function useJobsLogic() {
   // Create Accounts = All only
   if (isAll) {
     actions.push({
-      id: PERMISSIONS.CREATE_ACCOUNTS,
+      id: PERMISSIONS.ADMIN,
       title: "Create Accounts",
       subtitle: "Create new cadet accounts (admin-only)",
       allowed: true,

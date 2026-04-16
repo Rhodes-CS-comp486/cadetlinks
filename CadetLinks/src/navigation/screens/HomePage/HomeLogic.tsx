@@ -36,7 +36,8 @@ export function useHomeLogic() {
     new Map([
         [PERMISSIONS.EVENT_MAKING, false],
         [PERMISSIONS.FILE_UPLOADING, false],
-        [PERMISSIONS.ATTENDANCE_EDITING, false]
+        [PERMISSIONS.ATTENDANCE_EDITING, false],
+        [PERMISSIONS.ADMIN, false]
     ])
   );
 

@@ -160,7 +160,7 @@ describe('useJobsLogic', () => {
 			PERMISSIONS.ATTENDANCE_EDITING,
 			PERMISSIONS.FILE_UPLOADING,
 			PERMISSIONS.EVENT_MAKING,
-			PERMISSIONS.CREATE_ACCOUNTS,
+			PERMISSIONS.ADMIN,
 		]);
 
 		const attendanceAction = result.current.actions.find(
@@ -296,7 +296,7 @@ describe('useJobsLogic', () => {
 			PERMISSIONS.ATTENDANCE_EDITING,
 			PERMISSIONS.FILE_UPLOADING,
 			PERMISSIONS.EVENT_MAKING,
-			PERMISSIONS.CREATE_ACCOUNTS,
+			PERMISSIONS.ADMIN,
 		]);
 	});
 });
@@ -305,7 +305,7 @@ describe('iconForAction', () => {
 	it('maps action ids to expected icon names', () => {
 		expect(iconForAction(PERMISSIONS.ATTENDANCE_EDITING)).toBe('checkbox-outline');
 		expect(iconForAction(PERMISSIONS.FILE_UPLOADING)).toBe('cloud-upload-outline');
-		expect(iconForAction(PERMISSIONS.CREATE_ACCOUNTS)).toBe('person-add-outline');
+		expect(iconForAction(PERMISSIONS.ADMIN)).toBe('person-add-outline');
 		expect(iconForAction(PERMISSIONS.EVENT_MAKING)).toBe('calendar-outline');
 	});
 });
