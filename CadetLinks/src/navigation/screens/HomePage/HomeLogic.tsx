@@ -8,7 +8,6 @@ import { PERMISSIONS } from '../../../assets/constants';
 import {TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Event } from '../../../assets/types';
-// import { ca } from 'react-native-paper-dates';
 
 
 export let cadetObject: any = null;
@@ -32,6 +31,7 @@ type AnnouncementDbValue = {
 export function useHomeLogic() {
   const navigation = useNavigation();
   const [allEvents, setAllEvents] = useState<Event[]>([]);
+  const [userRsvpEventIds, setUserRsvpEventIds] = useState<Set<string>>(new Set());
   const [cadetPermissionsMap, setCadetPermissionsMap] = useState<Map<string, boolean>>(
     new Map([
         [PERMISSIONS.EVENT_MAKING, false],
@@ -53,6 +53,31 @@ export function useHomeLogic() {
 
     return localDate;
   };
+
+  useEffect(() => {
+    const loadRsvps = async () => {
+      const cadetKey = await AsyncStorage.getItem("currentCadetKey");
+      if (!cadetKey) return;
+
+      const unsubscribe = onValue(ref(db, 'rsvps'), (snapshot) => {
+        const rsvpData = snapshot.val() || {};
+        const ids = new Set<string>();
+
+        Object.entries(rsvpData).forEach(([eventId, eventNode]) => {
+          const userNode = (eventNode as any)[cadetKey];
+          if (userNode?.status === "Y") {
+            ids.add(eventId);
+          }
+        });
+
+        setUserRsvpEventIds(ids);
+      });
+
+      return () => unsubscribe();
+    };
+
+    loadRsvps();
+  }, []);
 
   useEffect(() => {
     const eventsRef = ref(db, 'events');
@@ -106,8 +131,11 @@ export function useHomeLogic() {
 
     return allEvents
       .filter((event) => event.time >= todayStart && event.time < dayAfterTomorrowEndExclusive)
+      .filter((event) => 
+        event.type === 'Mandatory' || userRsvpEventIds.has(event.id)
+      )
       .sort((a, b) => a.time.getTime() - b.time.getTime());
-  }, [allEvents]);
+  }, [allEvents, userRsvpEventIds]);
 
   useEffect(() => {
   
