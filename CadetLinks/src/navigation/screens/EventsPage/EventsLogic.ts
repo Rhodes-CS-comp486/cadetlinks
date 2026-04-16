@@ -279,8 +279,8 @@ export function useEvents() {
 
     await writeToEventsDB(newEvent); // Write the new event to the database
 
-    if(newEvent.title.toUpperCase() === "LLAB" || newEvent.title.toUpperCase() === "PT") {
-      await writeToSpecialEventsDB(newEvent.title.toUpperCase(), formatDate(newEvent.date) ); // Write to special events DB if event is LLAB or PT for easy filtering on home screen
+    if(newEvent.title.toUpperCase() === "LLAB" || newEvent.title.toUpperCase() === "PT" || newEvent.title.toUpperCase() === "RMP"){
+      await writeToSpecialEventsDB(newEvent.title.toUpperCase(), formatDate(newEvent.date) ); // Write to special events DB if event is LLAB, PT, RMP for easy filtering on home screen
       console.log("Wrote to Special Events DB with title:", newEvent.title.toUpperCase(), "date:", formatDate(newEvent.date));
     }
     setAddEventsModalVisible(false);
