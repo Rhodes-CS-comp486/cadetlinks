@@ -44,7 +44,7 @@ export function HomePage() {
         <View style={styles.announcementContainer}>
           <View style={{ flexDirection: 'row' }}>
             <Text style={styles.sectionTitle}>Announcements</Text>
-            {/**cadetPermissionsMap.get(PERMISSIONS.ADMIN) && */(
+            {hasPermission(PERMISSIONS.ADMIN) && (
               <TouchableOpacity
                 style={styles.addAnnouncementButton}
                 onPress={handleAddAnnouncement}
@@ -62,9 +62,11 @@ export function HomePage() {
               <View key={item.id} style={styles.announcementCard}>
                 <View style={{ flexDirection: 'row'}}>
                   <Text style={styles.announcementTitle}>{item.title}</Text>
-                  <TouchableOpacity onPress={() => handleDeleteAnnouncement(item.id)} style={{ marginLeft: 'auto' }}>
-                    <Ionicons name="trash" size={20} color="white" />
-                  </TouchableOpacity>
+                  {hasPermission(PERMISSIONS.ADMIN) && (
+                    <TouchableOpacity onPress={() => handleDeleteAnnouncement(item.id)} style={{ marginLeft: 'auto' }}>
+                      <Ionicons name="trash" size={20} color="white" />
+                    </TouchableOpacity>
+                  )}
                 </View>
                 <Text style={styles.announcementBody}>{item.body}</Text>
               </View>
