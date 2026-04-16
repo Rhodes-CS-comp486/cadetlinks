@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Calendar } from 'react-native-calendars';
 import { eventsStyles as styles, calendarTheme } from '../../../styles/EventStyles';
 import { useEvents } from './EventsLogic';
@@ -29,6 +30,7 @@ export function Events(): React.ReactElement {
     handleAddEvent,
     handleConfirmAddEvent,
     handleCancelAddEvent,
+    handleDeleteEvent,
     getLabelTextAndStyle
   } = useEvents();
 
@@ -79,6 +81,16 @@ export function Events(): React.ReactElement {
                         {labelText}
                       </Text>
                     </View>
+
+                    {cadetPermissionsMap.get(PERMISSIONS.EVENT_MAKING) && (
+                      <Pressable
+                        onPress={() => handleDeleteEvent(event)}
+                        style={{ marginLeft: 12 }}
+                        hitSlop={8}
+                      >
+                        <Ionicons name="trash-outline" size={20} color="red" />
+                      </Pressable>
+                    )}
                   </TouchableOpacity>
                 );
               })}

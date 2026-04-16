@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import { eventsStyles as styles } from '../../../styles/EventStyles';
 import { getDatabase, ref, onValue, set, get } from "firebase/database";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -377,6 +377,36 @@ export function useEvents() {
     setAddEventsModalVisible(false);
   };
 
+  // Delete an event from Firebase (and its RSVP entries)
+  const deleteEventFromDB = async (eventId: string) => {
+    const db = getDatabase();
+    await set(ref(db, `events/${eventId}`), null);
+    await set(ref(db, `rsvps/${eventId}`), null);
+    console.log('Event deleted from DB:', eventId);
+  };
+
+  const handleDeleteEvent = (event: Event) => {
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Are you sure you want to delete "${event.title}"?`)) {
+        void deleteEventFromDB(event.id);
+      }
+      return;
+    }
+
+    Alert.alert(
+      'Delete Event',
+      `Are you sure you want to delete "${event.title}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => void deleteEventFromDB(event.id),
+        },
+      ]
+    );
+  };
+
   // Helper function to determine label text and style for event based on type and RSVP status
   const getLabelTextAndStyle = (event: { type: string; id: string }): [any, string] => {
     if (event.type === 'Mandatory') {
@@ -420,6 +450,7 @@ export function useEvents() {
     handleAddEvent,
     handleConfirmAddEvent,
     handleCancelAddEvent,
+    handleDeleteEvent,
     // Helpers
     getLabelTextAndStyle,
   };
