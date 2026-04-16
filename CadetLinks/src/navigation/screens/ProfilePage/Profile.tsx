@@ -39,8 +39,16 @@ export function Profile(): React.ReactElement {
     llabInGoodStanding,
   } = useProfileLogic();
 
-  const bioText =
-    "This is where the cadet bio will go!";
+  const bioText = "This is where the cadet bio will go!";
+
+  function getAttendanceColor(percent: number) {
+    if (percent >= 90) return "good";     // green
+    if (percent >= 80) return "warning";  // yellow
+    return "bad";                         // red
+  }
+
+  const ptColor = getAttendanceColor(ptAttendancePercent);
+  const llabColor = getAttendanceColor(llabAttendancePercent);
 
   return (
     <ScreenLayout>
@@ -51,8 +59,7 @@ export function Profile(): React.ReactElement {
       >
         {/* PROFILE TOGGLE BUTTON AT THE TOP */}
         <View style={styles.profileToggleRow}>
-          {/* Private profile button */}
-          <Pressable // when pressed, set profileView to "private"
+          <Pressable
             onPress={() => setProfileView("private")}
             style={[
               styles.profileToggleButton,
@@ -181,7 +188,11 @@ export function Profile(): React.ReactElement {
                 <View
                   style={[
                     styles.attendance_circle,
-                    ptInGoodStanding ? styles.circle_good : styles.circle_bad,
+                    ptColor === "good"
+                      ? styles.circle_good
+                      : ptColor === "warning"
+                      ? styles.circle_warning
+                      : styles.circle_bad,
                   ]}
                 >
                   <Text style={styles.attendance_percent_text}>
@@ -193,11 +204,19 @@ export function Profile(): React.ReactElement {
                   <View
                     style={[
                       styles.standing_pill,
-                      ptInGoodStanding ? styles.pill_good : styles.pill_bad,
+                      ptColor === "good"
+                        ? styles.pill_good
+                        : ptColor === "warning"
+                        ? styles.pill_warning
+                        : styles.pill_bad,
                     ]}
                   >
                     <Text style={styles.standing_pill_text}>
-                      {ptInGoodStanding ? "Good Standing" : "Bad Standing"}
+                      {ptColor === "good"
+                        ? "Good Standing"
+                        : ptColor === "warning"
+                        ? "Warning"
+                        : "Bad Standing"}
                     </Text>
                   </View>
 
@@ -263,7 +282,11 @@ export function Profile(): React.ReactElement {
                 <View
                   style={[
                     styles.attendance_circle,
-                    llabInGoodStanding ? styles.circle_good : styles.circle_bad,
+                    llabColor === "good"
+                      ? styles.circle_good
+                      : llabColor === "warning"
+                      ? styles.circle_warning
+                      : styles.circle_bad,
                   ]}
                 >
                   <Text style={styles.attendance_percent_text}>
@@ -275,11 +298,19 @@ export function Profile(): React.ReactElement {
                   <View
                     style={[
                       styles.standing_pill,
-                      llabInGoodStanding ? styles.pill_good : styles.pill_bad,
+                      llabColor === "good"
+                        ? styles.pill_good
+                        : llabColor === "warning"
+                        ? styles.pill_warning
+                        : styles.pill_bad,
                     ]}
                   >
                     <Text style={styles.standing_pill_text}>
-                      {llabInGoodStanding ? "Good Standing" : "Bad Standing"}
+                      {llabColor === "good"
+                        ? "Good Standing"
+                        : llabColor === "warning"
+                        ? "Warning"
+                        : "Bad Standing"}
                     </Text>
                   </View>
 
@@ -395,7 +426,6 @@ export function Profile(): React.ReactElement {
               </View>
             </View>
 
-            {/* BIO CARD */}
             <Text style={styles.sectionTitle}>Bio</Text>
             <View style={styles.bioCard}>
               <Text style={styles.bioText}>{bioText}</Text>

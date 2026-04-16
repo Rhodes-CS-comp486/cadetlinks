@@ -26,8 +26,28 @@ export const homeStyles = StyleSheet.create({
         marginTop: 4,
     },
     eventsContainer: {
+        backgroundColor: colors.overlay,
+        borderRadius: 18,
         padding: 15,
+        height: '60%',
+        marginTop: '5%',
+    },
+    eventCard: {
         backgroundColor: colors.background,
-        height: '65%',
-    }
+        padding: 10,
+        borderRadius: 8,
+        marginVertical: 5,
+    },
+    eventTitle: {
+        color: colors.text,
+        fontWeight: 'bold',
+    },
+    eventMeta: {
+        color: colors.muted,
+        marginTop: 2,
+    },
+    noEventsText: {
+        color: colors.muted,
+        marginTop: 6,
+    },
 });
