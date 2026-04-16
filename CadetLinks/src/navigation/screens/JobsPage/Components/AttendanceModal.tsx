@@ -22,12 +22,19 @@ export function AttendanceModal({
   onSelectEvent,
   markedAbsentCount,
   markedLateCount,
+  onToggleFlightDropdown,
+  selectedFlight,
+  flightDropdownOpen,
+  onSelectFlight,
   allCadets,
   getCadetStatus,
   setCadetStatus,
   savingAttendance,
   onSubmitAttendance,
 }: AttendanceModalProps): React.ReactElement {
+  const filteredCadets = selectedFlight
+    ? allCadets.filter(cadet => cadet.flight === selectedFlight)
+    : allCadets;
   return (
     <Modal
       visible={visible}
@@ -107,10 +114,40 @@ export function AttendanceModal({
                   </Text>
                 </View>
 
-                <Text style={styles.fieldLabel}>Cadets</Text>
+                <View style={{ flexDirection: 'row', position: 'relative' }}>
+                  <Text style={styles.fieldLabel}>Cadets</Text>
+
+                  <Text style={[styles.fieldLabel, { marginLeft: 40}]}>Flight: </Text>
+
+                  <Pressable
+                    onPress={onToggleFlightDropdown}
+                    style={[styles.dropdownButton, { height: 50, justifyContent: 'center' }]}
+                  >
+                    <Text style={styles.dropdownButtonText}>
+                      {selectedFlight ? `${selectedFlight}` : "All"}
+                    </Text>
+                  </Pressable>
+
+                  {flightDropdownOpen ? (
+                    <View style={styles.dropdownMenu}>
+                      {(
+                        ["All", "POC", "Alpha", "Bravo"] as (string | "All")[]).map((flightName) => (
+                          <Pressable
+                            key={flightName}
+                            onPress={() => onSelectFlight(flightName)}
+                            style={styles.dropdownItem}  
+                          >
+                            <Text style={styles.dropdownItemTitle}>{flightName}</Text>
+                          </Pressable>
+                        ))
+                      }
+                    </View>
+                  ) : null}
+                </View>
 
                 <View style={styles.cadetListCard}>
-                  {allCadets.map((cadet, index) => {
+                  {
+                  filteredCadets.map((cadet, index) => {
                     const status = getCadetStatus(cadet.cadetKey);
 
                     return (

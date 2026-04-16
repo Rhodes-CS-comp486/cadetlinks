@@ -35,6 +35,10 @@ export type AttendanceModalProps = {
   onSelectEvent: (eventId: string) => void;
   markedAbsentCount: number;
   markedLateCount: number;
+  onToggleFlightDropdown: () => void;
+  selectedFlight?: string;
+  flightDropdownOpen: boolean;
+  onSelectFlight: (flightName: string) => void;
   allCadets: CadetListItem[];
   getCadetStatus: (cadetKey: string) => AttendanceStatus;
   setCadetStatus: (cadetKey: string, status: AttendanceStatus) => void;

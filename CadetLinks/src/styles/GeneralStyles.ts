@@ -181,6 +181,15 @@ export const generalStyles = StyleSheet.create({
         marginTop: 20,
         marginBottom: 20,
     },
+    cancelButton: {
+        backgroundColor: colors.danger,
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginTop: 20,
+        marginBottom: 20,
+    },
 
     /* USER INFO CARD */
     userinfo_card: {

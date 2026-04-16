@@ -8,7 +8,6 @@ import { PERMISSIONS } from '../../../assets/constants';
 import {TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Event } from '../../../assets/types';
-// import { ca } from 'react-native-paper-dates';
 
 
 export let cadetObject: any = null;
@@ -32,6 +31,7 @@ type AnnouncementDbValue = {
 export function useHomeLogic() {
   const navigation = useNavigation();
   const [allEvents, setAllEvents] = useState<Event[]>([]);
+  const [userRsvpEventIds, setUserRsvpEventIds] = useState<Set<string>>(new Set());
   const [cadetPermissionsMap, setCadetPermissionsMap] = useState<Map<string, boolean>>(
     new Map([
         [PERMISSIONS.EVENT_MAKING, false],
@@ -53,6 +53,31 @@ export function useHomeLogic() {
 
     return localDate;
   };
+
+  useEffect(() => {
+    const loadRsvps = async () => {
+      const cadetKey = await AsyncStorage.getItem("currentCadetKey");
+      if (!cadetKey) return;
+
+      const unsubscribe = onValue(ref(db, 'rsvps'), (snapshot) => {
+        const rsvpData = snapshot.val() || {};
+        const ids = new Set<string>();
+
+        Object.entries(rsvpData).forEach(([eventId, eventNode]) => {
+          const userNode = (eventNode as any)[cadetKey];
+          if (userNode?.status === "Y") {
+            ids.add(eventId);
+          }
+        });
+
+        setUserRsvpEventIds(ids);
+      });
+
+      return () => unsubscribe();
+    };
+
+    loadRsvps();
+  }, []);
 
   useEffect(() => {
     const eventsRef = ref(db, 'events');
@@ -106,8 +131,11 @@ export function useHomeLogic() {
 
     return allEvents
       .filter((event) => event.time >= todayStart && event.time < dayAfterTomorrowEndExclusive)
+      .filter((event) => 
+        event.type === 'Mandatory' || userRsvpEventIds.has(event.id)
+      )
       .sort((a, b) => a.time.getTime() - b.time.getTime());
-  }, [allEvents]);
+  }, [allEvents, userRsvpEventIds]);
 
   useEffect(() => {
   
@@ -183,6 +211,8 @@ export function useHomeLogic() {
   // Loading announcements and listening for changes in real-time
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [addAnnouncementModalVisible, setAddAnnouncementModalVisible] = useState(false);
+  const [deleteAnnouncementModalVisible, setDeleteAnnouncementModalVisible] = useState(false);
+  const [selectedAnnouncementId, setSelectedAnnouncementId] = useState<string>('');
   const [newAnnouncement, setNewAnnouncement] = useState<Announcement>({
     id: '',
     title: '',
@@ -281,6 +311,27 @@ export function useHomeLogic() {
     }
   }
 
+  const handleDeleteAnnouncement = async (announcementId: string) => {
+    setSelectedAnnouncementId(announcementId);
+    setDeleteAnnouncementModalVisible(true);
+  }
+
+  const handleCancelDeleteAnnouncement = () => {
+    setSelectedAnnouncementId('');
+    setDeleteAnnouncementModalVisible(false);
+  }
+
+  const handleConfirmDeleteAnnouncement = async () => {
+    try {
+      await set(ref(db, 'announcements/' + selectedAnnouncementId), null);
+      console.log("Announcement deleted from DB:", selectedAnnouncementId);
+      setSelectedAnnouncementId('');
+      setDeleteAnnouncementModalVisible(false);
+    } catch (error) {
+      console.error("Error deleting announcement from DB:", error);
+    }
+  }
+
   const reformatAnnouncementforDB = (announcement: Announcement): Announcement => {
     const id = announcement.id || generateUniqueId();
     return {
@@ -306,6 +357,11 @@ export function useHomeLogic() {
     handleAddAnnouncement,
     handleConfirmAddAnnouncement,
     handleCancelAddAnnouncement,
+    deleteAnnouncementModalVisible,
+    handleDeleteAnnouncement,
+    handleConfirmDeleteAnnouncement,
+    handleCancelDeleteAnnouncement,
+    selectedAnnouncementId,
   };
   
 }
