@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { Alert } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ref, get, update, remove } from "firebase/database";
 import { db } from "../../../firebase/config";
 import type { CadetProfile } from "../../../assets/types";
@@ -74,7 +73,7 @@ export function useAttendanceLogic() {
     setAttendanceOverrides((prev) => {
       const next = { ...prev };
 
-      // Absent is now the default, so remove override when set to A
+      // Absent is the default, so remove override when set to A
       if (status === "A") {
         delete next[cadetKeyToUpdate];
       } else {
@@ -86,7 +85,7 @@ export function useAttendanceLogic() {
   };
 
   const getCadetStatus = (cadetKeyToCheck: string): AttendanceStatus => {
-    // Default is now Absent
+    // Default is Absent
     return attendanceOverrides[cadetKeyToCheck] ?? "A";
   };
 
@@ -98,8 +97,7 @@ export function useAttendanceLogic() {
 
   const markedLateCount = useMemo(
     () =>
-      Object.values(attendanceOverrides).filter((status) => status === "L")
-        .length,
+      Object.values(attendanceOverrides).filter((status) => status === "L").length,
     [attendanceOverrides]
   );
 
@@ -161,8 +159,10 @@ export function useAttendanceLogic() {
       await loadAttendanceModalData();
       setAttendanceModalVisible(true);
       setSelectedEventId("");
+      setSelectedFlight(undefined);
       setAttendanceOverrides({});
       setEventDropdownOpen(false);
+      setFlightDropdownOpen(false);
     } catch {
       Alert.alert("Error", "Could not load attendance tools.");
     }
@@ -171,6 +171,7 @@ export function useAttendanceLogic() {
   const closeAttendanceModal = () => {
     setAttendanceModalVisible(false);
     setEventDropdownOpen(false);
+    setFlightDropdownOpen(false);
   };
 
   const toggleEventDropdown = () => {
@@ -186,30 +187,9 @@ export function useAttendanceLogic() {
     setFlightDropdownOpen((prev) => !prev);
   };
 
-   const selectFlight = (flightName: string) => {
+  const selectFlight = (flightName: string) => {
     setSelectedFlight(flightName === "All" ? undefined : flightName);
     setFlightDropdownOpen(false);
-  };
-
-  const setCadetStatus = (
-    cadetKeyToUpdate: string,
-    status: AttendanceStatus
-  ) => {
-    setAttendanceOverrides((prev) => {
-      const next = { ...prev };
-
-      if (status === "P") {
-        delete next[cadetKeyToUpdate];
-      } else {
-        next[cadetKeyToUpdate] = status;
-      }
-
-      return next;
-    });
-  };
-
-  const getCadetStatus = (cadetKeyToCheck: string): AttendanceStatus => {
-    return attendanceOverrides[cadetKeyToCheck] ?? "P";
   };
 
   async function saveAttendanceForEvent(
@@ -232,10 +212,13 @@ export function useAttendanceLogic() {
 
     const date = chosenEvent.date;
 
+    if (!date) {
+      throw new Error("Selected event is missing a date.");
+    }
+
     const updates: Record<string, { status: AttendanceStatus }> = {};
 
     for (const cadet of allCadets) {
-      // Default is now Absent
       const chosenStatus = overrides[cadet.cadetKey] ?? "A";
       updates[`attendance/${bucket}/${date}/${cadet.attendanceKey}`] = {
         status: chosenStatus,
@@ -261,7 +244,11 @@ export function useAttendanceLogic() {
     }
 
     const date = chosenEvent.date;
-  
+
+    if (!date) {
+      throw new Error("Selected event is missing a date.");
+    }
+
     await remove(ref(db, `attendance/${bucket}/${date}`));
   }
 
@@ -358,14 +345,6 @@ export function useAttendanceLogic() {
       clearingAttendance,
       markedAbsentCount,
       markedLateCount,
-      openAttendanceModal,
-      closeAttendanceModal,
-      toggleEventDropdown,
-      selectEvent,
-      setCadetStatus,
-      getCadetStatus,
-      submitAttendance,
-      clearSelectedAttendance,
     ]
   );
 }

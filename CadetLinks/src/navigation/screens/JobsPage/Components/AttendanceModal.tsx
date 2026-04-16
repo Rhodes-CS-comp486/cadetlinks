@@ -33,8 +33,9 @@ export function AttendanceModal({
   onSubmitAttendance,
 }: AttendanceModalProps): React.ReactElement {
   const filteredCadets = selectedFlight
-    ? allCadets.filter(cadet => cadet.flight === selectedFlight)
+    ? allCadets.filter((cadet) => cadet.flight === selectedFlight)
     : allCadets;
+
   return (
     <Modal
       visible={visible}
@@ -114,40 +115,46 @@ export function AttendanceModal({
                   </Text>
                 </View>
 
-                <View style={{ flexDirection: 'row', position: 'relative' }}>
+                <View style={{ flexDirection: "row", position: "relative" }}>
                   <Text style={styles.fieldLabel}>Cadets</Text>
 
-                  <Text style={[styles.fieldLabel, { marginLeft: 40}]}>Flight: </Text>
+                  <Text style={[styles.fieldLabel, { marginLeft: 40 }]}>
+                    Flight:
+                  </Text>
 
                   <Pressable
                     onPress={onToggleFlightDropdown}
-                    style={[styles.dropdownButton, { height: 50, justifyContent: 'center' }]}
+                    style={[
+                      styles.dropdownButton,
+                      { height: 50, justifyContent: "center" },
+                    ]}
                   >
                     <Text style={styles.dropdownButtonText}>
-                      {selectedFlight ? `${selectedFlight}` : "All"}
+                      {selectedFlight ? selectedFlight : "All"}
                     </Text>
                   </Pressable>
 
                   {flightDropdownOpen ? (
                     <View style={styles.dropdownMenu}>
-                      {(
-                        ["All", "POC", "Alpha", "Bravo"] as (string | "All")[]).map((flightName) => (
+                      {(["All", "POC", "Alpha", "Bravo"] as const).map(
+                        (flightName) => (
                           <Pressable
                             key={flightName}
                             onPress={() => onSelectFlight(flightName)}
-                            style={styles.dropdownItem}  
+                            style={styles.dropdownItem}
                           >
-                            <Text style={styles.dropdownItemTitle}>{flightName}</Text>
+                            <Text style={styles.dropdownItemTitle}>
+                              {flightName}
+                            </Text>
                           </Pressable>
-                        ))
-                      }
+                        )
+                      )}
                     </View>
                   ) : null}
                 </View>
 
                 <View style={styles.cadetListCard}>
-                  {
-                  filteredCadets.map((cadet, index) => {
+                  {filteredCadets.map((cadet, index) => {
                     const status = getCadetStatus(cadet.cadetKey);
 
                     return (
@@ -155,7 +162,7 @@ export function AttendanceModal({
                         key={cadet.cadetKey}
                         style={[
                           styles.cadetRow,
-                          index === allCadets.length - 1
+                          index === filteredCadets.length - 1
                             ? { borderBottomWidth: 0 }
                             : null,
                         ]}
