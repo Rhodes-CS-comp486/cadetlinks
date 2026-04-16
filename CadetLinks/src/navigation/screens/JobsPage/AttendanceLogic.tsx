@@ -67,11 +67,33 @@ export function useAttendanceLogic() {
     [todayEvents, selectedEventId]
   );
 
+  const setCadetStatus = (
+    cadetKeyToUpdate: string,
+    status: AttendanceStatus
+  ) => {
+    setAttendanceOverrides((prev) => {
+      const next = { ...prev };
+
+      // Absent is now the default, so remove override when set to A
+      if (status === "A") {
+        delete next[cadetKeyToUpdate];
+      } else {
+        next[cadetKeyToUpdate] = status;
+      }
+
+      return next;
+    });
+  };
+
+  const getCadetStatus = (cadetKeyToCheck: string): AttendanceStatus => {
+    // Default is now Absent
+    return attendanceOverrides[cadetKeyToCheck] ?? "A";
+  };
+
   const markedAbsentCount = useMemo(
     () =>
-      Object.values(attendanceOverrides).filter((status) => status === "A")
-        .length,
-    [attendanceOverrides]
+      allCadets.filter((cadet) => getCadetStatus(cadet.cadetKey) === "A").length,
+    [allCadets, attendanceOverrides]
   );
 
   const markedLateCount = useMemo(
@@ -213,7 +235,8 @@ export function useAttendanceLogic() {
     const updates: Record<string, { status: AttendanceStatus }> = {};
 
     for (const cadet of allCadets) {
-      const chosenStatus = overrides[cadet.cadetKey] ?? "P";
+      // Default is now Absent
+      const chosenStatus = overrides[cadet.cadetKey] ?? "A";
       updates[`attendance/${bucket}/${date}/${cadet.attendanceKey}`] = {
         status: chosenStatus,
       };
@@ -342,7 +365,7 @@ export function useAttendanceLogic() {
       setCadetStatus,
       getCadetStatus,
       submitAttendance,
-      clearSelectedAttendance
+      clearSelectedAttendance,
     ]
   );
 }

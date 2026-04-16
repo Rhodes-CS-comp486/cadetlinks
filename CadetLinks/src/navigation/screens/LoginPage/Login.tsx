@@ -36,7 +36,6 @@ export function Login() {
     navigation
   } = useLoginLogic();
 
-
   return (
     <SafeAreaView style={styles.outer_container}>
       <KeyboardAvoidingView
@@ -102,7 +101,6 @@ export function Login() {
                 <Text style={styles.primaryBtnText}>Log in</Text>
               )}
             </Pressable>
-
 
             <Pressable onPress={() => navigation.navigate("ChangePassword")}>
               <Text style={styles.link}>Forgot password?</Text>
