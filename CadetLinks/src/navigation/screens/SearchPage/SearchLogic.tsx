@@ -20,26 +20,30 @@ export type SearchCadetProfile = {
   };
 };
 
-function matchesQuery(cadet: SearchCadetProfile, query: string) { // checks if the cadet matches the search query by looking for the query as a substring in their name, rank, job, flight, class year, or school email. case-insensitive
+function matchesQuery(cadet: SearchCadetProfile, query: string) {
   const q = query.trim().toLowerCase();
   if (!q) return true;
 
-  const fullName = `${cadet.firstName ?? ""} ${cadet.lastName ?? ""}`.toLowerCase();
+  const fullName =
+    `${cadet.firstName ?? ""} ${cadet.lastName ?? ""}`.toLowerCase();
 
-  return (
+  return ( // checks if the query matches the full name, first name, last name, or job of the cadet.
     fullName.includes(q) ||
     (cadet.firstName ?? "").toLowerCase().includes(q) ||
     (cadet.lastName ?? "").toLowerCase().includes(q) ||
-    (cadet.cadetRank ?? "").toLowerCase().includes(q) ||
-    (cadet.job ?? "").toLowerCase().includes(q) ||
-    (cadet.flight ?? "").toLowerCase().includes(q) ||
-    String(cadet.classYear ?? "").includes(q) ||
-    (cadet.contact?.schoolEmail ?? "").toLowerCase().includes(q)
+    (cadet.job ?? "").toLowerCase().includes(q)
   );
+}
+
+function matchesFlight(cadet: SearchCadetProfile, selectedFlight: string) {
+  if (!selectedFlight) return true;
+
+  return (cadet.flight ?? "").toLowerCase() === selectedFlight.toLowerCase();
 }
 
 export function useSearchLogic() {
   const [query, setQuery] = useState("");
+  const [selectedFlight, setSelectedFlight] = useState("");
   const [allCadets, setAllCadets] = useState<SearchCadetProfile[]>([]);
   const [loadingCadets, setLoadingCadets] = useState(true);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -55,7 +59,7 @@ export function useSearchLogic() {
         const currentCadetKey = await AsyncStorage.getItem("currentCadetKey");
         const cadetsRef = ref(db, "cadets");
 
-        unsubscribeCadets = onValue( // listen in real-time to the "cadets" subtree in FB to get the list of cadets for searching, excluding the current user. sort them alphabetically by last name then first name.
+        unsubscribeCadets = onValue(
           cadetsRef,
           (snapshot) => {
             const cadetsData = snapshot.val() ?? {};
@@ -103,18 +107,43 @@ export function useSearchLogic() {
     };
   }, []);
 
+  const flightOptions = useMemo(() => {
+    const uniqueFlights = Array.from(
+      new Set(
+        allCadets
+          .map((cadet) => (cadet.flight ?? "").trim())
+          .filter((flight) => flight.length > 0)
+      )
+    );
+
+    return uniqueFlights.sort((a, b) => a.localeCompare(b));
+  }, [allCadets]);
+
   const filteredCadets = useMemo(() => {
-    return allCadets.filter((cadet) => matchesQuery(cadet, query));
-  }, [allCadets, query]);
+    return allCadets.filter(
+      (cadet) =>
+        matchesQuery(cadet, query) && matchesFlight(cadet, selectedFlight)
+    );
+  }, [allCadets, query, selectedFlight]);
 
   return useMemo(
     () => ({
       query,
       setQuery,
+      selectedFlight,
+      setSelectedFlight,
+      flightOptions,
       filteredCadets,
       loadingCadets,
       searchError,
     }),
-    [query, filteredCadets, loadingCadets, searchError]
+    [
+      query,
+      selectedFlight,
+      flightOptions,
+      filteredCadets,
+      loadingCadets,
+      searchError,
+    ]
   );
 }

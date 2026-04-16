@@ -11,9 +11,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { jobStyles as styles } from "../../../../styles/JobStyles";
 import { AttendanceModalProps } from "../../../../assets/types";
 
-
-
-
 export function AttendanceModal({
   visible,
   onRequestClose,
@@ -33,13 +30,12 @@ export function AttendanceModal({
   getCadetStatus,
   setCadetStatus,
   savingAttendance,
-  clearingAttendance,
-  onClearAttendance,
   onSubmitAttendance,
 }: AttendanceModalProps): React.ReactElement {
   const filteredCadets = selectedFlight
-    ? allCadets.filter(cadet => cadet.flight === selectedFlight)
+    ? allCadets.filter((cadet) => cadet.flight === selectedFlight)
     : allCadets;
+
   return (
     <Modal
       visible={visible}
@@ -97,7 +93,8 @@ export function AttendanceModal({
                             {event.eventName}
                           </Text>
                           <Text style={styles.dropdownItemSubtitle}>
-                            {event.time ?? "No time"} • {event.locationId ?? "No location"}
+                            {event.time ?? "No time"} •{" "}
+                            {event.locationId ?? "No location"}
                           </Text>
                         </Pressable>
                       ))
@@ -108,7 +105,7 @@ export function AttendanceModal({
                 <View style={styles.summaryCard}>
                   <Text style={styles.summaryTitle}>Quick Summary</Text>
                   <Text style={styles.summaryText}>
-                    Everyone is Present by default.
+                    Everyone is Absent by default.
                   </Text>
                   <Text style={styles.summaryTextSmallGap}>
                     Absent marked: {markedAbsentCount}
@@ -118,40 +115,46 @@ export function AttendanceModal({
                   </Text>
                 </View>
 
-                <View style={{ flexDirection: 'row', position: 'relative' }}>
+                <View style={{ flexDirection: "row", position: "relative" }}>
                   <Text style={styles.fieldLabel}>Cadets</Text>
 
-                  <Text style={[styles.fieldLabel, { marginLeft: 40}]}>Flight: </Text>
+                  <Text style={[styles.fieldLabel, { marginLeft: 40 }]}>
+                    Flight:
+                  </Text>
 
                   <Pressable
                     onPress={onToggleFlightDropdown}
-                    style={[styles.dropdownButton, { height: 50, justifyContent: 'center' }]}
+                    style={[
+                      styles.dropdownButton,
+                      { height: 50, justifyContent: "center" },
+                    ]}
                   >
                     <Text style={styles.dropdownButtonText}>
-                      {selectedFlight ? `${selectedFlight}` : "All"}
+                      {selectedFlight ? selectedFlight : "All"}
                     </Text>
                   </Pressable>
 
                   {flightDropdownOpen ? (
                     <View style={styles.dropdownMenu}>
-                      {(
-                        ["All", "POC", "Alpha", "Bravo"] as (string | "All")[]).map((flightName) => (
+                      {(["All", "POC", "Alpha", "Bravo"] as const).map(
+                        (flightName) => (
                           <Pressable
                             key={flightName}
                             onPress={() => onSelectFlight(flightName)}
-                            style={styles.dropdownItem}  
+                            style={styles.dropdownItem}
                           >
-                            <Text style={styles.dropdownItemTitle}>{flightName}</Text>
+                            <Text style={styles.dropdownItemTitle}>
+                              {flightName}
+                            </Text>
                           </Pressable>
-                        ))
-                      }
+                        )
+                      )}
                     </View>
                   ) : null}
                 </View>
 
                 <View style={styles.cadetListCard}>
-                  {
-                  filteredCadets.map((cadet, index) => {
+                  {filteredCadets.map((cadet, index) => {
                     const status = getCadetStatus(cadet.cadetKey);
 
                     return (
@@ -159,7 +162,7 @@ export function AttendanceModal({
                         key={cadet.cadetKey}
                         style={[
                           styles.cadetRow,
-                          index === allCadets.length - 1
+                          index === filteredCadets.length - 1
                             ? { borderBottomWidth: 0 }
                             : null,
                         ]}
@@ -205,46 +208,19 @@ export function AttendanceModal({
 
               <View style={styles.footerButtons}>
                 <Pressable
-                  onPress={onRequestClose}
-                  disabled={savingAttendance || clearingAttendance}
-                  style={[
-                    styles.footerButton,
-                    (savingAttendance || clearingAttendance) &&
-                      styles.footerButtonDisabled,
-                  ]}
-                >
-                  <Text style={styles.statusButtonText}>Cancel</Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={onClearAttendance}
-                  disabled={clearingAttendance || savingAttendance}
-                  style={[
-                    styles.footerButton,
-                    (clearingAttendance || savingAttendance) &&
-                      styles.footerButtonDisabled,
-                  ]}
-                >
-                  {clearingAttendance ? (
-                    <ActivityIndicator color="white" />
-                  ) : (
-                    <Text style={styles.statusButtonText}>Clear Attendance</Text>
-                  )}
-                </Pressable>
-
-                <Pressable
                   onPress={onSubmitAttendance}
-                  disabled={savingAttendance || clearingAttendance}
+                  disabled={savingAttendance}
                   style={[
                     styles.footerButton,
-                    (savingAttendance || clearingAttendance) &&
-                      styles.footerButtonDisabled,
+                    savingAttendance && styles.footerButtonDisabled,
                   ]}
                 >
                   {savingAttendance ? (
                     <ActivityIndicator color="white" />
                   ) : (
-                    <Text style={styles.statusButtonText}>Save Attendance</Text>
+                    <Text style={styles.statusButtonText}>
+                      Confirm Attendance
+                    </Text>
                   )}
                 </Pressable>
               </View>
