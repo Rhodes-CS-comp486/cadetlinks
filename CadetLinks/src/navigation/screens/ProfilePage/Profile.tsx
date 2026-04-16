@@ -12,7 +12,7 @@ import { ScreenLayout } from "../../Components/ScreenLayout";
 import { useProfileLogic } from "./ProfileLogic";
 
 export function Profile(): React.ReactElement {
-  const [profileView, setProfileView] = useState<"private" | "public">("private");
+  const [profileView, setProfileView] = useState<"private" | "public">("private"); // toggle between private and public profile views
 
   const {
     cadetKey,
@@ -67,7 +67,7 @@ export function Profile(): React.ReactElement {
             ]}
           >
             <Text
-              style={[
+              style={[ // if profileView is "private", apply active text style
                 styles.profileToggleText,
                 profileView === "private" && styles.profileToggleTextActive,
               ]}
@@ -75,7 +75,7 @@ export function Profile(): React.ReactElement {
               Private
             </Text>
           </Pressable>
-
+          {/* Public profile button */}
           <Pressable
             onPress={() => setProfileView("public")}
             style={[

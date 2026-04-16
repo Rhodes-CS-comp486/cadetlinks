@@ -3,57 +3,36 @@ import { Alert } from 'react-native';
 import { eventsStyles as styles } from '../../../styles/EventStyles';
 import { getDatabase, ref, onValue, set, get } from "firebase/database";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Event } from '../../../assets/types';
-import { cadetObject } from '../HomePage/HomeLogic';
+
+export interface Event {
+  id: string
+  title: string;
+  date: Date;
+  time: Date;
+  description: string;
+  location: string;
+  type: '' | 'RSVP' | 'Mandatory';
+}
+/*
+TODO: 
+- Get user-specific ID to update EventRSVP status in DB when user RSVPs to an event
+- Add ability to edit/delete events (optional)
+*/
+
 
 export function useEvents() {
 
-  //AI gen cuz i hate formatting date and time. needs to be tested. 
-  const formatLocalDateKey = (input: Date | string): string => {
-    if (typeof input === "string" && /^\d{4}-\d{2}-\d{2}$/.test(input)) {
-      return input;
-    }
-
-    const d = typeof input === "string" ? new Date(input) : input;
-    if (isNaN(d.getTime())) {
-      console.error("Invalid date provided to formatLocalDateKey:", input);
-      return "";
-    }
-
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  };
-
-  const formatLocalTimeString = (date: Date): string => {
+  // helper used throughout the hook - must be defined before any computed values that call it
+  const formatDate = (d: Date | string): string => {
+    const date = typeof d === 'string' ? new Date(d) : d;
     if (isNaN(date.getTime())) {
-      console.error("Invalid date provided to formatLocalTimeString:", date);
-      return "00:00:00";
+      console.error("Invalid date provided to formatDate:", d);
+      return ''; // Return empty string for invalid dates
     }
-
-    const hh = String(date.getHours()).padStart(2, "0");
-    const mm = String(date.getMinutes()).padStart(2, "0");
-    const ss = String(date.getSeconds()).padStart(2, "0");
-    return `${hh}:${mm}:${ss}`;
+    return date.toISOString().split('T')[0]; // Return just the date part (YYYY-MM-DD)
   };
 
-  const parseLocalDateTime = (dateStr: string, timeStr: string): Date | null => {
-    const [year, month, day] = String(dateStr).split("-").map(Number);
-    const [hours = 0, minutes = 0, seconds = 0] = String(timeStr || "00:00:00")
-      .split(":")
-      .map(Number);
-
-    const localDate = new Date(year, (month ?? 1) - 1, day ?? 1, hours, minutes, seconds, 0);
-    if (isNaN(localDate.getTime())) {
-      return null;
-    }
-
-    return localDate;
-  };
-
-
-  const [selectedDate, setSelectedDate] = useState<string>(formatLocalDateKey(new Date()));
+  const [selectedDate, setSelectedDate] = useState<string>(formatDate(new Date()));
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [eventInfoModalVisible, setEventInfoModalVisible] = useState(false);
   const [rsvpStatus, setRsvpStatus] = useState<{ [eventId: string]: boolean }>({});
@@ -99,7 +78,7 @@ export function useEvents() {
 
   // marked dates for calendar component 
   const markedDates = allEvents.reduce((acc: any, event) => {
-    const dateKey = formatLocalDateKey(event.date);
+    const dateKey = formatDate(event.date);
     acc[dateKey] = { marked: true, dotColor: 'blue' };
     return acc;
   }, {});
@@ -107,7 +86,7 @@ export function useEvents() {
   // Memoized, filtered, and sorted events for the selected date
   const eventsForSelectedDate = useMemo(() => {
     return allEvents
-      .filter((ev) => formatLocalDateKey(ev.date) === selectedDate)
+      .filter((ev) => formatDate(ev.date) === selectedDate)
       .sort((a, b) =>
         a.time.getTime() - b.time.getTime()
       );
@@ -134,8 +113,9 @@ export function useEvents() {
       const loadedEvents: Event[] = Object.keys(eventsData).map((key) => {
         const event = eventsData[key];
 
-        const combinedDateTime = parseLocalDateTime(event.date, event.time);
-        if (!combinedDateTime) {
+        const dateStr = `${event.date}T${event.time}`; // Combine date and time into ISO string
+        const combinedDateTime = new Date(dateStr);
+        if (isNaN(combinedDateTime.getTime())) {
           console.error(`Invalid date for event ${key}:`, event.date, event.time);
           return null;
         }
@@ -146,7 +126,7 @@ export function useEvents() {
           time: combinedDateTime,
           description: event.details,
           location: event.locationId,
-          type: event.mandatory === true || event.mandatory === "true" ? "Mandatory" : "RSVP",
+          type: event.mandatory === true ? "Mandatory" : "RSVP", // assuming DB stores type as boolean true/false
         };
       })
         .filter((event): event is Event => event !== null);
@@ -189,7 +169,7 @@ export function useEvents() {
     return () => {
       unsubscribeRsvp();
     };
-  }, [cadetKeyFromStorage, cadetKeyLoaded]);
+  }, [cadetKeyFromStorage]);
 
 
   /*
@@ -297,11 +277,6 @@ export function useEvents() {
     }
 
     await writeToEventsDB(newEvent); // Write the new event to the database
-    if (newEvent.title === "PT" || newEvent.title === "LLAB") {
-      Alert.alert('Event Added', 'PT/LLAB events must be added through the attendance section to properly track attendance.');
-      await addAttendanceForNewEvent(newEvent.title, newEvent.date,cadetObject.lastName); // If it's a PT/LLAB event, also add it to the attendance tracking in the DB
-    }
-
 
     setAddEventsModalVisible(false);
     setToastMessage('Event added successfully');
@@ -316,8 +291,8 @@ export function useEvents() {
     try {
       await set(ref(db, 'events/' + event.id), {
         eventName: event.title,
-        date: formatLocalDateKey(event.date),
-        time: formatLocalTimeString(event.time),
+        date: formatDate(event.date),
+        time: event.time.toTimeString().split(' ')[0], // Store time as HH:MM:SS
         details: event.description,
         locationId: event.location,
         mandatory: event.type === 'Mandatory' ? "true" : "false",
@@ -335,21 +310,6 @@ export function useEvents() {
     //await initializeRsvpEntryToDB(event.id); // Create corresponding entry in RSVP section of DB for the new event
     console.log("Wrote to Events DB with ID:", event.id);
   };
-
-  const addAttendanceForNewEvent = async (eventTitle: string, eventDate: Date, lastName: string) => {
-      const db = getDatabase();
-      try {
-        const title = eventTitle.trim().toUpperCase();
-        const attendanceRef = ref(db, `attendance/${title}/${formatLocalDateKey(eventDate)}/${lastName}`);
-        await set (attendanceRef, {
-          status: "."
-         });
-          console.log(`Initialized attendance tracking in DB for new event: ${title}`);
-       
-      } catch (error) {
-        console.error("Error adding attendance for new event:", error);
-      }
-    };
 
   // helper function to initialize an RSVP entry in the DB for a new event
   const initializeRsvpEntryToDB = async (eventId: string) => {

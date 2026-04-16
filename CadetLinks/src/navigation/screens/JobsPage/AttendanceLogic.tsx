@@ -197,9 +197,6 @@ export function useAttendanceLogic() {
     }
 
     const date = chosenEvent.date;
-    if (!date) {
-      throw new Error("Selected event does not have a valid date.");
-    }
 
     const updates: Record<string, { status: AttendanceStatus }> = {};
 
@@ -230,10 +227,7 @@ export function useAttendanceLogic() {
     }
 
     const date = chosenEvent.date;
-    if (!date) {
-      throw new Error("Selected event does not have a valid date.");
-    }
-
+  
     await remove(ref(db, `attendance/${bucket}/${date}`));
   }
 

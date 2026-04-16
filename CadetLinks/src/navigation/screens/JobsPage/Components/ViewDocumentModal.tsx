@@ -15,7 +15,27 @@ import { Ionicons } from "@expo/vector-icons";
 import { generalStyles as g_styles } from "../../../../styles/GeneralStyles";
 import { DarkColors as colors } from "../../../../styles/colors";
 import { jobStyles as styles } from "../../../../styles/JobStyles";
-import { ViewDocumentModalProps } from "../../../../assets/types";
+
+interface DocumentItem {
+    dbKey: string;
+    displayName: string;
+    mimeType: string;
+    downloadURL: string;
+    sizeBytes: number;
+    uploadedAt: string;
+    storagePath: string;
+}
+
+interface ViewDocumentModalProps {
+    visible: boolean;
+    onClose: () => void;
+    documents: DocumentItem[];
+    isLoading: boolean;
+    deleteError: string | null;
+    deletingKey: string | null;
+    onDelete: (dbKey: string, storagePath: string) => void;
+    canEditFiles: boolean;
+}
 
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 
