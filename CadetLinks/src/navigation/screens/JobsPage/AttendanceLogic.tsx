@@ -21,6 +21,7 @@ export type CadetListItem = {
   lastName: string;
   fullName: string;
   attendanceKey: string;
+  flight?: string;
 };
 
 export type AttendanceStatus = "P" | "A" | "L";
@@ -55,6 +56,8 @@ export function useAttendanceLogic() {
   const [attendanceModalVisible, setAttendanceModalVisible] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string>("");
   const [eventDropdownOpen, setEventDropdownOpen] = useState(false);
+  const [flightDropdownOpen, setFlightDropdownOpen] = useState(false);
+  const [selectedFlight, setSelectedFlight] = useState<string | undefined>(undefined);
   const [savingAttendance, setSavingAttendance] = useState(false);
   const [clearingAttendance, setClearingAttendance] = useState(false);
   const [attendanceOverrides, setAttendanceOverrides] = useState<AttendanceOverrides>({});
@@ -117,9 +120,10 @@ export function useAttendanceLogic() {
             lastName,
             fullName,
             attendanceKey: normalizeAttendanceKey(lastName || key),
+            flight: value.flight,
           };
         })
-        .sort((a, b) => a.fullName.localeCompare(b.fullName));
+        .sort((a, b) => a.lastName.localeCompare(b.lastName));
 
       setAllCadets(cadetList);
     } catch (e) {
@@ -154,6 +158,15 @@ export function useAttendanceLogic() {
   const selectEvent = (eventId: string) => {
     setSelectedEventId(eventId);
     setEventDropdownOpen(false);
+  };
+
+  const toggleFlightDropdown = () => {
+    setFlightDropdownOpen((prev) => !prev);
+  };
+
+   const selectFlight = (flightName: string) => {
+    setSelectedFlight(flightName === "All" ? undefined : flightName);
+    setFlightDropdownOpen(false);
   };
 
   const setCadetStatus = (
@@ -299,6 +312,10 @@ export function useAttendanceLogic() {
       closeAttendanceModal,
       toggleEventDropdown,
       selectEvent,
+      flightDropdownOpen,
+      selectFlight,
+      selectedFlight,
+      toggleFlightDropdown,
       setCadetStatus,
       getCadetStatus,
       submitAttendance,
@@ -312,6 +329,8 @@ export function useAttendanceLogic() {
       selectedEventId,
       selectedEvent,
       eventDropdownOpen,
+      selectedFlight,
+      flightDropdownOpen,
       savingAttendance,
       clearingAttendance,
       markedAbsentCount,
