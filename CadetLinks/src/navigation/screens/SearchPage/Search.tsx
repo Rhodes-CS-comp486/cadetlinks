@@ -20,8 +20,16 @@ export function Search(): React.ReactElement {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  const { query, setQuery, filteredCadets, loadingCadets, searchError } =
-    useSearchLogic();
+  const {
+    query,
+    setQuery,
+    selectedFlight,
+    setSelectedFlight,
+    flightOptions,
+    filteredCadets,
+    loadingCadets,
+    searchError,
+  } = useSearchLogic();
 
   return (
     <ScreenLayout>
@@ -42,11 +50,10 @@ export function Search(): React.ReactElement {
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Search by name, rank, job, flight..."
+            placeholder="Search by name or job...."
             placeholderTextColor={colors.muted}
             style={styles.searchInput}
           />
-          {/* if there's text in the search bar, show an "X" button to clear it. */}
           {query.length > 0 ? (
             <Pressable onPress={() => setQuery("")}>
               <Ionicons name="close-circle" size={18} color={colors.muted} />
@@ -54,7 +61,57 @@ export function Search(): React.ReactElement {
           ) : null}
         </View>
 
-        {/* show loading state, error, or "no results". otherwise show search results as a list of cards */}
+        <Text style={styles.filterLabel}>Filter by Flight</Text>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.flightFilterRow}
+        >
+          <Pressable
+            style={[
+              styles.flightChip,
+              selectedFlight === "" && styles.flightChipActive,
+            ]}
+            onPress={() => setSelectedFlight("")}
+          >
+            <Text
+              style={[
+                styles.flightChipText,
+                selectedFlight === "" && styles.flightChipTextActive,
+              ]}
+            >
+              All
+            </Text>
+          </Pressable>
+
+          {flightOptions.map((flight) => {
+            const isActive = selectedFlight === flight;
+
+            return (
+              <Pressable
+                key={flight}
+                style={[
+                  styles.flightChip,
+                  isActive && styles.flightChipActive,
+                ]}
+                onPress={() =>
+                  setSelectedFlight(isActive ? "" : flight)
+                }
+              >
+                <Text
+                  style={[
+                    styles.flightChipText,
+                    isActive && styles.flightChipTextActive,
+                  ]}
+                >
+                  {flight}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
         {loadingCadets ? (
           <View style={styles.stateCard}>
             <ActivityIndicator />
@@ -79,7 +136,6 @@ export function Search(): React.ReactElement {
                 })
               }
             >
-              {/* for each search result, show their name, rank, job, flight, class year. Clicking it goes to their public profile page. */}
               <View style={styles.resultLeft}>
                 <View style={styles.avatar_container}>
                   <Ionicons name="person" size={22} color="white" />
