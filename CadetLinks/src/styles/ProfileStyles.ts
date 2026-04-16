@@ -29,6 +29,13 @@ export const profileStyles = StyleSheet.create({
     circle_good: { borderColor: colors.success },
     circle_warning: { borderColor: colors.warning },
     circle_bad: { borderColor: colors.danger },
+    circle_warning: {
+        borderColor: colors.warning,
+    },
+
+    pill_warning: {
+        backgroundColor: colors.warning,
+    },
     attendance_percent_text: {
         color: colors.text,
         fontSize: 22,

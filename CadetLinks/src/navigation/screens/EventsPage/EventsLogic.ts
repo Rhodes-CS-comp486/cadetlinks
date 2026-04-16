@@ -356,6 +356,10 @@ export function useEvents() {
 
     await writeToEventsDB(newEvent); // Write the new event to the database
 
+    if(newEvent.title.toUpperCase() === "LLAB" || newEvent.title.toUpperCase() === "PT" || newEvent.title.toUpperCase() === "RMP"){
+      await writeToSpecialEventsDB(newEvent.title.toUpperCase(), formatDate(newEvent.date) ); // Write to special events DB if event is LLAB, PT, RMP for easy filtering on home screen
+      console.log("Wrote to Special Events DB with title:", newEvent.title.toUpperCase(), "date:", formatDate(newEvent.date));
+    }
     setAddEventsModalVisible(false);
     setToastMessage('Event added successfully');
     setTimeout(() => setToastMessage(null), 3000);
@@ -407,6 +411,21 @@ export function useEvents() {
       console.error("Error initializing RSVP entry in DB:", error);
     }
   };
+
+  const writeToSpecialEventsDB = async (eventTitle: string, eventDate: string) => {
+    const db = getDatabase();
+    console.log("Writing to Special Events DB with title:", eventTitle, "date:", eventDate, "for user:", cadetObject.lastName);
+    
+    try {
+      await set(ref(db, 'attendance/' + `${eventTitle}/${eventDate}/${cadetObject.lastName}`), {
+        status:"."
+      });
+      console.log("Special event written to DB:", { title: eventTitle, date: eventDate });
+    } catch (error) {
+      console.error("Error writing special event to DB:", error);
+    }
+  };
+
 
   // helper function to reformat event object for DB storage: sets ID and date/time formatting
   const reformatEventForDB = (event: Event) => {
