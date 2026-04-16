@@ -50,7 +50,7 @@ export function Search(): React.ReactElement {
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Search by name or job..."
+            placeholder="Search by name or job...."
             placeholderTextColor={colors.muted}
             style={styles.searchInput}
           />

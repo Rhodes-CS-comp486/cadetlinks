@@ -27,7 +27,7 @@ function matchesQuery(cadet: SearchCadetProfile, query: string) {
   const fullName =
     `${cadet.firstName ?? ""} ${cadet.lastName ?? ""}`.toLowerCase();
 
-  return (
+  return ( // checks if the query matches the full name, first name, last name, or job of the cadet.
     fullName.includes(q) ||
     (cadet.firstName ?? "").toLowerCase().includes(q) ||
     (cadet.lastName ?? "").toLowerCase().includes(q) ||
