@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Pressable } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { eventsStyles as styles, calendarTheme } from '../../../styles/EventStyles';
@@ -9,6 +9,7 @@ import { DarkColors as colors } from '../../../styles/colors';
 import { ScreenLayout } from '../../Components/ScreenLayout';
 import { PERMISSIONS } from '../../../assets/constants';
 import { useHomeLogic } from '../HomePage/HomeLogic';
+import Checkbox from 'expo-checkbox';
 
 export function Events(): React.ReactElement {
   const {
@@ -21,6 +22,10 @@ export function Events(): React.ReactElement {
     allEvents,
     newEvent,
     setNewEvent,
+    selectedOptions,
+    setSelectedOptions,
+    isPractice,
+    setIsPractice,
     markedDates,
     eventsForSelectedDate,
     handleEventPress,
@@ -29,10 +34,11 @@ export function Events(): React.ReactElement {
     handleAddEvent,
     handleConfirmAddEvent,
     handleCancelAddEvent,
-    getLabelTextAndStyle
+    getLabelTextAndStyle,
+    eventConfig,
   } = useEvents();
 
-  const{cadetPermissionsMap} = useHomeLogic();
+  const { cadetPermissionsMap } = useHomeLogic();
 
   return (
     <ScreenLayout>
@@ -181,13 +187,45 @@ export function Events(): React.ReactElement {
                 <Text style={styles.modalTitle}>Add New Event</Text>
 
                 {/* Title */}
-                <TextInput
-                  value={newEvent.title}
-                  onChangeText={(text) => setNewEvent({ ...newEvent, title: text })}
-                  placeholder='Enter Event Title'
-                  placeholderTextColor={styles.inputBox.color}
-                  style={[ styles.inputBox ]}
-                />
+                {eventConfig.mode === 'fixed' ? (
+                  <Text style={[styles.inputBox, { color: 'white' }]}>{newEvent.title}</Text>
+                ) : eventConfig.mode === 'checkbox' ? (
+                  <>
+                    {eventConfig.options?.map((option) => (
+                      <View key={option} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                        <Checkbox
+                          value={selectedOptions.includes(option)}
+                          onValueChange={(checked) => {
+                            if (checked) {
+                              setSelectedOptions(prev => [...prev, option]);
+                            } else {
+                              setSelectedOptions(prev => prev.filter(o => o !== option));
+                            }
+                          }}
+                        />
+                        <Text style={{ color: 'white', marginLeft: 8 }}>{option}</Text>
+                      </View>
+                    ))}
+                    {eventConfig.baseTitle === 'Honor Guard' && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
+                        <Checkbox
+                          value={isPractice}
+                          onValueChange={setIsPractice}
+                        />
+                        <Text style={{ color: 'white', marginLeft: 8 }}>Is this a practice?</Text>
+                      </View>
+                    )}
+                  </>
+                ) : (
+                  <TextInput
+                    value={newEvent.title}
+                    onChangeText={(text) => setNewEvent({ ...newEvent, title: text })}
+                    placeholder='Enter Event Title'
+                    placeholderTextColor={styles.inputBox.color}
+                    style={[styles.inputBox]}
+                    editable={true}
+                  />
+                )}
 
                 <DatePicker
                   value={newEvent.date}

@@ -265,11 +265,77 @@ export function useEvents() {
   };
 
 
+  //Determining event title based on user's job title or admin permission
+  const job = profile?.job || "—";
+  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+  const [isPractice, setIsPractice] = useState<boolean>(false);
+
+  const getEventConfig = (job?: string, permissions?: string) => {
+    if (permissions?.includes('Admin')) {
+      return { mode: 'free', title: '', options: [], baseTitle: '' };
+    }
+    switch (job) {
+      case 'Physical Fitness Officer (PFO)':
+        return { mode: 'fixed', title: 'PT', options:[], baseTitle: '' };
+      case 'Leadership Lab (LLAB) Commander':
+        return { mode: 'fixed', title: 'LLAB', options:[], baseTitle: '' };
+      case 'A3 Director':
+        return { mode: 'checkbox', title: '', options: ['LLAB', 'PT'], baseTitle: '' };
+      case 'Remedial Marching Practice (RMP) Commander':
+        return { mode: 'fixed', title: 'RMP', options:[], baseTitle: '' };
+      case 'Honor Guard Officer':
+        return { mode: 'checkbox', title: '', options: ['Honor Guard'], baseTitle: 'Honor Guard' };
+      case 'Morale Officer':
+        return { mode: 'fixed', title: 'Morale', options:[], baseTitle: '' };
+      case 'A4, A5 Director':
+        return { mode: 'checkbox', title: '', options: ['RMP', 'Honor Guard', 'Morale'], baseTitle: '' };
+      case 'Community Service Officer':
+        return { mode: 'fixed', title: 'Community Service', options:[], baseTitle: '' };
+      case 'Recruiting Officer':
+        return { mode: 'fixed', title: 'Recruiting', options:[], baseTitle: '' };
+      case 'A8, A9 Director':
+      case 'A9 Director':
+        return { mode: 'checkbox', title: '', options: ['Community Service', 'Recruiting'], baseTitle: '' };
+      case 'Special Projects Officer':
+        return { mode: 'free', title: '', options: [], baseTitle: '' };
+      default:
+        return { mode: 'free', title: '', options: [], baseTitle: '' };
+    }
+  };
+
+  useEffect(() => {
+    if (addEventsModalVisible) {
+      const config = getEventConfig(profile?.job, profile?.permissions);
+      if (config.mode === 'checkbox') {
+        let title = '';
+        if (selectedOptions.length > 0) {
+          title = selectedOptions[0];
+          if (config.baseTitle === 'Honor Guard' && isPractice) {
+            title += ' Practice';
+          }
+        }
+        setNewEvent(prev => ({ ...prev, title }));
+      }
+    }
+  }, [selectedOptions, isPractice, addEventsModalVisible, profile]);
+
+
   // Reset newEvent state to default values when opening the add event modal
   const handleAddEvent = () => {
+    const config = getEventConfig(profile?.job, profile?.permissions);
+    let title = '';
+    if (config.mode === 'fixed') {
+      title = config.title;
+    } else if (config.mode === 'checkbox') {
+      setSelectedOptions(config.options.length > 0 ? [config.options[0]] : []);
+      setIsPractice(false);
+      title = config.options.length > 0 ? config.options[0] : '';
+    } else {
+      title = '';
+    }
     setNewEvent({
       id: '',
-      title: '',
+      title,
       date: new Date(),
       time: new Date(),
       description: '',
@@ -400,6 +466,10 @@ export function useEvents() {
     allEvents,
     newEvent,
     setNewEvent,
+    selectedOptions,
+    setSelectedOptions,
+    isPractice,
+    setIsPractice,
     // Computed values
     markedDates,
     eventsForSelectedDate,
@@ -412,5 +482,6 @@ export function useEvents() {
     handleCancelAddEvent,
     // Helpers
     getLabelTextAndStyle,
+    eventConfig: getEventConfig(profile?.job, profile?.permissions),
   };
 }
