@@ -268,38 +268,37 @@ export function useEvents() {
   //Determining event title based on user's job title or admin permission
   const job = profile?.job || "—";
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-  const [isPractice, setIsPractice] = useState<boolean>(false);
 
   const getEventConfig = (job?: string, permissions?: string) => {
     if (permissions?.includes('Admin')) {
-      return { mode: 'free', title: '', options: [], baseTitle: '' };
+      return { mode: 'free', type: 'either', title: '', options: []};
     }
     switch (job) {
       case 'Physical Fitness Officer (PFO)':
-        return { mode: 'fixed', title: 'PT', options:[], baseTitle: '' };
+        return { mode: 'fixed', type: 'Mandatory', title: 'PT', options:[] };
       case 'Leadership Lab (LLAB) Commander':
-        return { mode: 'fixed', title: 'LLAB', options:[], baseTitle: '' };
+        return { mode: 'fixed', type: 'Mandatory', title: 'LLAB', options:[] };
       case 'A3 Director':
-        return { mode: 'checkbox', title: '', options: ['LLAB', 'PT'], baseTitle: '' };
+        return { mode: 'checkbox', type: 'Mandatory', title: '', options: ['LLAB', 'PT'] };
       case 'Remedial Marching Practice (RMP) Commander':
-        return { mode: 'fixed', title: 'RMP', options:[], baseTitle: '' };
+        return { mode: 'fixed', type: 'either', title: 'RMP', options:[] };
       case 'Honor Guard Officer':
-        return { mode: 'checkbox', title: '', options: ['Honor Guard'], baseTitle: 'Honor Guard' };
+        return { mode: 'checkbox', type: 'RSVP', title: '', options: ['Honor Guard', 'Honor Guard Practice'] };
       case 'Morale Officer':
-        return { mode: 'fixed', title: 'Morale', options:[], baseTitle: '' };
+        return { mode: 'fixed', type: 'RSVP', title: 'Morale', options:[], baseTitle: '' };
       case 'A4, A5 Director':
-        return { mode: 'checkbox', title: '', options: ['RMP', 'Honor Guard', 'Morale'], baseTitle: '' };
+        return { mode: 'checkbox', type: 'RSVP', title: '', options: ['RMP', 'Honor Guard', 'Honor Guard Practice', 'Morale'] };
       case 'Community Service Officer':
-        return { mode: 'fixed', title: 'Community Service', options:[], baseTitle: '' };
+        return { mode: 'fixed', type: 'RSVP', title: 'Community Service', options:[] };
       case 'Recruiting Officer':
-        return { mode: 'fixed', title: 'Recruiting', options:[], baseTitle: '' };
+        return { mode: 'fixed', type: 'RSVP', title: 'Recruiting', options:[] };
       case 'A8, A9 Director':
       case 'A9 Director':
-        return { mode: 'checkbox', title: '', options: ['Community Service', 'Recruiting'], baseTitle: '' };
+        return { mode: 'checkbox', type: 'RSVP', title: '', options: ['Community Service', 'Recruiting'] };
       case 'Special Projects Officer':
-        return { mode: 'free', title: '', options: [], baseTitle: '' };
+        return { mode: 'free', type: 'either', title: '', options: [] };
       default:
-        return { mode: 'free', title: '', options: [], baseTitle: '' };
+        return { mode: 'free', type: 'either', title: '', options: [] };
     }
   };
 
@@ -310,14 +309,11 @@ export function useEvents() {
         let title = '';
         if (selectedOptions.length > 0) {
           title = selectedOptions[0];
-          if (config.baseTitle === 'Honor Guard' && isPractice) {
-            title += ' Practice';
-          }
         }
         setNewEvent(prev => ({ ...prev, title }));
       }
     }
-  }, [selectedOptions, isPractice, addEventsModalVisible, profile]);
+  }, [selectedOptions, addEventsModalVisible, profile]);
 
 
   // Reset newEvent state to default values when opening the add event modal
@@ -328,19 +324,23 @@ export function useEvents() {
       title = config.title;
     } else if (config.mode === 'checkbox') {
       setSelectedOptions(config.options.length > 0 ? [config.options[0]] : []);
-      setIsPractice(false);
       title = config.options.length > 0 ? config.options[0] : '';
     } else {
       title = '';
     }
+
+    const [year, month, day] = selectedDate.split('-').map(Number);
+    const parsedDate = new Date(year, month - 1, day); // month is 0-indexed in JS Date
+
+    const type = config.type === 'either' ? '' : (config.type as '' | 'RSVP' | 'Mandatory');
     setNewEvent({
       id: '',
       title,
-      date: new Date(),
+      date: parsedDate,
       time: new Date(),
       description: '',
       location: '',
-      type: '' as '' | 'RSVP' | 'Mandatory',
+      type,
     });
     setAddEventsModalVisible(true);
   };
@@ -354,11 +354,15 @@ export function useEvents() {
       return;
     }
 
-    await writeToEventsDB(newEvent); // Write the new event to the database
+    //Temporary fix for date being added two days ahead in DB - think there is something wrong with the DatePicker component
+    const correctedDate = new Date(newEvent.date.getFullYear(), newEvent.date.getMonth(), newEvent.date.getDate() - 2);
+    const correctedEvent = { ...newEvent, date: correctedDate };
+
+    await writeToEventsDB(correctedEvent); // Write the new event to the database
 
     if(newEvent.title.toUpperCase() === "LLAB" || newEvent.title.toUpperCase() === "PT" || newEvent.title.toUpperCase() === "RMP"){
-      await writeToSpecialEventsDB(newEvent.title.toUpperCase(), formatDate(newEvent.date) ); // Write to special events DB if event is LLAB, PT, RMP for easy filtering on home screen
-      console.log("Wrote to Special Events DB with title:", newEvent.title.toUpperCase(), "date:", formatDate(newEvent.date));
+      await writeToSpecialEventsDB(newEvent.title.toUpperCase(), formatDate(correctedDate) ); // Write to special events DB if event is LLAB, PT, RMP for easy filtering on home screen
+      console.log("Wrote to Special Events DB with title:", newEvent.title.toUpperCase(), "date:", formatDate(correctedDate));
     }
     setAddEventsModalVisible(false);
     setToastMessage('Event added successfully');
@@ -414,10 +418,10 @@ export function useEvents() {
 
   const writeToSpecialEventsDB = async (eventTitle: string, eventDate: string) => {
     const db = getDatabase();
-    console.log("Writing to Special Events DB with title:", eventTitle, "date:", eventDate, "for user:", cadetObject.lastName);
+    console.log("Writing to Special Events DB with title:", eventTitle, "date:", eventDate, "for user:", /**cadetObject.lastName*/'Last Name');
     
     try {
-      await set(ref(db, 'attendance/' + `${eventTitle}/${eventDate}/${cadetObject.lastName}`), {
+      await set(ref(db, 'attendance/' + `${eventTitle}/${eventDate}/${/**cadetObject.lastName*/'Last Name'}`), {
         status:"."
       });
       console.log("Special event written to DB:", { title: eventTitle, date: eventDate });
@@ -487,8 +491,6 @@ export function useEvents() {
     setNewEvent,
     selectedOptions,
     setSelectedOptions,
-    isPractice,
-    setIsPractice,
     // Computed values
     markedDates,
     eventsForSelectedDate,

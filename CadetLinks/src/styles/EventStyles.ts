@@ -194,4 +194,13 @@ export const eventsStyles = StyleSheet.create({
     fontSize: 16,
     // fontFamily: 'System',
   },
+  eventTypeToggleButton: {
+    flexDirection: "row",
+    backgroundColor: "#2A3140",
+    borderRadius: 14,
+    padding: 4,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#3A4357",                                                                                                     
+  }
 });

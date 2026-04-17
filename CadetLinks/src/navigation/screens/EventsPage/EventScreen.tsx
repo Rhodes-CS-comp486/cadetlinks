@@ -24,8 +24,6 @@ export function Events(): React.ReactElement {
     setNewEvent,
     selectedOptions,
     setSelectedOptions,
-    isPractice,
-    setIsPractice,
     markedDates,
     eventsForSelectedDate,
     handleEventPress,
@@ -188,7 +186,7 @@ export function Events(): React.ReactElement {
 
                 {/* Title */}
                 {eventConfig.mode === 'fixed' ? (
-                  <Text style={[styles.inputBox, { color: 'white' }]}>{newEvent.title}</Text>
+                  <TextInput value={newEvent.title} editable={false} style={styles.inputBox}/>
                 ) : eventConfig.mode === 'checkbox' ? (
                   <>
                     {eventConfig.options?.map((option) => (
@@ -197,7 +195,7 @@ export function Events(): React.ReactElement {
                           value={selectedOptions.includes(option)}
                           onValueChange={(checked) => {
                             if (checked) {
-                              setSelectedOptions(prev => [...prev, option]);
+                              setSelectedOptions([option]);
                             } else {
                               setSelectedOptions(prev => prev.filter(o => o !== option));
                             }
@@ -206,15 +204,6 @@ export function Events(): React.ReactElement {
                         <Text style={{ color: 'white', marginLeft: 8 }}>{option}</Text>
                       </View>
                     ))}
-                    {eventConfig.baseTitle === 'Honor Guard' && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
-                        <Checkbox
-                          value={isPractice}
-                          onValueChange={setIsPractice}
-                        />
-                        <Text style={{ color: 'white', marginLeft: 8 }}>Is this a practice?</Text>
-                      </View>
-                    )}
                   </>
                 ) : (
                   <TextInput
@@ -260,62 +249,69 @@ export function Events(): React.ReactElement {
                   style={[ styles.inputBox, { height: 80 } ]}
                 />
 
-                {/* NEW TOGGLE */}
+                {/* MANDATORY OR RSVP TOGGLE */}
                 <Text style={styles.modalLabel}>Event Type:</Text>
 
-                <View
-                  style={{
-                    flexDirection: "row",
-                    backgroundColor: "#2A3140",
-                    borderRadius: 14,
-                    padding: 4,
-                    marginBottom: 14,
-                    borderWidth: 1,
-                    borderColor: "#3A4357",
-                  }}
-                >
-                  <Pressable
-                    onPress={() => setNewEvent({ ...newEvent, type: "RSVP" })}
-                    style={{
-                      flex: 1,
-                      paddingVertical: 12,
-                      borderRadius: 10,
-                      alignItems: "center",
-                      backgroundColor:
-                        newEvent.type === "RSVP" ? "#4A5568" : "transparent",
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: newEvent.type === "RSVP" ? "white" : "#C9D1D9",
-                        fontWeight: newEvent.type === "RSVP" ? "700" : "600",
-                      }}
-                    >
-                      RSVP
-                    </Text>
-                  </Pressable>
+                {eventConfig.type === 'either' ? (
+                <View style={styles.eventTypeToggleButton}>
+                  {['RSVP', 'Mandatory'].map((typeOption) => {
+                    const isActive = newEvent.type === typeOption;
 
-                  <Pressable
-                    onPress={() => setNewEvent({ ...newEvent, type: "Mandatory" })}
-                    style={{
-                      flex: 1,
-                      paddingVertical: 12,
-                      borderRadius: 10,
-                      alignItems: "center",
-                      backgroundColor:
-                        newEvent.type === "Mandatory" ? "#4A5568" : "transparent",
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: newEvent.type === "Mandatory" ? "white" : "#C9D1D9",
-                        fontWeight: newEvent.type === "Mandatory" ? "700" : "600",
-                      }}
-                    >
-                      Mandatory
-                    </Text>
-                  </Pressable>
+                    return (
+                      <Pressable
+                        key={typeOption}
+                        onPress={() => setNewEvent({ ...newEvent, type: typeOption as '' | 'RSVP' | 'Mandatory' })}
+                        style={{
+                          flex: 1,
+                          paddingVertical: 12,
+                          borderRadius: 10,
+                          alignItems: "center",
+                          backgroundColor:
+                            isActive ? "#FB9E50" : "transparent",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: "white",
+                            fontWeight: "600",
+                          }}
+                        >
+                          {typeOption}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
                 </View>
+                ) : (<View style={styles.eventTypeToggleButton}>
+                  {['RSVP', 'Mandatory'].map((typeOption) => {
+                    const isFixed = eventConfig.type !== 'either';
+                    const isActive = newEvent.type === typeOption;
+                    const isDisabled = isFixed && !isActive;
+
+                    return (
+                      <View
+                        key={typeOption}
+                        style={{
+                          flex: 1,
+                          paddingVertical: 12,
+                          borderRadius: 10,
+                          alignItems: "center",
+                          backgroundColor:
+                            isDisabled ? "transparent" : "#FB9E50",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: "white",
+                            fontWeight: "600",
+                          }}
+                        >
+                          {typeOption}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>)}
 
                 {/* Buttons */}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
