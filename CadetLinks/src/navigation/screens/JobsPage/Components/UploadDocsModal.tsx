@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { generalStyles as g_styles, generalStyles } from "../../../../styles/GeneralStyles";
 import { DarkColors as colors } from "../../../../styles/colors";
 import { jobStyles as styles } from "../../../../styles/JobStyles";
-import { eventsStyles } from "../../../../styles/EventsStyles";
+import { eventsStyles } from "../../../../styles/EventStyles";
 import { UploadDocsModalProps } from "../../../../assets/types";
 
 function formatBytes(sizeBytes: number): string {
