@@ -127,18 +127,8 @@ export function Profile(): React.ReactElement {
                     </Text>
 
                     <Text style={styles.userinfo_sub}>
-                      <Text style={styles.label_bold}>Flight: </Text>
-                      {profile.flight ?? "—"}
-                    </Text>
-
-                    <Text style={styles.userinfo_sub}>
                       <Text style={styles.label_bold}>Rank: </Text>
                       {profile.cadetRank ?? "—"}
-                    </Text>
-
-                    <Text style={styles.userinfo_sub}>
-                      <Text style={styles.label_bold}>Job: </Text>
-                      {profile.job ?? "—"}
                     </Text>
 
                     <Text style={styles.userinfo_sub}>
@@ -147,18 +137,23 @@ export function Profile(): React.ReactElement {
                     </Text>
 
                     <Text style={styles.userinfo_sub}>
+                      <Text style={styles.label_bold}>Flight: </Text>
+                      {profile.flight ?? "—"}
+                    </Text>
+
+                    <Text style={styles.userinfo_sub}>
+                      <Text style={styles.label_bold}>Job: </Text>
+                      {profile.job ?? "—"}
+                    </Text>
+
+                    <Text style={styles.userinfo_sub}>
                       <Text style={styles.label_bold}>School Email: </Text>
                       {profile.contact?.schoolEmail ?? "—"}
                     </Text>
 
                     <Text style={styles.userinfo_sub}>
-                      <Text style={styles.label_bold}>PT Attendance: </Text>
-                      {ptAttendancePercent}%
-                    </Text>
-
-                    <Text style={styles.userinfo_sub}>
-                      <Text style={styles.label_bold}>Lab Attendance: </Text>
-                      {llabAttendancePercent}%
+                      <Text style={styles.label_bold}>Phone Number: </Text>
+                      {profile.contact?.cellPhone ?? "—"}
                     </Text>
 
                     <Text style={styles.userinfo_sub}>
@@ -403,6 +398,11 @@ export function Profile(): React.ReactElement {
                     </Text>
 
                     <Text style={styles.userinfo_sub}>
+                      <Text style={styles.label_bold}>Flight: </Text>
+                      {profile.flight ?? "—"}
+                    </Text>
+
+                    <Text style={styles.userinfo_sub}>
                       <Text style={styles.label_bold}>Job: </Text>
                       {profile.job ?? "—"}
                     </Text>
@@ -410,6 +410,11 @@ export function Profile(): React.ReactElement {
                     <Text style={styles.userinfo_sub}>
                       <Text style={styles.label_bold}>Email: </Text>
                       {profile.contact?.schoolEmail ?? "—"}
+                    </Text>
+
+                    <Text style={styles.userinfo_sub}>
+                      <Text style={styles.label_bold}>Phone Number: </Text>
+                      {profile.contact?.cellPhone ?? "—"}
                     </Text>
                   </>
                 )}
