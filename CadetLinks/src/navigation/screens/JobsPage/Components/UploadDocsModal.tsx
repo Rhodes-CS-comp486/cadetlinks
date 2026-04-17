@@ -53,10 +53,6 @@ export function UploadDocsModal({
             </Pressable>
           </View>
 
-          <Text style={g_styles.text}>
-            Choose a local file, then upload it to Firebase.
-          </Text>
-
           <Pressable
             style={eventsStyles.mandatoryButton}
             onPress={() => { void onPickDocument(); }}
@@ -119,7 +115,7 @@ export function UploadDocsModal({
             {isUploadingDocument ? (
               <ActivityIndicator color={colors.text} />
             ) : (
-              <Text style={styles.dropdownItemText}>Upload to Firebase</Text>
+              <Text style={styles.dropdownItemText}>Upload</Text>
             )}
           </Pressable>
 
