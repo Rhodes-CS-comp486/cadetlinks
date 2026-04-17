@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Pressable } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { eventsStyles as styles, calendarTheme } from '../../../styles/EventStyles';
 import { useEvents } from './EventsLogic';
@@ -171,168 +171,173 @@ export function Events(): React.ReactElement {
           visible={addEventsModalVisible}
           onRequestClose={handleCancelAddEvent}
         >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
+          <KeyboardAvoidingView 
+            style={{ flex: 1 }} 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
 
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={handleCancelAddEvent}
-              >
-                <Text style={styles.closeButtonText}>✕</Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={handleCancelAddEvent}
+                >
+                  <Text style={styles.closeButtonText}>✕</Text>
+                </TouchableOpacity>
 
-              <ScrollView>
-                <Text style={styles.modalTitle}>Add New Event</Text>
+                <ScrollView>
+                  <Text style={styles.modalTitle}>Add New Event</Text>
 
-                {/* Title */}
-                {eventConfig.mode === 'fixed' ? (
-                  <TextInput value={newEvent.title} editable={false} style={styles.inputBox}/>
-                ) : eventConfig.mode === 'checkbox' ? (
-                  <>
-                    {eventConfig.options?.map((option) => (
-                      <View key={option} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                        <Checkbox
-                          value={selectedOptions.includes(option)}
-                          onValueChange={(checked) => {
-                            if (checked) {
-                              setSelectedOptions([option]);
-                            } else {
-                              setSelectedOptions(prev => prev.filter(o => o !== option));
-                            }
-                          }}
-                        />
-                        <Text style={{ color: 'white', marginLeft: 8 }}>{option}</Text>
-                      </View>
-                    ))}
-                  </>
-                ) : (
-                  <TextInput
-                    value={newEvent.title}
-                    onChangeText={(text) => setNewEvent({ ...newEvent, title: text })}
-                    placeholder='Enter Event Title'
-                    placeholderTextColor={styles.inputBox.color}
-                    style={[styles.inputBox]}
-                    editable={true}
+                  {/* Title */}
+                  {eventConfig.mode === 'fixed' ? (
+                    <TextInput value={newEvent.title} editable={false} style={styles.inputBox}/>
+                  ) : eventConfig.mode === 'checkbox' ? (
+                    <>
+                      {eventConfig.options?.map((option) => (
+                        <View key={option} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                          <Checkbox
+                            value={selectedOptions.includes(option)}
+                            onValueChange={(checked) => {
+                              if (checked) {
+                                setSelectedOptions([option]);
+                              } else {
+                                setSelectedOptions(prev => prev.filter(o => o !== option));
+                              }
+                            }}
+                          />
+                          <Text style={{ color: 'white', marginLeft: 8 }}>{option}</Text>
+                        </View>
+                      ))}
+                    </>
+                  ) : (
+                    <TextInput
+                      value={newEvent.title}
+                      onChangeText={(text) => setNewEvent({ ...newEvent, title: text })}
+                      placeholder='Enter Event Title'
+                      placeholderTextColor={styles.inputBox.color}
+                      style={[styles.inputBox]}
+                      editable={true}
+                    />
+                  )}
+
+                  <DatePicker
+                    value={newEvent.date}
+                    onChange={(date) =>
+                      setNewEvent({ ...newEvent, date })
+                    }
                   />
-                )}
 
-                <DatePicker
-                  value={newEvent.date}
-                  onChange={(date) =>
-                    setNewEvent({ ...newEvent, date })
-                  }
-                />
+                  <TimePicker
+                    value={newEvent.time}
+                    onChange={(date) =>
+                      setNewEvent({ ...newEvent, time: date })
+                    }
+                  />
 
-                <TimePicker
-                  value={newEvent.time}
-                  onChange={(date) =>
-                    setNewEvent({ ...newEvent, time: date })
-                  }
-                />
+                  {/* Location */}
+                  <TextInput
+                    value={newEvent.location}
+                    onChangeText={(text) => setNewEvent({ ...newEvent, location: text })}
+                    placeholder='Enter Location'
+                    placeholderTextColor={styles.inputBox.color}
+                    style={[ styles.inputBox ]}
+                  />
 
-                {/* Location */}
-                <TextInput
-                  value={newEvent.location}
-                  onChangeText={(text) => setNewEvent({ ...newEvent, location: text })}
-                  placeholder='Enter Location'
-                  placeholderTextColor={styles.inputBox.color}
-                  style={[ styles.inputBox ]}
-                />
+                  {/* Description */}
+                  <TextInput
+                    value={newEvent.description}
+                    onChangeText={(text) => setNewEvent({ ...newEvent, description: text })}
+                    multiline
+                    placeholder='Enter Event Description'
+                    placeholderTextColor={styles.inputBox.color}
+                    style={[ styles.inputBox, { height: 80 } ]}
+                  />
 
-                {/* Description */}
-                <TextInput
-                  value={newEvent.description}
-                  onChangeText={(text) => setNewEvent({ ...newEvent, description: text })}
-                  multiline
-                  placeholder='Enter Event Description'
-                  placeholderTextColor={styles.inputBox.color}
-                  style={[ styles.inputBox, { height: 80 } ]}
-                />
+                  {/* MANDATORY OR RSVP TOGGLE */}
+                  <Text style={styles.modalLabel}>Event Type:</Text>
 
-                {/* MANDATORY OR RSVP TOGGLE */}
-                <Text style={styles.modalLabel}>Event Type:</Text>
+                  {eventConfig.type === 'either' ? (
+                  <View style={styles.eventTypeToggleButton}>
+                    {['RSVP', 'Mandatory'].map((typeOption) => {
+                      const isActive = newEvent.type === typeOption;
 
-                {eventConfig.type === 'either' ? (
-                <View style={styles.eventTypeToggleButton}>
-                  {['RSVP', 'Mandatory'].map((typeOption) => {
-                    const isActive = newEvent.type === typeOption;
-
-                    return (
-                      <Pressable
-                        key={typeOption}
-                        onPress={() => setNewEvent({ ...newEvent, type: typeOption as '' | 'RSVP' | 'Mandatory' })}
-                        style={{
-                          flex: 1,
-                          paddingVertical: 12,
-                          borderRadius: 10,
-                          alignItems: "center",
-                          backgroundColor:
-                            isActive ? "#FB9E50" : "transparent",
-                        }}
-                      >
-                        <Text
+                      return (
+                        <Pressable
+                          key={typeOption}
+                          onPress={() => setNewEvent({ ...newEvent, type: typeOption as '' | 'RSVP' | 'Mandatory' })}
                           style={{
-                            color: "white",
-                            fontWeight: "600",
+                            flex: 1,
+                            paddingVertical: 12,
+                            borderRadius: 10,
+                            alignItems: "center",
+                            backgroundColor:
+                              isActive ? "#FB9E50" : "transparent",
                           }}
                         >
-                          {typeOption}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-                ) : (<View style={styles.eventTypeToggleButton}>
-                  {['RSVP', 'Mandatory'].map((typeOption) => {
-                    const isFixed = eventConfig.type !== 'either';
-                    const isActive = newEvent.type === typeOption;
-                    const isDisabled = isFixed && !isActive;
+                          <Text
+                            style={{
+                              color: "white",
+                              fontWeight: "600",
+                            }}
+                          >
+                            {typeOption}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                  ) : (<View style={styles.eventTypeToggleButton}>
+                    {['RSVP', 'Mandatory'].map((typeOption) => {
+                      const isFixed = eventConfig.type !== 'either';
+                      const isActive = newEvent.type === typeOption;
+                      const isDisabled = isFixed && !isActive;
 
-                    return (
-                      <View
-                        key={typeOption}
-                        style={{
-                          flex: 1,
-                          paddingVertical: 12,
-                          borderRadius: 10,
-                          alignItems: "center",
-                          backgroundColor:
-                            isDisabled ? "transparent" : "#FB9E50",
-                        }}
-                      >
-                        <Text
+                      return (
+                        <View
+                          key={typeOption}
                           style={{
-                            color: "white",
-                            fontWeight: "600",
+                            flex: 1,
+                            paddingVertical: 12,
+                            borderRadius: 10,
+                            alignItems: "center",
+                            backgroundColor:
+                              isDisabled ? "transparent" : "#FB9E50",
                           }}
                         >
-                          {typeOption}
-                        </Text>
-                      </View>
-                    );
-                  })}
-                </View>)}
+                          <Text
+                            style={{
+                              color: "white",
+                              fontWeight: "600",
+                            }}
+                          >
+                            {typeOption}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>)}
 
-                {/* Buttons */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
-                  <TouchableOpacity
-                    style={styles.confirmButton}
-                    onPress={handleConfirmAddEvent}
-                  >
-                    <Text style={styles.text}>Confirm</Text>
-                  </TouchableOpacity>
+                  {/* Buttons */}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
+                    <TouchableOpacity
+                      style={styles.confirmButton}
+                      onPress={handleConfirmAddEvent}
+                    >
+                      <Text style={styles.text}>Confirm</Text>
+                    </TouchableOpacity>
 
-                  <TouchableOpacity
-                    onPress={handleCancelAddEvent}
-                    style={styles.declineButton}
-                  >
-                    <Text style={styles.text}>Cancel</Text>
-                  </TouchableOpacity>
-                </View>
+                    <TouchableOpacity
+                      onPress={handleCancelAddEvent}
+                      style={styles.declineButton}
+                    >
+                      <Text style={styles.text}>Cancel</Text>
+                    </TouchableOpacity>
+                  </View>
 
-              </ScrollView>
+                </ScrollView>
+              </View>
             </View>
-          </View>
+          </KeyboardAvoidingView>
         </Modal>
 
       </View>
