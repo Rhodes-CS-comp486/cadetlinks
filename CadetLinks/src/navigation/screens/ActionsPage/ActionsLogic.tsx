@@ -36,8 +36,7 @@ export function useActionsLogic() {
 
   const canTakeAttendance = cadetPermissionsMap.get(PERMISSIONS.ATTENDANCE_EDITING) ?? false;
   const canUploadFiles = cadetPermissionsMap.get(PERMISSIONS.FILE_UPLOADING) ?? false;
-  const canMakeEvents = cadetPermissionsMap.get(PERMISSIONS.EVENT_MAKING) ?? false;
-  const isAll = canTakeAttendance && canUploadFiles && canMakeEvents;
+  const isAll = canTakeAttendance && canUploadFiles;
   const attendance = useAttendanceLogic();
   const documentUploading = useDocumentUploadingLogic();
   const navigation: NavAny = useNavigation();
@@ -143,16 +142,6 @@ export function useActionsLogic() {
     });
   }
 
-  if (canMakeEvents) {
-    actions.push({
-      id: PERMISSIONS.EVENT_MAKING,
-      title: "Event Making",
-      subtitle: "Create and publish events to the wing calendar",
-      routeHint: "Events",
-      allowed: true,
-    });
-  }
-
   // Create Accounts = All only
   if (isAll) {
     actions.push({
@@ -175,7 +164,6 @@ export function useActionsLogic() {
       isAll,
       canTakeAttendance,
       canUploadFiles,
-      canMakeEvents,
       actions,
       onPressAction,
       attendance,
@@ -195,7 +183,6 @@ export function useActionsLogic() {
       isAll,
       canTakeAttendance,
       canUploadFiles,
-      canMakeEvents,
       actions,
     ]
   );
