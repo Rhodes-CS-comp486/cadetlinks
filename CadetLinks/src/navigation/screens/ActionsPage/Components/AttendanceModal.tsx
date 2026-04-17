@@ -8,7 +8,7 @@ import {
   Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { jobStyles as styles } from "../../../../styles/JobStyles";
+import { actionStyles as styles } from "../../../../styles/ActionStyles";
 import { AttendanceModalProps } from "../../../../assets/types";
 
 export function AttendanceModal({

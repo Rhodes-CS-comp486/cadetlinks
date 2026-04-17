@@ -1,7 +1,7 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import { Modal } from 'react-native';
-import { AttendanceModal } from '../../../src/navigation/screens/JobsPage/Components/AttendanceModal';
+import { AttendanceModal } from '../../../src/navigation/screens/ActionsPage/Components/AttendanceModal';
 
 jest.mock('@expo/vector-icons', () => ({
 	Ionicons: ({ name }: { name: string }) => {

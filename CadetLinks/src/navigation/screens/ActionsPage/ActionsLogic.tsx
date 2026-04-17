@@ -4,14 +4,14 @@ import { ref, get } from "firebase/database";
 import { db } from "../../../firebase/config";
 import { useHomeLogic } from "../HomePage/HomeLogic";
 import { PERMISSIONS } from "../../../assets/constants";
-import { CadetProfile, JobsAction } from "../../../assets/types";
+import { CadetProfile, Action } from "../../../assets/types";
 import { useDocumentUploadingLogic } from "./UploadDocsLogic";
 import { useAttendanceLogic } from "./AttendanceLogic";
 import { useNavigation } from "@react-navigation/core";
 
 type NavAny = ReturnType<typeof useNavigation<any>>;
 
-export function iconForAction(id: JobsAction["id"]) { // this function maps icons to actions.
+export function iconForAction(id: Action["id"]) { // this function maps icons to actions.
   switch (id) {
     case PERMISSIONS.ATTENDANCE_EDITING:
       return "checkbox-outline";
@@ -26,7 +26,7 @@ export function iconForAction(id: JobsAction["id"]) { // this function maps icon
   }
 }
 
-export function useJobsLogic() {
+export function useActionsLogic() {
   const { cadetPermissionsMap } = useHomeLogic();
   const [cadetKey, setCadetKey] = useState<string | null>(null);
 
@@ -96,7 +96,7 @@ export function useJobsLogic() {
     load();
   }, []);
   
-  const onPressAction = async (a: JobsAction) => {
+  const onPressAction = async (a: Action) => {
       if (!a.allowed) return;
   
       if (a.id === PERMISSIONS.ATTENDANCE_EDITING) {
@@ -122,7 +122,7 @@ export function useJobsLogic() {
   const jobText = profile?.job ?? "—"; // grabs job from profile (dash if no job)
 
   // only show actions the cadet is actually allowed to use
-  const actions: JobsAction[] = [];
+  const actions: Action[] = [];
 
   if (canTakeAttendance) {
     actions.push({
