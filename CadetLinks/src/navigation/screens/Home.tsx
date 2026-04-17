@@ -28,20 +28,6 @@ export function Home() {
       });
   }, []);
 
-  useLayoutEffect(() => {
-    if (!navigation || typeof navigation.setOptions !== 'function') return;
-
-    navigation.setOptions({
-      headerRight: () => (
-        <TouchableOpacity 
-          onPress={() => navigation.navigate('Settings')}
-          style={{ marginRight: 15 }}>
-          <Ionicons name="settings-outline" size={24} color="black" />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation]); 
-
   //Announcements
   const announcements = [
   { id: '1', title: 'LLAB Uniform', body: 'OCPs required this Thursday.' },

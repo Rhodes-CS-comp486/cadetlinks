@@ -7,7 +7,6 @@ import { HomePage } from './screens/HomePage/Home';
 import { Login } from "./screens/LoginPage/Login";
 import { Profile } from './screens/ProfilePage/Profile';
 import { Jobs } from './screens/JobsPage/Jobs';
-import { Settings } from './screens/Settings';
 import { Events } from './screens/EventsPage/EventScreen';
 import { NotFound } from './screens/NotFound';
 import { Search } from "./screens/SearchPage/Search";
@@ -94,17 +93,6 @@ const RootStack = createNativeStackNavigator({
         headerShown: false,
       },
     },
-    Settings: {
-      screen: Settings,
-      options: ({ navigation }) => ({
-        presentation: "modal",
-        headerRight: () => (
-          <HeaderButton onPress={navigation.goBack}>
-            <Text>Close</Text>
-          </HeaderButton>
-        ),
-      }),
-    },
     Search: {
       screen: Search,
       options: {
@@ -135,7 +123,6 @@ export const Navigation = createStaticNavigation(RootStack);
 export type RootStackParamList = {
   Login: undefined;
   HomeTabs: undefined;
-  Settings: undefined;
   Search: undefined;
   PublicProfile: { cadetKey: string };
   ChangePassword: undefined;
