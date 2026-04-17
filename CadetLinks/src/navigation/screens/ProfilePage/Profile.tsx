@@ -152,11 +152,6 @@ export function Profile(): React.ReactElement {
                     </Text>
 
                     <Text style={styles.userinfo_sub}>
-                      <Text style={styles.label_bold}>Direct Supervisor: </Text>
-                      {profile.directSupervisor ?? "—"}
-                    </Text>
-
-                    <Text style={styles.userinfo_sub}>
                       <Text style={styles.label_bold}>PT Attendance: </Text>
                       {ptAttendancePercent}%
                     </Text>
