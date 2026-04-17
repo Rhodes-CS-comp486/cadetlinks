@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { jobStyles as styles } from "../../../styles/JobStyles";
+import { actionStyles as styles } from "../../../styles/ActionStyles";
 import { ScreenLayout } from "../../Components/ScreenLayout";
 import { AttendanceModal } from "./Components/AttendanceModal";
 import { UploadDocsModal } from "./Components/UploadDocsModal";
@@ -18,11 +18,11 @@ import { useAttendanceLogic } from "./AttendanceLogic";
 import { useDocumentUploadingLogic } from "./UploadDocsLogic";
 import { ViewDocumentLogic } from "./ViewDocumentLogic";
 import { PERMISSIONS } from "../../../assets/constants";
-import { useJobsLogic, iconForAction } from "./JobsLogic";
-import { CadetProfile, JobsAction, NavAny } from "../../../assets/types";
-import { ViewDocumentModal } from "../JobsPage/Components/ViewDocumentModal";
+import { useActionsLogic, iconForAction } from "../ActionsPage/ActionsLogic";
+import { CadetProfile, Action, NavAny } from "../../../assets/types";
+import { ViewDocumentModal } from "./Components/ViewDocumentModal";
 
-export function Jobs(): React.ReactElement {
+export function Actions(): React.ReactElement {
   const navigation: NavAny = useNavigation();
 
   const [docListVisible, setDocListVisible] = React.useState(false);
@@ -43,7 +43,7 @@ export function Jobs(): React.ReactElement {
     permissionText,
     anyVisibleActions,
     canUploadFiles,
-  } = useJobsLogic();
+  } = useActionsLogic();
 
   return (
     <ScreenLayout>
@@ -63,7 +63,7 @@ export function Jobs(): React.ReactElement {
               {loading ? (
                 <View style={styles.loadingBlock}>
                   <ActivityIndicator />
-                  <Text style={styles.userinfo_sub}>Loading jobs…</Text>
+                  <Text style={styles.userinfo_sub}>Loading actions...</Text>
                 </View>
               ) : error ? (
                 <>

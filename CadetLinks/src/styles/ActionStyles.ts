@@ -2,7 +2,7 @@ import { StyleSheet } from 'react-native';
 import { generalStyles } from './GeneralStyles';
 import {DarkColors as colors } from './colors';
 
-export const jobStyles = StyleSheet.create({
+export const actionStyles = StyleSheet.create({
     ...generalStyles, //inherit general styles for container and others
 
     label_bold: {

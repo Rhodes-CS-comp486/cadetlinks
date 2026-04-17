@@ -11,8 +11,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { generalStyles as g_styles, generalStyles } from "../../../../styles/GeneralStyles";
 import { DarkColors as colors } from "../../../../styles/colors";
-import { jobStyles as styles } from "../../../../styles/JobStyles";
-import { eventsStyles } from "../../../../styles/EventsStyles";
+import { actionStyles as styles } from "../../../../styles/ActionStyles";
+import { eventsStyles } from "../../../../styles/EventStyles";
 import { UploadDocsModalProps } from "../../../../assets/types";
 
 function formatBytes(sizeBytes: number): string {
@@ -52,10 +52,6 @@ export function UploadDocsModal({
               <Ionicons name="close" size={22} color={colors.text} />
             </Pressable>
           </View>
-
-          <Text style={g_styles.text}>
-            Choose a local file, then upload it to Firebase.
-          </Text>
 
           <Pressable
             style={eventsStyles.mandatoryButton}
@@ -119,7 +115,7 @@ export function UploadDocsModal({
             {isUploadingDocument ? (
               <ActivityIndicator color={colors.text} />
             ) : (
-              <Text style={styles.dropdownItemText}>Upload to Firebase</Text>
+              <Text style={styles.dropdownItemText}>Upload</Text>
             )}
           </Pressable>
 

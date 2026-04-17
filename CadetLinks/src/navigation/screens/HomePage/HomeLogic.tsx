@@ -191,23 +191,6 @@ export function useHomeLogic() {
     loadCadetData();
   },[] );
 
-  //console.log("Permissions map:",cadetPermissionsMap);
-
-
-  useLayoutEffect(() => {
-    if (!navigation || typeof navigation.setOptions !== 'function') return;
-
-    navigation.setOptions({
-      headerRight: () => (
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Settings')}
-          style={{ marginRight: 15 }}>
-          <Ionicons name="settings-outline" size={24} color="black" />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation]); 
-
   {/** Announcements */}
   // Loading announcements and listening for changes in real-time
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);

@@ -6,8 +6,7 @@ import { Image } from 'react-native';
 import { HomePage } from './screens/HomePage/Home';
 import { Login } from "./screens/LoginPage/Login";
 import { Profile } from './screens/ProfilePage/Profile';
-import { Jobs } from './screens/JobsPage/Jobs';
-import { Settings } from './screens/Settings';
+import { Actions } from './screens/ActionsPage/Actions';
 import { Events } from './screens/EventsPage/EventScreen';
 import { NotFound } from './screens/NotFound';
 import { Search } from "./screens/SearchPage/Search";
@@ -55,10 +54,10 @@ const HomeTabs = createBottomTabNavigator({
         ...createTabIcon(calendar),
       },
     },
-    Jobs: {
-      screen: Jobs,
+    Actions: {
+      screen: Actions,
       options: {
-        title: "Jobs",
+        title: "Actions",
         headerShown: false,
         tabBarIcon: ({ color, size }) => (
           <Image
@@ -69,7 +68,6 @@ const HomeTabs = createBottomTabNavigator({
         ),
       },
     },
-    
     Profile: {
       screen: Profile,
       options: {
@@ -93,17 +91,6 @@ const RootStack = createNativeStackNavigator({
         title: "Home",
         headerShown: false,
       },
-    },
-    Settings: {
-      screen: Settings,
-      options: ({ navigation }) => ({
-        presentation: "modal",
-        headerRight: () => (
-          <HeaderButton onPress={navigation.goBack}>
-            <Text>Close</Text>
-          </HeaderButton>
-        ),
-      }),
     },
     Search: {
       screen: Search,
@@ -135,7 +122,6 @@ export const Navigation = createStaticNavigation(RootStack);
 export type RootStackParamList = {
   Login: undefined;
   HomeTabs: undefined;
-  Settings: undefined;
   Search: undefined;
   PublicProfile: { cadetKey: string };
   ChangePassword: undefined;

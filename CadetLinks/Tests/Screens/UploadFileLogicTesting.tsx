@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as firebaseDatabase from 'firebase/database';
 import * as firebaseStorage from 'firebase/storage';
-import { useDocumentUploadingLogic } from '../../src/navigation/screens/JobsPage/UploadDocsLogic';
+import { useDocumentUploadingLogic } from '../../src/navigation/screens/ActionsPage/UploadDocsLogic';
 
 type PickerAsset = {
 	name?: string;

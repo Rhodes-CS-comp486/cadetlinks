@@ -4,7 +4,7 @@ import type {
   AttendanceStatus,
   CadetListItem,
   EventItem,
-} from "../navigation/screens/JobsPage/AttendanceLogic";
+} from "../navigation/screens/ActionsPage/AttendanceLogic";
 
 export type UploadDocsModalProps = {
   visible: boolean;
@@ -73,14 +73,14 @@ export type CadetProfile = {
   };
 };
 
-type JobsActionId =
+type ActionId =
 | typeof PERMISSIONS.ATTENDANCE_EDITING
 | typeof PERMISSIONS.FILE_UPLOADING
 | typeof PERMISSIONS.EVENT_MAKING
 | typeof PERMISSIONS.ADMIN;
 
-export type JobsAction = {
-  id: JobsActionId;
+export type Action = {
+  id: ActionId;
   title: string;
   subtitle: string;
   routeHint?: string;

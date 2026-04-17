@@ -4,14 +4,14 @@ import { ref, get } from "firebase/database";
 import { db } from "../../../firebase/config";
 import { useHomeLogic } from "../HomePage/HomeLogic";
 import { PERMISSIONS } from "../../../assets/constants";
-import { CadetProfile, JobsAction } from "../../../assets/types";
+import { CadetProfile, Action } from "../../../assets/types";
 import { useDocumentUploadingLogic } from "./UploadDocsLogic";
 import { useAttendanceLogic } from "./AttendanceLogic";
 import { useNavigation } from "@react-navigation/core";
 
 type NavAny = ReturnType<typeof useNavigation<any>>;
 
-export function iconForAction(id: JobsAction["id"]) { // this function maps icons to actions.
+export function iconForAction(id: Action["id"]) { // this function maps icons to actions.
   switch (id) {
     case PERMISSIONS.ATTENDANCE_EDITING:
       return "checkbox-outline";
@@ -26,7 +26,7 @@ export function iconForAction(id: JobsAction["id"]) { // this function maps icon
   }
 }
 
-export function useJobsLogic() {
+export function useActionsLogic() {
   const { cadetPermissionsMap } = useHomeLogic();
   const [cadetKey, setCadetKey] = useState<string | null>(null);
 
@@ -36,8 +36,7 @@ export function useJobsLogic() {
 
   const canTakeAttendance = cadetPermissionsMap.get(PERMISSIONS.ATTENDANCE_EDITING) ?? false;
   const canUploadFiles = cadetPermissionsMap.get(PERMISSIONS.FILE_UPLOADING) ?? false;
-  const canMakeEvents = cadetPermissionsMap.get(PERMISSIONS.EVENT_MAKING) ?? false;
-  const isAll = canTakeAttendance && canUploadFiles && canMakeEvents;
+  const isAll = canTakeAttendance && canUploadFiles;
   const attendance = useAttendanceLogic();
   const documentUploading = useDocumentUploadingLogic();
   const navigation: NavAny = useNavigation();
@@ -96,7 +95,7 @@ export function useJobsLogic() {
     load();
   }, []);
   
-  const onPressAction = async (a: JobsAction) => {
+  const onPressAction = async (a: Action) => {
       if (!a.allowed) return;
   
       if (a.id === PERMISSIONS.ATTENDANCE_EDITING) {
@@ -122,7 +121,7 @@ export function useJobsLogic() {
   const jobText = profile?.job ?? "—"; // grabs job from profile (dash if no job)
 
   // only show actions the cadet is actually allowed to use
-  const actions: JobsAction[] = [];
+  const actions: Action[] = [];
 
   if (canTakeAttendance) {
     actions.push({
@@ -139,16 +138,6 @@ export function useJobsLogic() {
       title: "Upload Files",
       subtitle: "Upload PDFs and other documents for cadets",
       routeHint: "Files",
-      allowed: true,
-    });
-  }
-
-  if (canMakeEvents) {
-    actions.push({
-      id: PERMISSIONS.EVENT_MAKING,
-      title: "Event Making",
-      subtitle: "Create and publish events to the wing calendar",
-      routeHint: "Events",
       allowed: true,
     });
   }
@@ -175,7 +164,6 @@ export function useJobsLogic() {
       isAll,
       canTakeAttendance,
       canUploadFiles,
-      canMakeEvents,
       actions,
       onPressAction,
       attendance,
@@ -195,7 +183,6 @@ export function useJobsLogic() {
       isAll,
       canTakeAttendance,
       canUploadFiles,
-      canMakeEvents,
       actions,
     ]
   );
