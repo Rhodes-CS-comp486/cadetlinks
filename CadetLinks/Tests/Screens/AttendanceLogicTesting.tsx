@@ -5,7 +5,7 @@ import * as firebaseDatabase from 'firebase/database';
 import {
   useAttendanceLogic,
   type AttendanceStatus,
-} from '../../src/navigation/screens/JobsPage/AttendanceLogic';
+} from '../../src/navigation/screens/ActionsPage/AttendanceLogic';
 import { useEvents } from '../../src/navigation/screens/EventsPage/EventsLogic';
 import { useProfileLogic } from '../../src/navigation/screens/ProfilePage/ProfileLogic';
 

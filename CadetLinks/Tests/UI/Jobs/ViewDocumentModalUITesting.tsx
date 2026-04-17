@@ -1,7 +1,7 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import { Linking, Modal, Platform } from 'react-native';
-import { ViewDocumentModal } from '../../../src/navigation/screens/JobsPage/Components/ViewDocumentModal';
+import { ViewDocumentModal } from '../../../src/navigation/screens/ActionsPage/Components/ViewDocumentModal';
 
 jest.mock('@expo/vector-icons', () => ({
 	Ionicons: ({ name }: { name: string }) => {

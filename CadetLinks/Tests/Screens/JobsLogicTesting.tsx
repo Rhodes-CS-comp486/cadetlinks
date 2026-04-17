@@ -3,10 +3,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as firebaseDatabase from 'firebase/database';
 import { useNavigation } from '@react-navigation/core';
 import { PERMISSIONS } from '../../src/assets/constants';
-import { iconForAction, useJobsLogic } from '../../src/navigation/screens/JobsPage/JobsLogic';
+import { iconForAction, useJobsLogic } from '../../src/navigation/screens/JobsPage/ActionsLogic';
 import { useHomeLogic } from '../../src/navigation/screens/HomePage/HomeLogic';
-import { useAttendanceLogic } from '../../src/navigation/screens/JobsPage/AttendanceLogic';
-import { useDocumentUploadingLogic } from '../../src/navigation/screens/JobsPage/UploadDocsLogic';
+import { useAttendanceLogic } from '../../src/navigation/screens/ActionsPage/AttendanceLogic';
+import { useDocumentUploadingLogic } from '../../src/navigation/screens/ActionsPage/UploadDocsLogic';
 
 type Snapshot = {
 	val: () => unknown;

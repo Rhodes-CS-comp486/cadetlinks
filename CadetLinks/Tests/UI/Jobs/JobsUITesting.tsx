@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
-import { Jobs } from '../../../src/navigation/screens/JobsPage/Jobs';
+import { Jobs } from '../../../src/navigation/screens/ActionsPage/Actions';
 import { PERMISSIONS } from '../../../src/assets/constants';
 
 const mockUseJobsLogic = jest.fn();
