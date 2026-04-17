@@ -16,6 +16,15 @@ export default function DatePicker({
 }: DatePickerProps) {
   const [show, setShow] = useState(false);
 
+  const handlePress = () => {
+    if (Platform.OS === 'ios') {
+      setShow((prev) => !prev);
+      return;
+    }
+
+    setShow(true);
+  };
+
   const formatDate = (date: Date) =>
     date.toLocaleDateString([], {
       year: 'numeric',
@@ -57,7 +66,7 @@ export default function DatePicker({
     <View>
       <Pressable
         style={styles.scrollWheelIOS as any}
-        onPress={() => setShow(true)}
+        onPress={handlePress}
       >
         <Text>
           {value ? formatDate(value) : placeholder}
@@ -69,6 +78,7 @@ export default function DatePicker({
           value={value ?? new Date()}
           mode="date"
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          textColor={Platform.OS === 'ios' ? 'white' : undefined}
           onChange={(
             event: DateTimePickerEvent,
             selectedDate?: Date

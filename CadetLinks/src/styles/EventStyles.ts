@@ -192,6 +192,7 @@ export const eventsStyles = StyleSheet.create({
     marginBottom: 15,
     backgroundColor: '#f9f9f9',
     fontSize: 16,
+
     // fontFamily: 'System',
   },
   eventTypeToggleButton: {
