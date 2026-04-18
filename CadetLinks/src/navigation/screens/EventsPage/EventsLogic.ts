@@ -5,6 +5,7 @@ import { getDatabase, ref, onValue, set, get } from "firebase/database";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CadetProfile } from '../ProfilePage/ProfileLogic';
 import { db } from '../../../firebase/config';
+import { useHomeLogic } from '../HomePage/HomeLogic';
 
 export interface Event {
   id: string
@@ -268,9 +269,9 @@ export function useEvents() {
   //Determining event title based on user's job title or admin permission
   const job = profile?.job || "—";
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-
+  const { cadetPermissionsMap } = useHomeLogic();
   const getEventConfig = (job?: string, permissions?: string) => {
-    if (permissions?.includes('Admin')) {
+    if (cadetPermissionsMap.get('Admin')) {
       return { mode: 'free', type: 'either', title: '', options: []};
     }
     switch (job) {
@@ -300,6 +301,29 @@ export function useEvents() {
       default:
         return { mode: 'free', type: 'either', title: '', options: [] };
     }
+  };
+
+  const normalizeEventTitle = (title: string) => title.trim().toLowerCase();
+
+  // Determines if curr user can delete the event based on perrmission, job, and event title
+  const canDeleteEvent = (event: Event): boolean => {
+    const config = getEventConfig(profile?.job, profile?.permissions);
+    console.log("Checking if they are admin:", cadetPermissionsMap.get('Admin'));
+    
+    if (cadetPermissionsMap.get('Admin')) {
+      return true;
+    }
+
+    const eventTitle = normalizeEventTitle(event.title);
+
+    if (config.mode === 'fixed') {
+      return normalizeEventTitle(config.title) === eventTitle;
+    }
+
+    if (config.mode === 'checkbox') {
+      return config.options.some((option) => normalizeEventTitle(option) === eventTitle);
+    }
+    return false;
   };
 
   useEffect(() => {
@@ -465,6 +489,11 @@ export function useEvents() {
   };
 
   const handleDeleteEvent = (event: Event) => {
+    if (!canDeleteEvent(event)) {
+      Alert.alert('Not allowed', 'You can only delete events associated with your role.');
+      return;
+    }
+
     if (Platform.OS === 'web') {
       if (window.confirm(`Are you sure you want to delete "${event.title}"?`)) {
         void deleteEventFromDB(event.id);
@@ -505,6 +534,8 @@ export function useEvents() {
 
   };
 
+  const canManageEvents = profile?.permissions?.includes('Event Making') || profile?.permissions?.includes('Admin');
+
   // Return all state, computed values, handlers, and helpers
   return {
     // State
@@ -532,6 +563,8 @@ export function useEvents() {
     handleConfirmAddEvent,
     handleCancelAddEvent,
     handleDeleteEvent,
+    canDeleteEvent,
+    canManageEvents,
     // Helpers
     getLabelTextAndStyle,
     eventConfig: getEventConfig(profile?.job, profile?.permissions),

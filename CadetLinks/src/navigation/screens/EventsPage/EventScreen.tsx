@@ -34,11 +34,15 @@ export function Events(): React.ReactElement {
     handleConfirmAddEvent,
     handleCancelAddEvent,
     handleDeleteEvent,
+    canDeleteEvent,
     getLabelTextAndStyle,
     eventConfig,
   } = useEvents();
 
   const { cadetPermissionsMap } = useHomeLogic();
+  const canManageEvents =
+    cadetPermissionsMap.get(PERMISSIONS.EVENT_MAKING) ||
+    cadetPermissionsMap.get(PERMISSIONS.ADMIN);
 
   return (
     <ScreenLayout>
@@ -86,7 +90,7 @@ export function Events(): React.ReactElement {
                       </Text>
                     </View>
 
-                    {cadetPermissionsMap.get(PERMISSIONS.EVENT_MAKING) && (
+                    {canManageEvents && canDeleteEvent(event) && (
                       <Pressable
                         onPress={() => handleDeleteEvent(event)}
                         style={{ marginLeft: 12 }}
@@ -110,7 +114,7 @@ export function Events(): React.ReactElement {
         )}
 
         {/* Add Event Button */}
-        {cadetPermissionsMap.get(PERMISSIONS.EVENT_MAKING) && (
+        {canManageEvents && (
           <TouchableOpacity
             style={styles.addEventButton}
             onPress={handleAddEvent}
