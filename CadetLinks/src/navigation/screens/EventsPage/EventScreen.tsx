@@ -35,14 +35,12 @@ export function Events(): React.ReactElement {
     handleCancelAddEvent,
     handleDeleteEvent,
     canDeleteEvent,
+    canManageEvents,
     getLabelTextAndStyle,
     eventConfig,
   } = useEvents();
 
   const { cadetPermissionsMap } = useHomeLogic();
-  const canManageEvents =
-    cadetPermissionsMap.get(PERMISSIONS.EVENT_MAKING) ||
-    cadetPermissionsMap.get(PERMISSIONS.ADMIN);
 
   return (
     <ScreenLayout>
@@ -157,7 +155,7 @@ export function Events(): React.ReactElement {
                   <Text style={styles.modalLabel}>Description:</Text>
                   <Text style={styles.modalText}>{selectedEvent.description}</Text>
 
-                  {selectedEvent.type === 'RSVP' && rsvpStatus[selectedEvent.id] === undefined && (
+                  {selectedEvent.type === 'RSVP' && (
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
                       <TouchableOpacity
                         onPress={() => handleRSVP(selectedEvent.id, true)}
