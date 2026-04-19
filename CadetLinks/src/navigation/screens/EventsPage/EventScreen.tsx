@@ -156,7 +156,6 @@ export function Events(): React.ReactElement {
                   <Text style={styles.modalLabel}>Description:</Text>
                   <Text style={styles.modalText}>{selectedEvent.description}</Text>
 
-
                   {selectedEvent.type === 'RSVP' && (
                     <View>
                       <Text style={styles.modalLabel}> RSVP List </Text>
@@ -164,7 +163,6 @@ export function Events(): React.ReactElement {
                     </View>
                   )
                   }
-
 
                   {selectedEvent.type === 'RSVP' && (
 
