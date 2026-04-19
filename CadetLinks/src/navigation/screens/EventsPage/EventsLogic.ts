@@ -46,6 +46,7 @@ export function useEvents() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [profile, setProfile] = useState<CadetProfile | null>(null);
+  const [rsvpList,setRsvpList] = useState<{[eventId: string]: string[]}>({}); // New state to hold RSVP lists for events
 
   const [newEvent, setNewEvent] = useState<Event>({
     id: '',
@@ -198,6 +199,7 @@ export function useEvents() {
       if (status !== undefined) {
         setRsvpStatus((prev) => ({ ...prev, [event.id]: status }));
       }
+      getRsvpListForEvent(event.id);
     }
     setEventInfoModalVisible(true);
   };
@@ -260,6 +262,52 @@ export function useEvents() {
 
   }
 
+  const getRsvpListForEvent = async (eventId: string): Promise<void> => {
+    try {
+      const rsvpRef = ref(db, `rsvps/${eventId}`);
+      const snapshot = await get(rsvpRef);
+
+      if (!snapshot.exists()) {
+        setRsvpList((prev) => ({ ...prev, [eventId]: [] }));
+        return;
+      }
+
+      const confirmedCadetKeys: string[] = [];
+      snapshot.forEach((childSnapshot) => {
+        const value = childSnapshot.val();
+        if (value && value.status === 'Y' && childSnapshot.key) {
+          confirmedCadetKeys.push(childSnapshot.key);
+        }
+      });
+
+      if (confirmedCadetKeys.length === 0) {
+        setRsvpList((prev) => ({ ...prev, [eventId]: [] }));
+        return;
+      }
+
+      const cadetNames = await Promise.all(
+        confirmedCadetKeys.map(async (cadetId) => {
+          const cadetRef = ref(db, `cadets/${cadetId}`);
+          const cadetSnap = await get(cadetRef);
+
+          if (!cadetSnap.exists()) {
+            return cadetId;
+          }
+
+          const cadetData = cadetSnap.val() as CadetProfile;
+          const fullName = `${cadetData.firstName ?? ''} ${cadetData.lastName ?? ''}`.trim();
+          return fullName || cadetId;
+        })
+      );
+
+      setRsvpList((prev) => ({ ...prev, [eventId]: cadetNames }));
+    } catch (error) {
+      console.error('Error getting RSVP list from DB:', error);
+      setRsvpList((prev) => ({ ...prev, [eventId]: [] }));
+    }
+  };
+
+
   const handleCloseEventInfoModal = () => {
     setEventInfoModalVisible(false);
     setSelectedEvent(null);
@@ -308,7 +356,6 @@ export function useEvents() {
   // Determines if curr user can delete the event based on perrmission, job, and event title
   const canDeleteEvent = (event: Event): boolean => {
     const config = getEventConfig(profile?.job, profile?.permissions);
-    console.log("Checking if they are admin:", cadetPermissionsMap.get('Admin'));
     
     if (cadetPermissionsMap.get('Admin')) {
       return true;
@@ -540,6 +587,8 @@ export function useEvents() {
   return {
     // State
     selectedDate,
+    rsvpList,
+    setRsvpList,
     setSelectedDate,
     selectedEvent,
     eventInfoModalVisible,
