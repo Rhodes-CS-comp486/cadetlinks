@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import { eventsStyles as styles } from '../../../styles/EventStyles';
 import { getDatabase, ref, onValue, set, get } from "firebase/database";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CadetProfile } from '../ProfilePage/ProfileLogic';
 import { db } from '../../../firebase/config';
+import { useHomeLogic } from '../HomePage/HomeLogic';
 
 export interface Event {
   id: string
@@ -268,9 +269,9 @@ export function useEvents() {
   //Determining event title based on user's job title or admin permission
   const job = profile?.job || "—";
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-
+  const { cadetPermissionsMap } = useHomeLogic();
   const getEventConfig = (job?: string, permissions?: string) => {
-    if (permissions?.includes('Admin')) {
+    if (cadetPermissionsMap.get('Admin')) {
       return { mode: 'free', type: 'either', title: '', options: []};
     }
     switch (job) {
@@ -300,6 +301,29 @@ export function useEvents() {
       default:
         return { mode: 'free', type: 'either', title: '', options: [] };
     }
+  };
+
+  const normalizeEventTitle = (title: string) => title.trim().toLowerCase();
+
+  // Determines if curr user can delete the event based on perrmission, job, and event title
+  const canDeleteEvent = (event: Event): boolean => {
+    const config = getEventConfig(profile?.job, profile?.permissions);
+    console.log("Checking if they are admin:", cadetPermissionsMap.get('Admin'));
+    
+    if (cadetPermissionsMap.get('Admin')) {
+      return true;
+    }
+
+    const eventTitle = normalizeEventTitle(event.title);
+
+    if (config.mode === 'fixed') {
+      return normalizeEventTitle(config.title) === eventTitle;
+    }
+
+    if (config.mode === 'checkbox') {
+      return config.options.some((option) => normalizeEventTitle(option) === eventTitle);
+    }
+    return false;
   };
 
   useEffect(() => {
@@ -456,6 +480,41 @@ export function useEvents() {
     setAddEventsModalVisible(false);
   };
 
+  // Delete an event from Firebase (and its RSVP entries)
+  const deleteEventFromDB = async (eventId: string) => {
+    const db = getDatabase();
+    await set(ref(db, `events/${eventId}`), null);
+    await set(ref(db, `rsvps/${eventId}`), null);
+    console.log('Event deleted from DB:', eventId);
+  };
+
+  const handleDeleteEvent = (event: Event) => {
+    if (!canDeleteEvent(event)) {
+      Alert.alert('Not allowed', 'You can only delete events associated with your role.');
+      return;
+    }
+
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Are you sure you want to delete "${event.title}"?`)) {
+        void deleteEventFromDB(event.id);
+      }
+      return;
+    }
+
+    Alert.alert(
+      'Delete Event',
+      `Are you sure you want to delete "${event.title}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => void deleteEventFromDB(event.id),
+        },
+      ]
+    );
+  };
+
   // Helper function to determine label text and style for event based on type and RSVP status
   const getLabelTextAndStyle = (event: { type: string; id: string }): [any, string] => {
     if (event.type === 'Mandatory') {
@@ -474,6 +533,8 @@ export function useEvents() {
     return [styles.rsvpLabel, 'RSVP']; // default for RSVP events with no response yet
 
   };
+
+  const canManageEvents = profile?.permissions?.includes('Event Making') || profile?.permissions?.includes('Admin');
 
   // Return all state, computed values, handlers, and helpers
   return {
@@ -501,6 +562,9 @@ export function useEvents() {
     handleAddEvent,
     handleConfirmAddEvent,
     handleCancelAddEvent,
+    handleDeleteEvent,
+    canDeleteEvent,
+    canManageEvents,
     // Helpers
     getLabelTextAndStyle,
     eventConfig: getEventConfig(profile?.job, profile?.permissions),
