@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Platform } from 'react-native';
 import { eventsStyles as styles } from '../../../styles/EventStyles';
-import { globals, initializeGlobals, addEvent, removeEvent, setUserRsvpStatus, PERMISSIONS } from '../../../firebase/globals';
+import { globals, initializeGlobals, addEvent, removeEvent, setUserRsvpStatus, PERMISSIONS } from '../../../firebase/dbController';
 
 export interface Event {
   id: string;

@@ -16,8 +16,32 @@ import { get, onValue, ref, set } from "firebase/database";
 import { remove, update } from "firebase/database";
 import { deleteObject, getDownloadURL, ref as storageRef, uploadBytes } from "firebase/storage";
 import { ADMIN_PERMISSIONS, ATTENDANCE_EDITING_PERMISSION, EVENT_MAKING_PERMISSION, FILE_UPLOADING_PERMISSION } from "../assets/constants";
-import type { CadetProfile, Event as CadetEvent } from "../assets/types";
+import type {
+  Announcement,
+  AttendanceCadetItem,
+  AttendanceEventItem,
+  AttendanceStatus,
+  AttendanceSubtree,
+  CadetProfile,
+  Event as CadetEvent,
+  GlobalFirebaseState,
+  StoreDomainErrors,
+  UploadDocumentInput,
+  UploadedDocument,
+} from "../assets/types";
 import { db, storage } from "./config";
+
+export type {
+  Announcement,
+  AttendanceCadetItem,
+  AttendanceEventItem,
+  AttendanceStatus,
+  AttendanceSubtree,
+  GlobalFirebaseState,
+  StoreDomainErrors,
+  UploadDocumentInput,
+  UploadedDocument,
+} from "../assets/types";
 
 // Permission string constants re-exported for convenient access in screens.
 export const PERMISSIONS = {
@@ -25,87 +49,6 @@ export const PERMISSIONS = {
   FILE_UPLOADING: FILE_UPLOADING_PERMISSION,
   ATTENDANCE_EDITING: ATTENDANCE_EDITING_PERMISSION,
   ADMIN: ADMIN_PERMISSIONS,
-};
-
-// ─── Domain types ────────────────────────────────────────────────────────────
-
-/** A pinned message displayed on the home screen. */
-export type Announcement = {
-  id: string;
-  title: string;
-  body: string;
-  importance: string;
-  retirementDate: Date;
-};
-
-/** A file uploaded to Firebase Storage and indexed in the Realtime Database. */
-export type UploadedDocument = {
-  dbKey: string;
-  displayName: string;
-  fileName: string;
-  mimeType: string;
-  sizeBytes: number;
-  uploadedAt: string;
-  downloadURL: string;
-  storagePath: string;
-  uploadedBy: string;
-};
-
-/** P = Present, A = Absent, L = Late */
-type AttendanceStatus = "P" | "A" | "L";
-type AttendanceRecordStatus = "P" | "A" | "E" | "L" | ".";
-type AttendanceSubtree = Record<string, Record<string, { status?: AttendanceRecordStatus }>>;
-
-type AttendanceEventItem = {
-  id: string;
-  eventName?: string;
-  date?: string;
-  time?: string;
-};
-
-type AttendanceCadetItem = {
-  cadetKey: string;
-  firstName: string;
-  lastName: string;
-  fullName: string;
-  attendanceKey: string;
-  flight?: string;
-};
-
-type StoreDomainErrors = {
-  profile?: string;
-  permissions?: string;
-  events?: string;
-  announcements?: string;
-  rsvps?: string;
-  cadets?: string;
-  documents?: string;
-  attendance?: string;
-};
-
-// ─── Store shape ─────────────────────────────────────────────────────────────
-
-/**
- * The full shape of the global Firebase store.
- * All fields are derived from realtime listeners or async actions.
- */
-export type GlobalFirebaseState = {
-  isInitialized: boolean;
-  isInitializing: boolean;
-  cadetKey: string | null;
-  profile: CadetProfile | null;
-  permissionsMap: Map<string, boolean>;
-  events: CadetEvent[];
-  announcements: Announcement[];
-  userRsvpEventIds: Set<string>;
-  userRsvpStatusByEvent: Record<string, boolean>;
-  rsvpCadetKeysByEvent: Record<string, string[]>;
-  cadetsByKey: Record<string, CadetProfile>;
-  uploadedDocuments: UploadedDocument[];
-  attendancePT: AttendanceSubtree;
-  attendanceLLAB: AttendanceSubtree;
-  errors: StoreDomainErrors;
-  lastUpdated: Record<string, number | null>;
 };
 
 // ─── Store internals ─────────────────────────────────────────────────────────
@@ -823,14 +766,6 @@ export const clearAttendanceForEvent = async (eventId: string, todayEvents: Atte
   }
 
   await remove(ref(db, `attendance/${bucket}/${chosenEvent.date}`));
-};
-
-type UploadDocumentInput = {
-  displayName: string;
-  mimeType: string;
-  sizeBytes: number;
-  uri: string;
-  originalFileName: string;
 };
 
 /**

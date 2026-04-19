@@ -7,7 +7,7 @@ import { generalStyles as styles } from "../../styles/GeneralStyles";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { signOut } from "firebase/auth";
 import { auth } from "../../firebase/config";
-import { teardownGlobals } from "../../firebase/globals";
+import { teardownGlobals } from "../../firebase/dbController";
 
 export function BaseScreenLayout({
   children, 

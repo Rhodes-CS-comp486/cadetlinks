@@ -6,7 +6,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../index";
 import { auth, db } from "../../../firebase/config";
-import { initializeGlobals, deriveCadetKeyFromEmail } from "../../../firebase/globals";
+import { initializeGlobals, deriveCadetKeyFromEmail } from "../../../firebase/dbController";
 
 
 export function useLoginLogic() {

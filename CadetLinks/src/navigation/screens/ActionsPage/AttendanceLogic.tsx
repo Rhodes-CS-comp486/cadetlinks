@@ -4,7 +4,7 @@ import {
   clearAttendanceForEvent as clearAttendanceForEventGlobal,
   loadAttendanceToolsData,
   saveAttendanceForEvent as saveAttendanceForEventGlobal,
-} from "../../../firebase/globals";
+} from "../../../firebase/dbController";
 
 export type EventItem = {
   id: string;

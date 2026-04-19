@@ -1,5 +1,5 @@
 import React from "react";
-import { deleteUploadedDocument, globals, initializeGlobals, type UploadedDocument } from "../../../firebase/globals";
+import { deleteUploadedDocument, globals, initializeGlobals, type UploadedDocument } from "../../../firebase/dbController";
 
 export function ViewDocumentLogic() {
     const globalState = globals();

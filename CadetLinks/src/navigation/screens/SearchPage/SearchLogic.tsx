@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { globals, initializeGlobals } from "../../../firebase/globals";
+import { globals, initializeGlobals } from "../../../firebase/dbController";
 
 export type SearchCadetProfile = {
   cadetKey: string;

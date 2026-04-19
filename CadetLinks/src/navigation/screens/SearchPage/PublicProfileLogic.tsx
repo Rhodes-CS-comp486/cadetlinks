@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getProfileByCadetKey, globals, initializeGlobals } from "../../../firebase/globals";
+import { getProfileByCadetKey, globals, initializeGlobals } from "../../../firebase/dbController";
 
 export type PublicCadetProfile = { // only public info for search results/profile page
   firstName?: string;

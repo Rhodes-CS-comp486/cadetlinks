@@ -4,7 +4,7 @@ import { CadetProfile, Action } from "../../../assets/types";
 import { useDocumentUploadingLogic } from "./UploadDocsLogic";
 import { useAttendanceLogic } from "./AttendanceLogic";
 import { useNavigation } from "@react-navigation/core";
-import { globals, initializeGlobals } from "../../../firebase/globals";
+import { globals, initializeGlobals } from "../../../firebase/dbController";
 
 type NavAny = ReturnType<typeof useNavigation<any>>;
 

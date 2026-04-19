@@ -3,7 +3,7 @@ import { Alert, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { Event } from "../../../assets/types";
-import { globals, initializeGlobals, PERMISSIONS, upsertAnnouncement, deleteAnnouncement, type Announcement } from "../../../firebase/globals";
+import { globals, initializeGlobals, PERMISSIONS, upsertAnnouncement, deleteAnnouncement, type Announcement } from "../../../firebase/dbController";
 
 export let cadetObject: any = null;
 

@@ -1,7 +1,7 @@
 import React from "react";
 import * as DocumentPicker from "expo-document-picker";
 import { Platform } from "react-native";
-import { uploadDocumentFromUri } from "../../../firebase/globals";
+import { uploadDocumentFromUri } from "../../../firebase/dbController";
  
 type SelectedDocument = {
     name: string;

@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { globals, initializeGlobals } from "../../../firebase/globals";
+import { globals, initializeGlobals } from "../../../firebase/dbController";
 
 // USER INFO STRUCTURE (from FB)
 export type CadetProfile = {
