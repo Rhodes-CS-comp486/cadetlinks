@@ -250,6 +250,8 @@ export function useEvents() {
 
   return {
     selectedDate,
+    rsvpList,
+    setRsvpList,
     setSelectedDate,
     selectedEvent,
     eventInfoModalVisible,
