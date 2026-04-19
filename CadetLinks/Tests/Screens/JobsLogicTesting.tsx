@@ -113,7 +113,7 @@ describe('useJobsLogic', () => {
 		expect(result.current.canMakeEvents).toBe(false);
 		expect(result.current.isAll).toBe(false);
 		expect(result.current.permissionText).toBe(PERMISSIONS.FILE_UPLOADING);
-		expect(result.current.actions.map((a) => a.id)).toEqual([PERMISSIONS.FILE_UPLOADING]);
+		expect(result.current.actions.map((a: any) => a.id)).toEqual([PERMISSIONS.FILE_UPLOADING]);
 
 		await act(async () => {
 			await result.current.onPressAction(result.current.actions[0]);
@@ -156,7 +156,7 @@ describe('useJobsLogic', () => {
 		expect(result.current.canMakeEvents).toBe(true);
 		expect(result.current.isAll).toBe(true);
 		expect(result.current.anyVisibleActions).toBe(true);
-		expect(result.current.actions.map((a) => a.id)).toEqual([
+		expect(result.current.actions.map((a: any) => a.id)).toEqual([
 			PERMISSIONS.ATTENDANCE_EDITING,
 			PERMISSIONS.FILE_UPLOADING,
 			PERMISSIONS.EVENT_MAKING,
@@ -164,7 +164,7 @@ describe('useJobsLogic', () => {
 		]);
 
 		const attendanceAction = result.current.actions.find(
-			(a) => a.id === PERMISSIONS.ATTENDANCE_EDITING
+			(a: any) => a.id === PERMISSIONS.ATTENDANCE_EDITING
 		);
 		expect(attendanceAction).toBeDefined();
 
@@ -173,7 +173,7 @@ describe('useJobsLogic', () => {
 		});
 		expect(mockOpenAttendanceModal).toHaveBeenCalledTimes(1);
 
-		const eventAction = result.current.actions.find((a) => a.id === PERMISSIONS.EVENT_MAKING);
+		const eventAction = result.current.actions.find((a: any) => a.id === PERMISSIONS.EVENT_MAKING);
 		expect(eventAction?.routeHint).toBe('Events');
 
 		await act(async () => {
@@ -268,7 +268,7 @@ describe('useJobsLogic', () => {
 		expect(result.current.fullName).toBe('Cadet');
 		expect(result.current.jobText).toBe('—');
 		// Actions are still populated based on permissions even if profile load failed
-		expect(result.current.actions.map((a) => a.id)).toEqual([PERMISSIONS.FILE_UPLOADING]);
+		expect(result.current.actions.map((a: any) => a.id)).toEqual([PERMISSIONS.FILE_UPLOADING]);
 	});
 
 	it('handles error when database read fails', async () => {
@@ -292,7 +292,7 @@ describe('useJobsLogic', () => {
 		expect(result.current.profile).toBeNull();
 		expect(result.current.error).toBe('Could not load jobs & permissions.');
 		// Actions are still populated based on permissions even if profile load failed
-		expect(result.current.actions.map((a) => a.id)).toEqual([
+		expect(result.current.actions.map((a: any) => a.id)).toEqual([
 			PERMISSIONS.ATTENDANCE_EDITING,
 			PERMISSIONS.FILE_UPLOADING,
 			PERMISSIONS.EVENT_MAKING,

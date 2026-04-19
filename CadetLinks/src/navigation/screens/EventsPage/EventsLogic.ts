@@ -190,11 +190,8 @@ export function useEvents() {
       return;
     }
 
-    const correctedDate = new Date(newEvent.date.getFullYear(), newEvent.date.getMonth(), newEvent.date.getDate() - 2);
-    const correctedEvent = { ...newEvent, date: correctedDate };
-
     try {
-      await addEvent(correctedEvent);
+      await addEvent(newEvent);
       setAddEventsModalVisible(false);
       setToastMessage('Event added successfully');
       setTimeout(() => setToastMessage(null), 3000);

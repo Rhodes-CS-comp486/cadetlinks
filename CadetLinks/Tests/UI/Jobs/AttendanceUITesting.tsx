@@ -23,9 +23,13 @@ function buildAttendanceModalProps(overrides: Partial<any> = {}) {
 		onSelectEvent: jest.fn(),
 		markedAbsentCount: 2,
 		markedLateCount: 1,
+		onToggleFlightDropdown: jest.fn(),
+		selectedFlight: undefined,
+		flightDropdownOpen: false,
+		onSelectFlight: jest.fn(),
 		allCadets: [
-			{ cadetKey: 'cadet-1', fullName: 'Alice Smith' },
-			{ cadetKey: 'cadet-2', fullName: 'Bob Jones' },
+			{ cadetKey: 'cadet-1', firstName: 'Alice', lastName: 'Smith', fullName: 'Alice Smith', attendanceKey: 'smith' },
+			{ cadetKey: 'cadet-2', firstName: 'Bob', lastName: 'Jones', fullName: 'Bob Jones', attendanceKey: 'jones' },
 		],
 		getCadetStatus: jest.fn((cadetKey: string) => {
 			if (cadetKey === 'cadet-1') return 'P';
@@ -136,9 +140,9 @@ describe('AttendanceModal UI', () => {
 	it('renders summary, cadet list statuses, and supports status button handlers', () => {
 		const props = buildAttendanceModalProps({
 			allCadets: [
-				{ cadetKey: 'cadet-p', fullName: 'Present Cadet' },
-				{ cadetKey: 'cadet-a', fullName: 'Absent Cadet' },
-				{ cadetKey: 'cadet-l', fullName: 'Late Cadet' },
+				{ cadetKey: 'cadet-p', firstName: 'Present', lastName: 'Cadet', fullName: 'Present Cadet', attendanceKey: 'presentcadet' },
+				{ cadetKey: 'cadet-a', firstName: 'Absent', lastName: 'Cadet', fullName: 'Absent Cadet', attendanceKey: 'absentcadet' },
+				{ cadetKey: 'cadet-l', firstName: 'Late', lastName: 'Cadet', fullName: 'Late Cadet', attendanceKey: 'latecadet' },
 			],
 			getCadetStatus: jest.fn((cadetKey: string) => {
 				if (cadetKey === 'cadet-p') return 'P';

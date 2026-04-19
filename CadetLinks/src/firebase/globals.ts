@@ -1,3 +1,15 @@
+/**
+ * globals.ts — Centralized Firebase singleton store
+ *
+ * All Firebase Realtime Database listeners and write actions live here.
+ * Components subscribe via the `globals()` React hook (backed by useSyncExternalStore),
+ * which re-renders them whenever relevant state changes.
+ *
+ * Lifecycle:
+ *   - Call `initializeGlobals(cadetKey?)` after login to start all listeners.
+ *   - Call `teardownGlobals()` on logout to stop listeners and reset state.
+ */
+
 import { useSyncExternalStore } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { get, onValue, ref, set } from "firebase/database";
@@ -7,6 +19,7 @@ import { ADMIN_PERMISSIONS, ATTENDANCE_EDITING_PERMISSION, EVENT_MAKING_PERMISSI
 import type { CadetProfile, Event as CadetEvent } from "../assets/types";
 import { db, storage } from "./config";
 
+// Permission string constants re-exported for convenient access in screens.
 export const PERMISSIONS = {
   EVENT_MAKING: EVENT_MAKING_PERMISSION,
   FILE_UPLOADING: FILE_UPLOADING_PERMISSION,
@@ -14,6 +27,9 @@ export const PERMISSIONS = {
   ADMIN: ADMIN_PERMISSIONS,
 };
 
+// ─── Domain types ────────────────────────────────────────────────────────────
+
+/** A pinned message displayed on the home screen. */
 export type Announcement = {
   id: string;
   title: string;
@@ -22,6 +38,7 @@ export type Announcement = {
   retirementDate: Date;
 };
 
+/** A file uploaded to Firebase Storage and indexed in the Realtime Database. */
 export type UploadedDocument = {
   dbKey: string;
   displayName: string;
@@ -34,6 +51,7 @@ export type UploadedDocument = {
   uploadedBy: string;
 };
 
+/** P = Present, A = Absent, L = Late */
 type AttendanceStatus = "P" | "A" | "L";
 
 type AttendanceEventItem = {
@@ -62,6 +80,12 @@ type StoreDomainErrors = {
   documents?: string;
 };
 
+// ─── Store shape ─────────────────────────────────────────────────────────────
+
+/**
+ * The full shape of the global Firebase store.
+ * All fields are derived from realtime listeners or async actions.
+ */
 export type GlobalFirebaseState = {
   isInitialized: boolean;
   isInitializing: boolean;
@@ -78,6 +102,9 @@ export type GlobalFirebaseState = {
   lastUpdated: Record<string, number | null>;
 };
 
+// ─── Store internals ─────────────────────────────────────────────────────────
+
+/** Returns a Map with every permission key defaulting to false. */
 const defaultPermissionsMap = () =>
   new Map<string, boolean>([
     [PERMISSIONS.EVENT_MAKING, false],
@@ -110,19 +137,25 @@ const initialState: GlobalFirebaseState = {
   },
 };
 
+/** Module-level singleton state. Never reassign — use patchStore() instead. */
 let store: GlobalFirebaseState = initialState;
+/** useSyncExternalStore subscriber callbacks registered by React components. */
 const subscribers = new Set<() => void>();
+/** Firebase onValue unsubscribe functions; cleared on teardown. */
 const activeListeners: Array<() => void> = [];
 
+/** Notify all React subscribers that the store has changed. */
 const emit = () => {
   subscribers.forEach((listener) => listener());
 };
 
+/** Shallow-merge `patch` into the store and notify subscribers. */
 const patchStore = (patch: Partial<GlobalFirebaseState>) => {
   store = { ...store, ...patch };
   emit();
 };
 
+/** Set or clear a domain-scoped error message in the store. */
 const patchError = (domain: keyof StoreDomainErrors, message?: string) => {
   const nextErrors = { ...store.errors };
   if (message) {
@@ -133,6 +166,7 @@ const patchError = (domain: keyof StoreDomainErrors, message?: string) => {
   patchStore({ errors: nextErrors });
 };
 
+/** Stamp the current timestamp for a domain (used by screens to detect freshness). */
 const touch = (domain: keyof GlobalFirebaseState["lastUpdated"]) => {
   patchStore({
     lastUpdated: {
@@ -142,10 +176,12 @@ const touch = (domain: keyof GlobalFirebaseState["lastUpdated"]) => {
   });
 };
 
+/** Register a Firebase unsubscribe function so it is cleaned up on teardown. */
 const addListener = (unsubscribe: () => void) => {
   activeListeners.push(unsubscribe);
 };
 
+/** Call every registered unsubscribe and empty the list. */
 const clearListeners = () => {
   while (activeListeners.length > 0) {
     const unsubscribe = activeListeners.pop();
@@ -155,6 +191,12 @@ const clearListeners = () => {
   }
 };
 
+// ─── Utilities ───────────────────────────────────────────────────────────────
+
+/**
+ * Build a local (non-UTC) Date from separate date and time strings.
+ * Returns null when either string cannot be parsed.
+ */
 const parseLocalDateTime = (dateStr: string, timeStr: string): Date | null => {
   const [year, month, day] = String(dateStr).split("-").map(Number);
   const [hours = 0, minutes = 0, seconds = 0] = String(timeStr || "00:00:00")
@@ -168,6 +210,7 @@ const parseLocalDateTime = (dateStr: string, timeStr: string): Date | null => {
   return localDate;
 };
 
+/** Format a Date as "YYYY-MM-DD" using local timezone. */
 const formatDateOnly = (date: Date): string => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -175,15 +218,26 @@ const formatDateOnly = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
+/** Generate a unique announcement DB key. */
 const generateAnnouncementId = () => `announcement-${Date.now()}`;
 
+/** Generate a random 4-digit numeric string for use as an event DB key. */
 const generateEventId = () => `${Math.floor(1000 + Math.random() * 9000)}`;
 
+/**
+ * Convert a cadet's email address to the Firebase key used to identify them.
+ * e.g. "john.doe@example.com" → "john_doe_example_com"
+ */
 export const deriveCadetKeyFromEmail = (email: string): string =>
   email.trim().toLowerCase().replace(/@/g, "_").replace(/\./g, "_").replace(/-/g, "_");
 
+/** Strip non-alphanumeric characters so last names match their attendance DB keys. */
 const normalizeAttendanceKey = (input: string) => input.toLowerCase().replace(/[^a-z0-9]/g, "");
 
+/**
+ * Determine which attendance subtree (PT or LLAB) an event belongs to
+ * based on keywords in its name. Returns null if neither keyword is found.
+ */
 const inferAttendanceBucket = (eventName?: string): "PT" | "LLAB" | null => {
   const normalized = (eventName ?? "").toLowerCase();
   if (normalized.includes("pt")) return "PT";
@@ -191,6 +245,12 @@ const inferAttendanceBucket = (eventName?: string): "PT" | "LLAB" | null => {
   return null;
 };
 
+// ─── Private listener starters ──────────────────────────────────────────────
+
+/**
+ * Fetch the permission map for a given AFROTC job title and patch the store.
+ * Called automatically when the profile listener detects a job change.
+ */
 const fetchPermissionsForJob = async (job?: string) => {
   if (!job) {
     patchStore({ permissionsMap: defaultPermissionsMap() });
@@ -221,20 +281,18 @@ const fetchPermissionsForJob = async (job?: string) => {
   }
 };
 
+/**
+ * Attach a realtime listener to the logged-in cadet's profile node.
+ */
 const startProfileListener = (cadetKey: string) => {
   const profileRef = ref(db, `cadets/${cadetKey}`);
   const unsubscribe = onValue(
     profileRef,
     (snapshot) => {
       const profile = (snapshot.val() as CadetProfile | null) ?? null;
-      const previousJob = store.profile?.job;
       patchStore({ profile });
       patchError("profile", undefined);
       touch("profile");
-
-      if (profile?.job !== previousJob) {
-        void fetchPermissionsForJob(profile?.job);
-      }
     },
     (error) => {
       console.error("Profile listener failed:", error);
@@ -245,6 +303,7 @@ const startProfileListener = (cadetKey: string) => {
   addListener(unsubscribe);
 };
 
+/** Attach a realtime listener to the events node and normalize each entry into a CadetEvent. */
 const startEventsListener = () => {
   const eventsRef = ref(db, "events");
   const unsubscribe = onValue(
@@ -291,6 +350,7 @@ const startEventsListener = () => {
   addListener(unsubscribe);
 };
 
+/** Attach a realtime listener to announcements, sorted by importance (High → Low). */
 const startAnnouncementsListener = () => {
   const announcementsRef = ref(db, "announcements");
   const unsubscribe = onValue(
@@ -340,6 +400,7 @@ const startAnnouncementsListener = () => {
   addListener(unsubscribe);
 };
 
+/** Attach a realtime listener to the full RSVPs node and extract the current cadet's status for each event. */
 const startRsvpListener = (cadetKey: string) => {
   const rsvpRef = ref(db, "rsvps");
   const unsubscribe = onValue(
@@ -373,6 +434,7 @@ const startRsvpListener = (cadetKey: string) => {
   addListener(unsubscribe);
 };
 
+/** Attach a realtime listener to all cadet profiles; used as a lookup cache by Search and Public Profile. */
 const startCadetsListener = () => {
   const cadetsRef = ref(db, "cadets");
   const unsubscribe = onValue(
@@ -392,6 +454,7 @@ const startCadetsListener = () => {
   addListener(unsubscribe);
 };
 
+/** Attach a realtime listener to uploadedDocuments, sorted alphabetically by display name. */
 const startDocumentsListener = () => {
   const uploadsRef = ref(db, "uploadedDocuments");
   const unsubscribe = onValue(
@@ -417,7 +480,7 @@ const startDocumentsListener = () => {
         uploadedBy: value.uploadedBy,
       }));
 
-      parsedDocuments.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+      parsedDocuments.sort((a, b) => a.displayName.localeCompare(b.displayName, undefined, { sensitivity: "base" }));
 
       patchStore({ uploadedDocuments: parsedDocuments });
       patchError("documents", undefined);
@@ -432,6 +495,15 @@ const startDocumentsListener = () => {
   addListener(unsubscribe);
 };
 
+// ─── Public lifecycle API ────────────────────────────────────────────────────
+
+/**
+ * Initialize the global store for the logged-in cadet.
+ *
+ * - If `cadetKeyInput` is omitted, the key is read from AsyncStorage.
+ * - Starts all six realtime listeners (profile, events, announcements, RSVPs, cadets, documents).
+ * - Safe to call multiple times; re-entrant calls while initializing are ignored.
+ */
 export const initializeGlobals = async (cadetKeyInput?: string | null) => {
   if (store.isInitializing) {
     return;
@@ -467,6 +539,11 @@ export const initializeGlobals = async (cadetKeyInput?: string | null) => {
     startCadetsListener();
     startDocumentsListener();
 
+    // Cadet jobs change infrequently (semester cadence), so load permissions once at init.
+    const initialProfileSnap = await get(ref(db, `cadets/${cadetKey}`));
+    const initialProfile = (initialProfileSnap.val() as CadetProfile | null) ?? null;
+    await fetchPermissionsForJob(initialProfile?.job);
+
     patchStore({
       isInitialized: true,
       isInitializing: false,
@@ -484,6 +561,10 @@ export const initializeGlobals = async (cadetKeyInput?: string | null) => {
   }
 };
 
+/**
+ * Stop all realtime listeners and reset the store to its initial (logged-out) state.
+ * Call this on logout.
+ */
 export const teardownGlobals = () => {
   clearListeners();
   patchStore({
@@ -493,8 +574,18 @@ export const teardownGlobals = () => {
   });
 };
 
+/** Non-hook snapshot access for use outside React components (e.g. write actions). */
 export const getGlobalsSnapshot = () => store;
 
+/**
+ * React hook that subscribes a component to the global store.
+ *
+ * IMPORTANT: Must be called inside a React component or custom hook body —
+ * never at module scope, as it calls useSyncExternalStore internally.
+ *
+ * The snapshot getter returns `store` directly (not a spread copy) to maintain
+ * referential stability and avoid an infinite render loop.
+ */
 export const globals = () =>
   useSyncExternalStore(
     (listener) => {
@@ -507,8 +598,14 @@ export const globals = () =>
     () => store
   );
 
+// ─── Convenience helpers ─────────────────────────────────────────────────────
+
+/** Synchronous permission check against the current store (no React subscription). */
 export const hasPermission = (permission: string): boolean => store.permissionsMap.get(permission) ?? false;
 
+// ─── Write actions ───────────────────────────────────────────────────────────
+
+/** Create or update an announcement. Returns the DB key used. */
 export const upsertAnnouncement = async (announcement: Omit<Announcement, "id"> & { id?: string }) => {
   const id = announcement.id || generateAnnouncementId();
   await set(ref(db, `announcements/${id}`), {
@@ -520,10 +617,12 @@ export const upsertAnnouncement = async (announcement: Omit<Announcement, "id"> 
   return id;
 };
 
+/** Remove an announcement from the database by its ID. */
 export const deleteAnnouncement = async (announcementId: string) => {
   await set(ref(db, `announcements/${announcementId}`), null);
 };
 
+/** Set the logged-in cadet's RSVP for an event to Y (confirming=true) or N. */
 export const setUserRsvpStatus = async (eventId: string, confirming: boolean) => {
   if (!store.cadetKey) {
     throw new Error("No user is logged in.");
@@ -534,6 +633,11 @@ export const setUserRsvpStatus = async (eventId: string, confirming: boolean) =>
   });
 };
 
+/**
+ * Persist a new event to the database.
+ * For RSVP events, also initialises the rsvps node.
+ * For special events (LLAB / PT / RMP), seeds the attendance subtree.
+ */
 export const addEvent = async (event: Omit<CadetEvent, "id"> & { id?: string }) => {
   const id = event.id || generateEventId();
   const eventDate = formatDateOnly(event.date);
@@ -561,11 +665,17 @@ export const addEvent = async (event: Omit<CadetEvent, "id"> & { id?: string }) 
   return id;
 };
 
+/** Delete an event and its associated RSVP node. */
 export const removeEvent = async (eventId: string) => {
   await set(ref(db, `events/${eventId}`), null);
   await set(ref(db, `rsvps/${eventId}`), null);
 };
 
+/**
+ * Fetch today's events and build the cadet list needed by the Attendance tool.
+ * Cadets are derived from the in-memory cadetsByKey cache (startCadetsListener must
+ * have run first). Events are fetched fresh from the DB to guarantee up-to-date times.
+ */
 export const loadAttendanceToolsData = async () => {
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -603,6 +713,10 @@ export const loadAttendanceToolsData = async () => {
   };
 };
 
+/**
+ * Write attendance statuses for all cadets for a given event.
+ * The event name must contain "PT" or "LLAB" so the correct bucket can be inferred.
+ */
 export const saveAttendanceForEvent = async (
   eventId: string,
   todayEvents: AttendanceEventItem[],
@@ -635,6 +749,7 @@ export const saveAttendanceForEvent = async (
   await update(ref(db), updates);
 };
 
+/** Remove all attendance records for a given event date from the database. */
 export const clearAttendanceForEvent = async (eventId: string, todayEvents: AttendanceEventItem[]) => {
   const chosenEvent = todayEvents.find((event) => event.id === eventId);
   if (!chosenEvent) {
@@ -661,6 +776,10 @@ type UploadDocumentInput = {
   originalFileName: string;
 };
 
+/**
+ * Upload a local file URI to Firebase Storage and record its metadata in the database.
+ * Returns the generated DB key and the uploads root ref.
+ */
 export const uploadDocumentFromUri = async (input: UploadDocumentInput) => {
   const cadetKey = store.cadetKey ?? (await AsyncStorage.getItem("currentCadetKey")) ?? "unknown";
   const extension = input.originalFileName.match(/\.[^/.]+$/)?.[0] ?? "";
@@ -689,11 +808,16 @@ export const uploadDocumentFromUri = async (input: UploadDocumentInput) => {
   return { uploadKey, uploadsRoot };
 };
 
+/** Delete a document from both Firebase Storage and the database index. */
 export const deleteUploadedDocument = async (dbKey: string, path: string) => {
   await deleteObject(storageRef(storage, path));
   await remove(ref(db, `uploadedDocuments/${dbKey}`));
 };
 
+/**
+ * Return a cadet's profile by their key.
+ * Checks the in-memory cache first; falls back to a one-time database read.
+ */
 export const getProfileByCadetKey = async (cadetKey: string) => {
   const cached = store.cadetsByKey[cadetKey];
   if (cached) {

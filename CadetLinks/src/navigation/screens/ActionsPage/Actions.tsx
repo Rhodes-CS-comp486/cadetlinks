@@ -199,3 +199,5 @@ export function Actions(): React.ReactElement {
     </ScreenLayout>
   );
 }
+
+export const Jobs = Actions;
