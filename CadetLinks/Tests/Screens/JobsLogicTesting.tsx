@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react-native';
 import { PERMISSIONS } from '../../src/assets/constants';
-import { iconForAction, useJobsLogic } from '../../src/navigation/screens/JobsPage/ActionsLogic';
+import { iconForAction, useActionsLogic } from '../../src/navigation/screens/ActionsPage/ActionsLogic';
 
 const mockNavigate = jest.fn();
 const mockOpenAttendanceModal = jest.fn();
@@ -52,14 +52,14 @@ function buildGlobalState(overrides: Partial<any> = {}) {
   };
 }
 
-describe('useJobsLogic', () => {
+describe('useActionsLogic', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGlobalState = buildGlobalState();
   });
 
   it('returns empty actions when no permissions are granted', () => {
-    const { result } = renderHook(() => useJobsLogic());
+    const { result } = renderHook(() => useActionsLogic());
 
     expect(result.current.loading).toBe(false);
     expect(result.current.error).toBeNull();
@@ -67,7 +67,6 @@ describe('useJobsLogic', () => {
     expect(result.current.jobText).toBe('Admin');
     expect(result.current.actions).toHaveLength(0);
     expect(result.current.anyVisibleActions).toBe(false);
-    expect(result.current.canMakeEvents).toBe(false);
   });
 
   it('creates attendance and upload actions when permissions are enabled', () => {
@@ -80,7 +79,7 @@ describe('useJobsLogic', () => {
       ]),
     });
 
-    const { result } = renderHook(() => useJobsLogic());
+    const { result } = renderHook(() => useActionsLogic());
 
     expect(result.current.actions.map((a: any) => a.id)).toEqual([
       PERMISSIONS.ATTENDANCE_EDITING,
@@ -100,7 +99,7 @@ describe('useJobsLogic', () => {
       ]),
     });
 
-    const { result } = renderHook(() => useJobsLogic());
+    const { result } = renderHook(() => useActionsLogic());
 
     const attendanceAction = result.current.actions.find((a: any) => a.id === PERMISSIONS.ATTENDANCE_EDITING);
     const uploadAction = result.current.actions.find((a: any) => a.id === PERMISSIONS.FILE_UPLOADING);

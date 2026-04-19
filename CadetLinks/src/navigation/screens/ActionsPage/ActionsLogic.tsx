@@ -59,7 +59,6 @@ export function useActionsLogic() {
       if (!a.allowed) return;
   
       if (a.id === PERMISSIONS.ATTENDANCE_EDITING) {
-        console.log("Opening attendance modal and type:", attendance.attendanceModalVisible, typeof attendance.openAttendanceModal);
         attendance.openAttendanceModal();
         return;
       }
