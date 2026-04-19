@@ -7,6 +7,7 @@ import { generalStyles as styles } from "../../styles/GeneralStyles";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { signOut } from "firebase/auth";
 import { auth } from "../../firebase/config";
+import { teardownGlobals } from "../../firebase/globals";
 
 export function BaseScreenLayout({
   children, 
@@ -24,7 +25,8 @@ export function BaseScreenLayout({
 
   const handleLogout = async () => {
   try {
-    await AsyncStorage.removeItem("cadetKey");
+    await AsyncStorage.removeItem("currentCadetKey");
+    teardownGlobals();
     await signOut(auth);
 
     navigation.reset({

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ref, get, onValue } from "firebase/database"; // added onValue for real-time updates
+import { ref, onValue } from "firebase/database";
 import { db } from "../../../firebase/config";
+import { globals, initializeGlobals } from "../../../firebase/globals";
 
 // USER INFO STRUCTURE (from FB)
 export type CadetProfile = {
@@ -61,6 +62,8 @@ function countAttendance(tree: AttendanceSubtree, cadetId: string) {
 }
 
 export function useProfileLogic() {
+  const globalState = globals();
+  const globalProfile = globalState.profile;
   const [cadetKey, setCadetKey] = useState<string | null>(null);
 
   // ---- Firebase profile state ----
@@ -83,6 +86,16 @@ export function useProfileLogic() {
   const [llabMissed, setLlabMissed] = useState(0);
   const [llabExcused, setLlabExcused] = useState(0);
   const [llabLate, setLlabLate] = useState(0);
+
+  useEffect(() => {
+    if (!globalState.isInitialized && !globalState.isInitializing) {
+      void initializeGlobals();
+    }
+  }, [globalState.isInitialized, globalState.isInitializing]);
+
+  useEffect(() => {
+    setProfile((globalProfile as CadetProfile | null) ?? null);
+  }, [globalProfile]);
 
   useEffect(() => {
     let unsubscribePT: (() => void) | null = null;
@@ -119,26 +132,12 @@ export function useProfileLogic() {
           return;
         }
 
-        // 1) Load profile first
-        const profileRef = ref(db, `cadets/${key}`);
-        const profileSnap = await get(profileRef);
-
-        let profileVal: CadetProfile | null = null;
-
-        if (profileSnap.exists()) {
-          profileVal = profileSnap.val();
-          setProfile(profileVal);
-        } else {
-          setProfile(null);
-          setProfileError("No profile found for this user.");
-        }
-
         // figure out the keys used in attendance
         const ptKey =
-          profileVal?.lastName ? normalizePTKey(profileVal.lastName) : key;
+          globalProfile?.lastName ? normalizePTKey(globalProfile.lastName) : key;
 
         const llabKey =
-          profileVal?.lastName ? normalizeLlabKey(profileVal.lastName) : key;
+          globalProfile?.lastName ? normalizeLlabKey(globalProfile.lastName) : key;
 
         // listens for PT attendance in real time
         const ptRef = ref(db, "attendance/PT"); 

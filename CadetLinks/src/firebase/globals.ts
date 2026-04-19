@@ -1,0 +1,696 @@
+import { useSyncExternalStore } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { get, onValue, ref, set } from "firebase/database";
+import { remove, update } from "firebase/database";
+import { deleteObject, getDownloadURL, ref as storageRef, uploadBytes } from "firebase/storage";
+import { ADMIN_PERMISSIONS, ATTENDANCE_EDITING_PERMISSION, EVENT_MAKING_PERMISSION, FILE_UPLOADING_PERMISSION } from "../assets/constants";
+import type { CadetProfile, Event as CadetEvent } from "../assets/types";
+import { db, storage } from "./config";
+
+export const PERMISSIONS = {
+  EVENT_MAKING: EVENT_MAKING_PERMISSION,
+  FILE_UPLOADING: FILE_UPLOADING_PERMISSION,
+  ATTENDANCE_EDITING: ATTENDANCE_EDITING_PERMISSION,
+  ADMIN: ADMIN_PERMISSIONS,
+};
+
+export type Announcement = {
+  id: string;
+  title: string;
+  body: string;
+  importance: string;
+  retirementDate: Date;
+};
+
+export type UploadedDocument = {
+  dbKey: string;
+  displayName: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedAt: string;
+  downloadURL: string;
+  storagePath: string;
+  uploadedBy: string;
+};
+
+type AttendanceStatus = "P" | "A" | "L";
+
+type AttendanceEventItem = {
+  id: string;
+  eventName?: string;
+  date?: string;
+  time?: string;
+};
+
+type AttendanceCadetItem = {
+  cadetKey: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  attendanceKey: string;
+  flight?: string;
+};
+
+type StoreDomainErrors = {
+  profile?: string;
+  permissions?: string;
+  events?: string;
+  announcements?: string;
+  rsvps?: string;
+  cadets?: string;
+  documents?: string;
+};
+
+export type GlobalFirebaseState = {
+  isInitialized: boolean;
+  isInitializing: boolean;
+  cadetKey: string | null;
+  profile: CadetProfile | null;
+  permissionsMap: Map<string, boolean>;
+  events: CadetEvent[];
+  announcements: Announcement[];
+  userRsvpEventIds: Set<string>;
+  userRsvpStatusByEvent: Record<string, boolean>;
+  cadetsByKey: Record<string, CadetProfile>;
+  uploadedDocuments: UploadedDocument[];
+  errors: StoreDomainErrors;
+  lastUpdated: Record<string, number | null>;
+};
+
+const defaultPermissionsMap = () =>
+  new Map<string, boolean>([
+    [PERMISSIONS.EVENT_MAKING, false],
+    [PERMISSIONS.FILE_UPLOADING, false],
+    [PERMISSIONS.ATTENDANCE_EDITING, false],
+    [PERMISSIONS.ADMIN, false],
+  ]);
+
+const initialState: GlobalFirebaseState = {
+  isInitialized: false,
+  isInitializing: false,
+  cadetKey: null,
+  profile: null,
+  permissionsMap: defaultPermissionsMap(),
+  events: [],
+  announcements: [],
+  userRsvpEventIds: new Set<string>(),
+  userRsvpStatusByEvent: {},
+  cadetsByKey: {},
+  uploadedDocuments: [],
+  errors: {},
+  lastUpdated: {
+    profile: null,
+    permissions: null,
+    events: null,
+    announcements: null,
+    rsvps: null,
+    cadets: null,
+    documents: null,
+  },
+};
+
+let store: GlobalFirebaseState = initialState;
+const subscribers = new Set<() => void>();
+const activeListeners: Array<() => void> = [];
+
+const emit = () => {
+  subscribers.forEach((listener) => listener());
+};
+
+const patchStore = (patch: Partial<GlobalFirebaseState>) => {
+  store = { ...store, ...patch };
+  emit();
+};
+
+const patchError = (domain: keyof StoreDomainErrors, message?: string) => {
+  const nextErrors = { ...store.errors };
+  if (message) {
+    nextErrors[domain] = message;
+  } else {
+    delete nextErrors[domain];
+  }
+  patchStore({ errors: nextErrors });
+};
+
+const touch = (domain: keyof GlobalFirebaseState["lastUpdated"]) => {
+  patchStore({
+    lastUpdated: {
+      ...store.lastUpdated,
+      [domain]: Date.now(),
+    },
+  });
+};
+
+const addListener = (unsubscribe: () => void) => {
+  activeListeners.push(unsubscribe);
+};
+
+const clearListeners = () => {
+  while (activeListeners.length > 0) {
+    const unsubscribe = activeListeners.pop();
+    if (unsubscribe) {
+      unsubscribe();
+    }
+  }
+};
+
+const parseLocalDateTime = (dateStr: string, timeStr: string): Date | null => {
+  const [year, month, day] = String(dateStr).split("-").map(Number);
+  const [hours = 0, minutes = 0, seconds = 0] = String(timeStr || "00:00:00")
+    .split(":")
+    .map(Number);
+
+  const localDate = new Date(year, (month ?? 1) - 1, day ?? 1, hours, minutes, seconds, 0);
+  if (isNaN(localDate.getTime())) {
+    return null;
+  }
+  return localDate;
+};
+
+const formatDateOnly = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const generateAnnouncementId = () => `announcement-${Date.now()}`;
+
+const generateEventId = () => `${Math.floor(1000 + Math.random() * 9000)}`;
+
+export const deriveCadetKeyFromEmail = (email: string): string =>
+  email.trim().toLowerCase().replace(/@/g, "_").replace(/\./g, "_").replace(/-/g, "_");
+
+const normalizeAttendanceKey = (input: string) => input.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+const inferAttendanceBucket = (eventName?: string): "PT" | "LLAB" | null => {
+  const normalized = (eventName ?? "").toLowerCase();
+  if (normalized.includes("pt")) return "PT";
+  if (normalized.includes("llab") || normalized.includes("lab")) return "LLAB";
+  return null;
+};
+
+const fetchPermissionsForJob = async (job?: string) => {
+  if (!job) {
+    patchStore({ permissionsMap: defaultPermissionsMap() });
+    touch("permissions");
+    return;
+  }
+
+  try {
+    const permissionsSnap = await get(ref(db, `indexes/permissions/${job}`));
+    if (!permissionsSnap.exists()) {
+      patchStore({ permissionsMap: defaultPermissionsMap() });
+      patchError("permissions", undefined);
+      touch("permissions");
+      return;
+    }
+
+    const next = defaultPermissionsMap();
+    Object.entries(permissionsSnap.val() as Record<string, unknown>).forEach(([permission, value]) => {
+      next.set(permission, value === true);
+    });
+
+    patchStore({ permissionsMap: next });
+    patchError("permissions", undefined);
+    touch("permissions");
+  } catch (error) {
+    console.error("Failed to load permissions:", error);
+    patchError("permissions", "Could not load permissions.");
+  }
+};
+
+const startProfileListener = (cadetKey: string) => {
+  const profileRef = ref(db, `cadets/${cadetKey}`);
+  const unsubscribe = onValue(
+    profileRef,
+    (snapshot) => {
+      const profile = (snapshot.val() as CadetProfile | null) ?? null;
+      const previousJob = store.profile?.job;
+      patchStore({ profile });
+      patchError("profile", undefined);
+      touch("profile");
+
+      if (profile?.job !== previousJob) {
+        void fetchPermissionsForJob(profile?.job);
+      }
+    },
+    (error) => {
+      console.error("Profile listener failed:", error);
+      patchError("profile", "Could not load profile.");
+    }
+  );
+
+  addListener(unsubscribe);
+};
+
+const startEventsListener = () => {
+  const eventsRef = ref(db, "events");
+  const unsubscribe = onValue(
+    eventsRef,
+    (snapshot) => {
+      const eventsData = snapshot.val() as Record<string, any> | null;
+      if (!eventsData) {
+        patchStore({ events: [] });
+        patchError("events", undefined);
+        touch("events");
+        return;
+      }
+
+      const loadedEvents: CadetEvent[] = Object.keys(eventsData)
+        .map((key) => {
+          const event = eventsData[key];
+          const combinedDateTime = parseLocalDateTime(event.date, event.time);
+          if (!combinedDateTime) {
+            return null;
+          }
+
+          return {
+            id: key,
+            title: event.eventName,
+            date: combinedDateTime,
+            time: combinedDateTime,
+            description: event.details,
+            location: event.locationId,
+            type: event.mandatory === true || event.mandatory === "true" ? "Mandatory" : "RSVP",
+          } as CadetEvent;
+        })
+        .filter((event): event is CadetEvent => event !== null);
+
+      patchStore({ events: loadedEvents });
+      patchError("events", undefined);
+      touch("events");
+    },
+    (error) => {
+      console.error("Events listener failed:", error);
+      patchError("events", "Could not load events.");
+    }
+  );
+
+  addListener(unsubscribe);
+};
+
+const startAnnouncementsListener = () => {
+  const announcementsRef = ref(db, "announcements");
+  const unsubscribe = onValue(
+    announcementsRef,
+    (snapshot) => {
+      const announcementsData = snapshot.val() as Record<string, any> | null;
+      if (!announcementsData) {
+        patchStore({ announcements: [] });
+        patchError("announcements", undefined);
+        touch("announcements");
+        return;
+      }
+
+      const parsedAnnouncements: Announcement[] = Object.entries(announcementsData)
+        .map(([id, value]) => {
+          const parsedDate = parseLocalDateTime(value.retirementDate, "00:00:00");
+          if (!parsedDate) {
+            return null;
+          }
+          return {
+            id,
+            title: value.title,
+            body: value.body,
+            importance: value.importance,
+            retirementDate: parsedDate,
+          } as Announcement;
+        })
+        .filter((announcement): announcement is Announcement => announcement !== null);
+
+      const importanceOrder: Record<string, number> = {
+        High: 3,
+        Medium: 2,
+        Low: 1,
+      };
+      parsedAnnouncements.sort((a, b) => importanceOrder[b.importance] - importanceOrder[a.importance]);
+
+      patchStore({ announcements: parsedAnnouncements });
+      patchError("announcements", undefined);
+      touch("announcements");
+    },
+    (error) => {
+      console.error("Announcements listener failed:", error);
+      patchError("announcements", "Could not load announcements.");
+    }
+  );
+
+  addListener(unsubscribe);
+};
+
+const startRsvpListener = (cadetKey: string) => {
+  const rsvpRef = ref(db, "rsvps");
+  const unsubscribe = onValue(
+    rsvpRef,
+    (snapshot) => {
+      const rsvpData = (snapshot.val() as Record<string, any>) || {};
+      const selectedIds = new Set<string>();
+      const statusByEvent: Record<string, boolean> = {};
+
+      Object.entries(rsvpData).forEach(([eventId, eventNode]) => {
+        const userNode = (eventNode as Record<string, any>)[cadetKey];
+        const status = userNode?.status;
+        if (status === "Y") {
+          selectedIds.add(eventId);
+          statusByEvent[eventId] = true;
+        } else if (status === "N") {
+          statusByEvent[eventId] = false;
+        }
+      });
+
+      patchStore({ userRsvpEventIds: selectedIds, userRsvpStatusByEvent: statusByEvent });
+      patchError("rsvps", undefined);
+      touch("rsvps");
+    },
+    (error) => {
+      console.error("RSVP listener failed:", error);
+      patchError("rsvps", "Could not load RSVP status.");
+    }
+  );
+
+  addListener(unsubscribe);
+};
+
+const startCadetsListener = () => {
+  const cadetsRef = ref(db, "cadets");
+  const unsubscribe = onValue(
+    cadetsRef,
+    (snapshot) => {
+      const cadets = (snapshot.val() as Record<string, CadetProfile>) || {};
+      patchStore({ cadetsByKey: cadets });
+      patchError("cadets", undefined);
+      touch("cadets");
+    },
+    (error) => {
+      console.error("Cadets listener failed:", error);
+      patchError("cadets", "Could not load cadets.");
+    }
+  );
+
+  addListener(unsubscribe);
+};
+
+const startDocumentsListener = () => {
+  const uploadsRef = ref(db, "uploadedDocuments");
+  const unsubscribe = onValue(
+    uploadsRef,
+    (snapshot) => {
+      const data = snapshot.val() as Record<string, any> | null;
+      if (!data) {
+        patchStore({ uploadedDocuments: [] });
+        patchError("documents", undefined);
+        touch("documents");
+        return;
+      }
+
+      const parsedDocuments: UploadedDocument[] = Object.entries(data).map(([key, value]) => ({
+        dbKey: key,
+        displayName: value.displayName ?? value.fileName,
+        fileName: value.fileName,
+        mimeType: value.mimeType,
+        sizeBytes: value.sizeBytes,
+        uploadedAt: value.uploadedAt,
+        downloadURL: value.downloadURL,
+        storagePath: value.storagePath,
+        uploadedBy: value.uploadedBy,
+      }));
+
+      parsedDocuments.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+
+      patchStore({ uploadedDocuments: parsedDocuments });
+      patchError("documents", undefined);
+      touch("documents");
+    },
+    (error) => {
+      console.error("Documents listener failed:", error);
+      patchError("documents", "Could not load documents.");
+    }
+  );
+
+  addListener(unsubscribe);
+};
+
+export const initializeGlobals = async (cadetKeyInput?: string | null) => {
+  if (store.isInitializing) {
+    return;
+  }
+
+  patchStore({ isInitializing: true });
+
+  try {
+    const cadetKey = cadetKeyInput ?? (await AsyncStorage.getItem("currentCadetKey"));
+
+    clearListeners();
+
+    if (!cadetKey) {
+      patchStore({
+        ...initialState,
+        isInitialized: true,
+        isInitializing: false,
+      });
+      return;
+    }
+
+    patchStore({
+      cadetKey,
+      isInitialized: false,
+      isInitializing: true,
+      errors: {},
+    });
+
+    startProfileListener(cadetKey);
+    startEventsListener();
+    startAnnouncementsListener();
+    startRsvpListener(cadetKey);
+    startCadetsListener();
+    startDocumentsListener();
+
+    patchStore({
+      isInitialized: true,
+      isInitializing: false,
+    });
+  } catch (error) {
+    console.error("Failed to initialize globals:", error);
+    patchStore({
+      isInitialized: false,
+      isInitializing: false,
+      errors: {
+        ...store.errors,
+        profile: "Could not initialize session.",
+      },
+    });
+  }
+};
+
+export const teardownGlobals = () => {
+  clearListeners();
+  patchStore({
+    ...initialState,
+    isInitialized: true,
+    isInitializing: false,
+  });
+};
+
+export const getGlobalsSnapshot = () => store;
+
+export const globals = () =>
+  useSyncExternalStore(
+    (listener) => {
+      subscribers.add(listener);
+      return () => {
+        subscribers.delete(listener);
+      };
+    },
+    () => store,
+    () => store
+  );
+
+export const hasPermission = (permission: string): boolean => store.permissionsMap.get(permission) ?? false;
+
+export const upsertAnnouncement = async (announcement: Omit<Announcement, "id"> & { id?: string }) => {
+  const id = announcement.id || generateAnnouncementId();
+  await set(ref(db, `announcements/${id}`), {
+    title: announcement.title,
+    retirementDate: formatDateOnly(announcement.retirementDate),
+    body: announcement.body,
+    importance: announcement.importance,
+  });
+  return id;
+};
+
+export const deleteAnnouncement = async (announcementId: string) => {
+  await set(ref(db, `announcements/${announcementId}`), null);
+};
+
+export const setUserRsvpStatus = async (eventId: string, confirming: boolean) => {
+  if (!store.cadetKey) {
+    throw new Error("No user is logged in.");
+  }
+
+  await set(ref(db, `rsvps/${eventId}/${store.cadetKey}`), {
+    status: confirming ? "Y" : "N",
+  });
+};
+
+export const addEvent = async (event: Omit<CadetEvent, "id"> & { id?: string }) => {
+  const id = event.id || generateEventId();
+
+  await set(ref(db, `events/${id}`), {
+    eventName: event.title,
+    date: formatDateOnly(event.date),
+    time: event.time.toTimeString().split(" ")[0],
+    details: event.description,
+    locationId: event.location,
+    mandatory: event.type === "Mandatory" ? "true" : "false",
+  });
+
+  if (event.type === "RSVP") {
+    await set(ref(db, `rsvps/${id}`), "");
+  }
+
+  return id;
+};
+
+export const removeEvent = async (eventId: string) => {
+  await set(ref(db, `events/${eventId}`), null);
+  await set(ref(db, `rsvps/${eventId}`), null);
+};
+
+export const loadAttendanceToolsData = async () => {
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+  const eventsSnap = await get(ref(db, "events"));
+  const eventsData = (eventsSnap.val() ?? {}) as Record<string, AttendanceEventItem>;
+  const todayEvents = Object.entries(eventsData)
+    .map(([id, value]) => {
+      const { id: _ignoredId, ...rest } = value;
+      return { id, ...rest };
+    })
+    .filter((event) => event.date === today && !!event.eventName)
+    .sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
+
+  const cadets = Object.entries(store.cadetsByKey)
+    .map(([key, value]) => {
+      const firstName = value.firstName ?? "";
+      const lastName = value.lastName ?? "";
+      const fullName = `${firstName} ${lastName}`.trim() || key;
+
+      return {
+        cadetKey: key,
+        firstName,
+        lastName,
+        fullName,
+        attendanceKey: normalizeAttendanceKey(lastName || key),
+        flight: value.flight,
+      } as AttendanceCadetItem;
+    })
+    .sort((a, b) => a.lastName.localeCompare(b.lastName));
+
+  return {
+    todayEvents,
+    cadets,
+  };
+};
+
+export const saveAttendanceForEvent = async (
+  eventId: string,
+  todayEvents: AttendanceEventItem[],
+  allCadets: AttendanceCadetItem[],
+  overrides: Record<string, AttendanceStatus>
+) => {
+  const chosenEvent = todayEvents.find((event) => event.id === eventId);
+  if (!chosenEvent) {
+    throw new Error("Please select an event.");
+  }
+
+  const bucket = inferAttendanceBucket(chosenEvent.eventName);
+  if (!bucket) {
+    throw new Error('Could not tell whether this event is PT or LLAB. Add "PT" or "LLAB" to the event name.');
+  }
+
+  const date = chosenEvent.date;
+  if (!date) {
+    throw new Error("Selected event is missing a date.");
+  }
+
+  const updates: Record<string, { status: AttendanceStatus }> = {};
+  for (const cadet of allCadets) {
+    const chosenStatus = overrides[cadet.cadetKey] ?? "A";
+    updates[`attendance/${bucket}/${date}/${cadet.attendanceKey}`] = {
+      status: chosenStatus,
+    };
+  }
+
+  await update(ref(db), updates);
+};
+
+export const clearAttendanceForEvent = async (eventId: string, todayEvents: AttendanceEventItem[]) => {
+  const chosenEvent = todayEvents.find((event) => event.id === eventId);
+  if (!chosenEvent) {
+    throw new Error("Please select an event.");
+  }
+
+  const bucket = inferAttendanceBucket(chosenEvent.eventName);
+  if (!bucket) {
+    throw new Error('Could not tell whether this event is PT or LLAB. Add "PT" or "LLAB" to the event name.');
+  }
+
+  if (!chosenEvent.date) {
+    throw new Error("Selected event is missing a date.");
+  }
+
+  await remove(ref(db, `attendance/${bucket}/${chosenEvent.date}`));
+};
+
+type UploadDocumentInput = {
+  displayName: string;
+  mimeType: string;
+  sizeBytes: number;
+  uri: string;
+  originalFileName: string;
+};
+
+export const uploadDocumentFromUri = async (input: UploadDocumentInput) => {
+  const cadetKey = store.cadetKey ?? (await AsyncStorage.getItem("currentCadetKey")) ?? "unknown";
+  const extension = input.originalFileName.match(/\.[^/.]+$/)?.[0] ?? "";
+  const fileName = `${Date.now()}_${input.displayName}${extension}`;
+  const storagePath = `uploadedDocuments/${fileName}`;
+
+  const response = await fetch(input.uri);
+  const blob = await response.blob();
+  const fileRef = storageRef(storage, storagePath);
+  await uploadBytes(fileRef, blob);
+  const downloadURL = await getDownloadURL(fileRef);
+
+  const uploadsRoot = ref(db, "uploadedDocuments");
+  const uploadKey = `upload-${Date.now()}`;
+  await set(ref(db, `uploadedDocuments/${uploadKey}`), {
+    uploadedBy: cadetKey,
+    displayName: input.displayName,
+    fileName: input.originalFileName,
+    mimeType: input.mimeType,
+    sizeBytes: input.sizeBytes,
+    uploadedAt: new Date().toISOString(),
+    downloadURL,
+    storagePath,
+  });
+
+  return { uploadKey, uploadsRoot };
+};
+
+export const deleteUploadedDocument = async (dbKey: string, path: string) => {
+  await deleteObject(storageRef(storage, path));
+  await remove(ref(db, `uploadedDocuments/${dbKey}`));
+};
+
+export const getProfileByCadetKey = async (cadetKey: string) => {
+  const cached = store.cadetsByKey[cadetKey];
+  if (cached) {
+    return cached;
+  }
+  const profileSnap = await get(ref(db, `cadets/${cadetKey}`));
+  return (profileSnap.val() as CadetProfile | null) ?? null;
+};

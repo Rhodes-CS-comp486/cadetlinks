@@ -1,10 +1,7 @@
 import React from "react";
 import * as DocumentPicker from "expo-document-picker";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
-import { push, ref as dbRef, set } from "firebase/database";
-import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "../../../firebase/config";
+import { uploadDocumentFromUri } from "../../../firebase/globals";
  
 type SelectedDocument = {
     name: string;
@@ -123,27 +120,16 @@ export function useDocumentUploadingLogic() {
         setIsUploadingDocument(true);
  
         try {
-            const cadetKey = await AsyncStorage.getItem("currentCadetKey");
-            const blob = await getBlob(selectedDocument);
- 
-            const extension = selectedDocument.name.match(/\.[^/.]+$/)?.[0] ?? "";
-            const fileName = `${Date.now()}_${trimmedName}${extension}`;
-            const fileRef = storageRef(storage, `uploadedDocuments/${fileName}`);
-            await uploadBytes(fileRef, blob);
- 
-            const downloadURL = await getDownloadURL(fileRef);
- 
-            const uploadsRef = dbRef(db, "uploadedDocuments");
-            const newUploadRef = push(uploadsRef);
-            await set(newUploadRef, {
-                uploadedBy: cadetKey ?? "unknown",
+            if (Platform.OS === "web") {
+                await getBlob(selectedDocument);
+            }
+
+            await uploadDocumentFromUri({
                 displayName: trimmedName,
-                fileName: selectedDocument.name,
                 mimeType: selectedDocument.mimeType,
                 sizeBytes: selectedDocument.size,
-                uploadedAt: new Date().toISOString(),
-                downloadURL,
-                storagePath: `uploadedDocuments/${fileName}`,
+                uri: selectedDocument.uri,
+                originalFileName: selectedDocument.name,
             });
  
             setUploadSuccessMessage(`"${trimmedName}" uploaded successfully.`);
