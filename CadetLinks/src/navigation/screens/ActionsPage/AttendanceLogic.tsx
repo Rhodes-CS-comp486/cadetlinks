@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import { Alert } from "react-native";
-import { ref, get, update, remove } from "firebase/database";
-import { db } from "../../../firebase/config";
-import type { CadetProfile } from "../../../assets/types";
+import {
+  clearAttendanceForEvent as clearAttendanceForEventGlobal,
+  loadAttendanceToolsData,
+  saveAttendanceForEvent as saveAttendanceForEventGlobal,
+} from "../../../firebase/dbController";
 
 export type EventItem = {
   id: string;
@@ -26,27 +28,6 @@ export type CadetListItem = {
 export type AttendanceStatus = "P" | "A" | "L";
 
 type AttendanceOverrides = Record<string, AttendanceStatus>;
-
-function normalizeAttendanceKey(input: string) {
-  return input.toLowerCase().replace(/[^a-z0-9]/g, "");
-}
-
-function getTodayString() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function inferAttendanceBucket(eventName?: string): "PT" | "LLAB" | null {
-  const name = (eventName ?? "").toLowerCase();
-
-  if (name.includes("pt")) return "PT";
-  if (name.includes("llab") || name.includes("lab")) return "LLAB";
-
-  return null;
-}
 
 export function useAttendanceLogic() {
   const [todayEvents, setTodayEvents] = useState<EventItem[]>([]);
@@ -105,47 +86,9 @@ export function useAttendanceLogic() {
     setLoadingAttendanceTools(true);
 
     try {
-      const today = getTodayString();
-
-      const eventsRef = ref(db, "events");
-      const eventsSnap = await get(eventsRef);
-      const eventsData = (eventsSnap.val() ?? {}) as Record<string, EventItem>;
-
-      const todaysEvents = Object.entries(eventsData)
-        .map(([id, value]) => {
-          const { id: _ignoredId, ...rest } = value;
-          return {
-            id,
-            ...rest,
-          };
-        })
-        .filter((event) => event.date === today && !!event.eventName)
-        .sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
-
-      setTodayEvents(todaysEvents);
-
-      const cadetsRef = ref(db, "cadets");
-      const cadetsSnap = await get(cadetsRef);
-      const cadetsData = (cadetsSnap.val() ?? {}) as Record<string, CadetProfile>;
-
-      const cadetList = Object.entries(cadetsData)
-        .map(([key, value]) => {
-          const firstName = value.firstName ?? "";
-          const lastName = value.lastName ?? "";
-          const fullName = `${firstName} ${lastName}`.trim() || key;
-
-          return {
-            cadetKey: key,
-            firstName,
-            lastName,
-            fullName,
-            attendanceKey: normalizeAttendanceKey(lastName || key),
-            flight: value.flight,
-          };
-        })
-        .sort((a, b) => a.lastName.localeCompare(b.lastName));
-
-      setAllCadets(cadetList);
+      const { todayEvents: loadedEvents, cadets } = await loadAttendanceToolsData();
+      setTodayEvents(loadedEvents);
+      setAllCadets(cadets as CadetListItem[]);
     } catch (e) {
       console.error("❌ Error loading attendance modal data:", e);
       throw e;
@@ -196,60 +139,11 @@ export function useAttendanceLogic() {
     eventId: string,
     overrides: AttendanceOverrides
   ) {
-    const chosenEvent = todayEvents.find((event) => event.id === eventId);
-
-    if (!chosenEvent) {
-      throw new Error("Please select an event.");
-    }
-
-    const bucket = inferAttendanceBucket(chosenEvent.eventName);
-
-    if (!bucket) {
-      throw new Error(
-        'Could not tell whether this event is PT or LLAB. Add "PT" or "LLAB" to the event name, or add an attendanceType field.'
-      );
-    }
-
-    const date = chosenEvent.date;
-
-    if (!date) {
-      throw new Error("Selected event is missing a date.");
-    }
-
-    const updates: Record<string, { status: AttendanceStatus }> = {};
-
-    for (const cadet of allCadets) {
-      const chosenStatus = overrides[cadet.cadetKey] ?? "A";
-      updates[`attendance/${bucket}/${date}/${cadet.attendanceKey}`] = {
-        status: chosenStatus,
-      };
-    }
-
-    await update(ref(db), updates);
+    await saveAttendanceForEventGlobal(eventId, todayEvents, allCadets, overrides);
   }
 
   async function clearAttendanceForEvent(eventId: string) {
-    const chosenEvent = todayEvents.find((event) => event.id === eventId);
-
-    if (!chosenEvent) {
-      throw new Error("Please select an event.");
-    }
-
-    const bucket = inferAttendanceBucket(chosenEvent.eventName);
-
-    if (!bucket) {
-      throw new Error(
-        'Could not tell whether this event is PT or LLAB. Add "PT" or "LLAB" to the event name, or add an attendanceType field.'
-      );
-    }
-
-    const date = chosenEvent.date;
-
-    if (!date) {
-      throw new Error("Selected event is missing a date.");
-    }
-
-    await remove(ref(db, `attendance/${bucket}/${date}`));
+    await clearAttendanceForEventGlobal(eventId, todayEvents);
   }
 
   const submitAttendance = async () => {

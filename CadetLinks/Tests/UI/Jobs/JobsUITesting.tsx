@@ -11,12 +11,12 @@ jest.mock('@react-navigation/native', () => ({
 	useNavigation: () => mockUseNavigation(),
 }));
 
-jest.mock('../../../src/navigation/screens/JobsPage/JobsLogic', () => ({
-	useJobsLogic: () => mockUseJobsLogic(),
+jest.mock('../../../src/navigation/screens/ActionsPage/ActionsLogic', () => ({
+	useActionsLogic: () => mockUseJobsLogic(),
 	iconForAction: jest.fn(() => 'mock-icon'),
 }));
 
-jest.mock('../../../src/navigation/screens/JobsPage/ViewDocumentLogic', () => ({
+jest.mock('../../../src/navigation/screens/ActionsPage/ViewDocumentLogic', () => ({
 	ViewDocumentLogic: () => mockViewDocumentLogic(),
 }));
 
@@ -32,7 +32,7 @@ jest.mock('@expo/vector-icons', () => ({
 	},
 }));
 
-jest.mock('../../../src/navigation/screens/JobsPage/Components/AttendanceModal', () => ({
+jest.mock('../../../src/navigation/screens/ActionsPage/Components/AttendanceModal', () => ({
 	AttendanceModal: (props: any) => {
 		const React = require('react');
 		const { Text } = require('react-native');
@@ -44,7 +44,7 @@ jest.mock('../../../src/navigation/screens/JobsPage/Components/AttendanceModal',
 	},
 }));
 
-jest.mock('../../../src/navigation/screens/JobsPage/Components/UploadDocsModal', () => ({
+jest.mock('../../../src/navigation/screens/ActionsPage/Components/UploadDocsModal', () => ({
 	UploadDocsModal: (props: any) => {
 		const React = require('react');
 		const { Text } = require('react-native');
@@ -56,7 +56,7 @@ jest.mock('../../../src/navigation/screens/JobsPage/Components/UploadDocsModal',
 	},
 }));
 
-jest.mock('../../../src/navigation/screens/JobsPage/Components/ViewDocumentModal', () => ({
+jest.mock('../../../src/navigation/screens/ActionsPage/Components/ViewDocumentModal', () => ({
 	ViewDocumentModal: (props: any) => {
 		const React = require('react');
 		const { Pressable, Text } = require('react-native');
@@ -157,7 +157,7 @@ describe('Jobs UI', () => {
 
 		const { getByText, getByTestId } = render(<Jobs />);
 
-		expect(getByText(/Loading jobs/)).toBeTruthy();
+		expect(getByText(/Loading actions/)).toBeTruthy();
 		expect(getByText('View Documents')).toBeTruthy();
 		expect(getByTestId('attendance-modal')).toBeTruthy();
 		expect(getByTestId('upload-modal')).toBeTruthy();

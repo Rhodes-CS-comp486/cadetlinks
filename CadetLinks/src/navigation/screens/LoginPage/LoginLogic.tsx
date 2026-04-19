@@ -6,6 +6,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../index";
 import { auth, db } from "../../../firebase/config";
+import { initializeGlobals, deriveCadetKeyFromEmail } from "../../../firebase/dbController";
 
 
 export function useLoginLogic() {
@@ -40,10 +41,7 @@ export function useLoginLogic() {
 
 
       // 2. Derive the email-based key to find the cadet profile
-      const cadetKey = enteredEmail
-        .replace(/@/g, "_")
-        .replace(/\./g, "_")
-        .replace(/-/g, "_");
+      const cadetKey = deriveCadetKeyFromEmail(enteredEmail);
 
 
       // 3. Confirm cadet profile exists in database
@@ -56,6 +54,7 @@ export function useLoginLogic() {
 
       // 4. Save the key for the rest of the app
       await AsyncStorage.setItem("currentCadetKey", cadetKey);
+      await initializeGlobals(cadetKey);
       console.log("✅ Logged in, cadet key:", cadetKey);
 
 

@@ -8,8 +8,6 @@ import TimePicker from './Components/timePicker';
 import DatePicker from './Components/datePicker';
 import { DarkColors as colors } from '../../../styles/colors';
 import { ScreenLayout } from '../../Components/ScreenLayout';
-import { PERMISSIONS } from '../../../assets/constants';
-import { useHomeLogic } from '../HomePage/HomeLogic';
 import Checkbox from 'expo-checkbox';
 
 export function Events(): React.ReactElement {
@@ -38,9 +36,9 @@ export function Events(): React.ReactElement {
     canManageEvents,
     getLabelTextAndStyle,
     eventConfig,
+    rsvpList,
+    
   } = useEvents();
-
-  const { cadetPermissionsMap } = useHomeLogic();
 
   return (
     <ScreenLayout>
@@ -156,6 +154,15 @@ export function Events(): React.ReactElement {
                   <Text style={styles.modalText}>{selectedEvent.description}</Text>
 
                   {selectedEvent.type === 'RSVP' && (
+                    <View>
+                      <Text style={styles.modalLabel}> RSVP List </Text>
+                      <Text style={styles.modalText}>{rsvpList[selectedEvent.id]?.join(', ') || 'No RSVPs yet'}</Text>
+                    </View>
+                  )
+                  }
+
+                  {selectedEvent.type === 'RSVP' && (
+
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
                       <TouchableOpacity
                         onPress={() => handleRSVP(selectedEvent.id, true)}
@@ -171,7 +178,9 @@ export function Events(): React.ReactElement {
                         <Text style={styles.declineButton}>Decline</Text>
                       </TouchableOpacity>
                     </View>
-                  )}
+                  )
+                  }
+
                 </ScrollView>
               )}
             </View>
@@ -185,8 +194,8 @@ export function Events(): React.ReactElement {
           visible={addEventsModalVisible}
           onRequestClose={handleCancelAddEvent}
         >
-          <KeyboardAvoidingView 
-            style={{ flex: 1 }} 
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           >
             <View style={styles.modalOverlay}>
@@ -204,7 +213,7 @@ export function Events(): React.ReactElement {
 
                   {/* Title */}
                   {eventConfig.mode === 'fixed' ? (
-                    <TextInput value={newEvent.title} editable={false} style={styles.inputBox}/>
+                    <TextInput value={newEvent.title} editable={false} style={styles.inputBox} />
                   ) : eventConfig.mode === 'checkbox' ? (
                     <>
                       {eventConfig.options?.map((option) => (
@@ -254,7 +263,7 @@ export function Events(): React.ReactElement {
                     onChangeText={(text) => setNewEvent({ ...newEvent, location: text })}
                     placeholder='Enter Location'
                     placeholderTextColor={styles.inputBox.color}
-                    style={[ styles.inputBox ]}
+                    style={[styles.inputBox]}
                   />
 
                   {/* Description */}
@@ -264,42 +273,42 @@ export function Events(): React.ReactElement {
                     multiline
                     placeholder='Enter Event Description'
                     placeholderTextColor={styles.inputBox.color}
-                    style={[ styles.inputBox, { height: 80 } ]}
+                    style={[styles.inputBox, { height: 80 }]}
                   />
 
                   {/* MANDATORY OR RSVP TOGGLE */}
                   <Text style={styles.modalLabel}>Event Type:</Text>
 
                   {eventConfig.type === 'either' ? (
-                  <View style={styles.eventTypeToggleButton}>
-                    {['RSVP', 'Mandatory'].map((typeOption) => {
-                      const isActive = newEvent.type === typeOption;
+                    <View style={styles.eventTypeToggleButton}>
+                      {['RSVP', 'Mandatory'].map((typeOption) => {
+                        const isActive = newEvent.type === typeOption;
 
-                      return (
-                        <Pressable
-                          key={typeOption}
-                          onPress={() => setNewEvent({ ...newEvent, type: typeOption as '' | 'RSVP' | 'Mandatory' })}
-                          style={{
-                            flex: 1,
-                            paddingVertical: 12,
-                            borderRadius: 10,
-                            alignItems: "center",
-                            backgroundColor:
-                              isActive ? "#FB9E50" : "transparent",
-                          }}
-                        >
-                          <Text
+                        return (
+                          <Pressable
+                            key={typeOption}
+                            onPress={() => setNewEvent({ ...newEvent, type: typeOption as '' | 'RSVP' | 'Mandatory' })}
                             style={{
-                              color: "white",
-                              fontWeight: "600",
+                              flex: 1,
+                              paddingVertical: 12,
+                              borderRadius: 10,
+                              alignItems: "center",
+                              backgroundColor:
+                                isActive ? "#FB9E50" : "transparent",
                             }}
                           >
-                            {typeOption}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
+                            <Text
+                              style={{
+                                color: "white",
+                                fontWeight: "600",
+                              }}
+                            >
+                              {typeOption}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
                   ) : (<View style={styles.eventTypeToggleButton}>
                     {['RSVP', 'Mandatory'].map((typeOption) => {
                       const isFixed = eventConfig.type !== 'either';

@@ -1,7 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
-import {PERMISSIONS} from "./constants";
+import { PERMISSIONS } from "./constants";
 import type {
-  AttendanceStatus,
+  AttendanceStatus as AttendanceLogicStatus,
   CadetListItem,
   EventItem,
 } from "../navigation/screens/ActionsPage/AttendanceLogic";
@@ -40,8 +40,8 @@ export type AttendanceModalProps = {
   flightDropdownOpen: boolean;
   onSelectFlight: (flightName: string) => void;
   allCadets: CadetListItem[];
-  getCadetStatus: (cadetKey: string) => AttendanceStatus;
-  setCadetStatus: (cadetKey: string, status: AttendanceStatus) => void;
+  getCadetStatus: (cadetKey: string) => AttendanceLogicStatus;
+  setCadetStatus: (cadetKey: string, status: AttendanceLogicStatus) => void;
   savingAttendance: boolean;
   clearingAttendance: boolean;
   onClearAttendance: () => void;
@@ -88,3 +88,81 @@ export type Action = {
 };
 
 export type NavAny = ReturnType<typeof useNavigation<any>>;
+
+export type Announcement = {
+  id: string;
+  title: string;
+  body: string;
+  importance: string;
+  retirementDate: Date;
+};
+
+export type UploadedDocument = {
+  dbKey: string;
+  displayName: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedAt: string;
+  downloadURL: string;
+  storagePath: string;
+  uploadedBy: string;
+};
+
+export type AttendanceStatus = "P" | "A" | "L";
+export type AttendanceRecordStatus = "P" | "A" | "E" | "L" | ".";
+export type AttendanceSubtree = Record<string, Record<string, { status?: AttendanceRecordStatus }>>;
+
+export type AttendanceEventItem = {
+  id: string;
+  eventName?: string;
+  date?: string;
+  time?: string;
+};
+
+export type AttendanceCadetItem = {
+  cadetKey: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  attendanceKey: string;
+  flight?: string;
+};
+
+export type StoreDomainErrors = {
+  profile?: string;
+  permissions?: string;
+  events?: string;
+  announcements?: string;
+  rsvps?: string;
+  cadets?: string;
+  documents?: string;
+  attendance?: string;
+};
+
+export type GlobalFirebaseState = {
+  isInitialized: boolean;
+  isInitializing: boolean;
+  cadetKey: string | null;
+  profile: CadetProfile | null;
+  permissionsMap: Map<string, boolean>;
+  events: Event[];
+  announcements: Announcement[];
+  userRsvpEventIds: Set<string>;
+  userRsvpStatusByEvent: Record<string, boolean>;
+  rsvpCadetKeysByEvent: Record<string, string[]>;
+  cadetsByKey: Record<string, CadetProfile>;
+  uploadedDocuments: UploadedDocument[];
+  attendancePT: AttendanceSubtree;
+  attendanceLLAB: AttendanceSubtree;
+  errors: StoreDomainErrors;
+  lastUpdated: Record<string, number | null>;
+};
+
+export type UploadDocumentInput = {
+  displayName: string;
+  mimeType: string;
+  sizeBytes: number;
+  uri: string;
+  originalFileName: string;
+};

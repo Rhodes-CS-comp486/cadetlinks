@@ -1,13 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ref, get } from "firebase/database";
-import { db } from "../../../firebase/config";
-import { useHomeLogic } from "../HomePage/HomeLogic";
+import { useEffect, useMemo } from "react";
 import { PERMISSIONS } from "../../../assets/constants";
 import { CadetProfile, Action } from "../../../assets/types";
 import { useDocumentUploadingLogic } from "./UploadDocsLogic";
 import { useAttendanceLogic } from "./AttendanceLogic";
 import { useNavigation } from "@react-navigation/core";
+import { globals, initializeGlobals } from "../../../firebase/dbController";
 
 type NavAny = ReturnType<typeof useNavigation<any>>;
 
@@ -27,12 +24,12 @@ export function iconForAction(id: Action["id"]) { // this function maps icons to
 }
 
 export function useActionsLogic() {
-  const { cadetPermissionsMap } = useHomeLogic();
-  const [cadetKey, setCadetKey] = useState<string | null>(null);
-
-  const [profile, setProfile] = useState<CadetProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const globalState = globals();
+  const cadetPermissionsMap = globalState.permissionsMap;
+  const cadetKey = globalState.cadetKey;
+  const profile = globalState.profile as CadetProfile | null;
+  const loading = globalState.isInitializing || !globalState.isInitialized;
+  const error = globalState.errors.profile ?? null;
 
   const canTakeAttendance = cadetPermissionsMap.get(PERMISSIONS.ATTENDANCE_EDITING) ?? false;
   const canUploadFiles = cadetPermissionsMap.get(PERMISSIONS.FILE_UPLOADING) ?? false;
@@ -52,54 +49,16 @@ export function useActionsLogic() {
   const permissionText =
     permissionNames.length > 0 ? permissionNames.join(", ") : "None"; // gets permission names or "none"
 
- 
-
-  //loading users overview of data
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const key = await AsyncStorage.getItem("currentCadetKey");
-        setCadetKey(key);
-
-        if (!key) {
-          setProfile(null);
-          setError("No user is logged in.");
-          return;
-        }
-
-        // load logged-in cadet profile
-        const profileRef = ref(db, `cadets/${key}`);
-        const profileSnap = await get(profileRef);
-
-        if (!profileSnap.exists()) {
-          setProfile(null);
-          setError("No profile found for this user.");
-          return;
-        }
-
-        const cadetData = profileSnap.val() as CadetProfile;
-        setProfile(cadetData);
-
-
-      } catch (e) {
-        console.error("❌ Error reading jobs/permissions:", e);
-        setError("Could not load jobs & permissions.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    load();
-  }, []);
+    if (!globalState.isInitialized && !globalState.isInitializing) {
+      void initializeGlobals();
+    }
+  }, [globalState.isInitialized, globalState.isInitializing]);
   
   const onPressAction = async (a: Action) => {
       if (!a.allowed) return;
   
       if (a.id === PERMISSIONS.ATTENDANCE_EDITING) {
-        console.log("Opening attendance modal and type:", attendance.attendanceModalVisible, typeof attendance.openAttendanceModal);
         attendance.openAttendanceModal();
         return;
       }

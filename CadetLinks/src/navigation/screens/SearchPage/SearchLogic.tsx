@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { onValue, ref } from "firebase/database";
-import { db } from "../../../firebase/config";
+import { globals, initializeGlobals } from "../../../firebase/dbController";
 
 export type SearchCadetProfile = {
   cadetKey: string;
@@ -42,70 +40,39 @@ function matchesFlight(cadet: SearchCadetProfile, selectedFlight: string) {
 }
 
 export function useSearchLogic() {
+  const globalState = globals();
   const [query, setQuery] = useState("");
   const [selectedFlight, setSelectedFlight] = useState("");
-  const [allCadets, setAllCadets] = useState<SearchCadetProfile[]>([]);
-  const [loadingCadets, setLoadingCadets] = useState(true);
-  const [searchError, setSearchError] = useState<string | null>(null);
 
   useEffect(() => {
-    let unsubscribeCadets: (() => void) | null = null;
+    if (!globalState.isInitialized && !globalState.isInitializing) {
+      void initializeGlobals();
+    }
+  }, [globalState.isInitialized, globalState.isInitializing]);
 
-    const load = async () => {
-      setLoadingCadets(true);
-      setSearchError(null);
+  const allCadets = useMemo(() => {
+    const currentCadetKey = globalState.cadetKey;
+    const cadetsData = globalState.cadetsByKey;
 
-      try {
-        const currentCadetKey = await AsyncStorage.getItem("currentCadetKey");
-        const cadetsRef = ref(db, "cadets");
+    return Object.entries(cadetsData)
+      .map(([cadetKey, value]) => {
+        const cadet = value as Omit<SearchCadetProfile, "cadetKey">;
+        return {
+          cadetKey,
+          ...cadet,
+        };
+      })
+      .filter((cadet) => cadet.cadetKey !== currentCadetKey)
+      .sort((a, b) => {
+        const aLast = (a.lastName ?? "").toLowerCase();
+        const bLast = (b.lastName ?? "").toLowerCase();
+        if (aLast !== bLast) return aLast.localeCompare(bLast);
 
-        unsubscribeCadets = onValue(
-          cadetsRef,
-          (snapshot) => {
-            const cadetsData = snapshot.val() ?? {};
-
-            const cadetList: SearchCadetProfile[] = Object.entries(cadetsData)
-              .map(([cadetKey, value]) => {
-                const cadet = value as Omit<SearchCadetProfile, "cadetKey">;
-                return {
-                  cadetKey,
-                  ...cadet,
-                };
-              })
-              .filter((cadet) => cadet.cadetKey !== currentCadetKey)
-              .sort((a, b) => {
-                const aLast = (a.lastName ?? "").toLowerCase();
-                const bLast = (b.lastName ?? "").toLowerCase();
-                if (aLast !== bLast) return aLast.localeCompare(bLast);
-
-                const aFirst = (a.firstName ?? "").toLowerCase();
-                const bFirst = (b.firstName ?? "").toLowerCase();
-                return aFirst.localeCompare(bFirst);
-              });
-
-            setAllCadets(cadetList);
-            setLoadingCadets(false);
-            setSearchError(null);
-          },
-          (error) => {
-            console.error("❌ Error loading cadets:", error);
-            setSearchError("Could not load cadets.");
-            setLoadingCadets(false);
-          }
-        );
-      } catch (error) {
-        console.error("❌ Error starting search:", error);
-        setSearchError("Could not start search.");
-        setLoadingCadets(false);
-      }
-    };
-
-    load();
-
-    return () => {
-      if (unsubscribeCadets) unsubscribeCadets();
-    };
-  }, []);
+        const aFirst = (a.firstName ?? "").toLowerCase();
+        const bFirst = (b.firstName ?? "").toLowerCase();
+        return aFirst.localeCompare(bFirst);
+      });
+  }, [globalState.cadetsByKey, globalState.cadetKey]);
 
   const flightOptions = useMemo(() => {
     const uniqueFlights = Array.from(
@@ -125,6 +92,9 @@ export function useSearchLogic() {
         matchesQuery(cadet, query) && matchesFlight(cadet, selectedFlight)
     );
   }, [allCadets, query, selectedFlight]);
+
+  const loadingCadets = globalState.isInitializing || !globalState.isInitialized;
+  const searchError = globalState.errors.cadets ?? null;
 
   return useMemo(
     () => ({
