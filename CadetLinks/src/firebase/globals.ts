@@ -536,10 +536,11 @@ export const setUserRsvpStatus = async (eventId: string, confirming: boolean) =>
 
 export const addEvent = async (event: Omit<CadetEvent, "id"> & { id?: string }) => {
   const id = event.id || generateEventId();
+  const eventDate = formatDateOnly(event.date);
 
   await set(ref(db, `events/${id}`), {
     eventName: event.title,
-    date: formatDateOnly(event.date),
+    date: eventDate,
     time: event.time.toTimeString().split(" ")[0],
     details: event.description,
     locationId: event.location,
@@ -548,6 +549,13 @@ export const addEvent = async (event: Omit<CadetEvent, "id"> & { id?: string }) 
 
   if (event.type === "RSVP") {
     await set(ref(db, `rsvps/${id}`), "");
+  }
+
+  const title = event.title.toUpperCase();
+  if (title === "LLAB" || title === "PT" || title === "RMP") {
+    await set(ref(db, `attendance/${title}/${eventDate}/Last Name`), {
+      status: ".",
+    });
   }
 
   return id;

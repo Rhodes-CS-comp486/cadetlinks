@@ -1,5 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
-import {PERMISSIONS} from "../firebase/globals";
+import { PERMISSIONS } from "./constants";
 import type {
   AttendanceStatus,
   CadetListItem,
