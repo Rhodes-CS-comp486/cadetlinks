@@ -53,6 +53,8 @@ export type UploadedDocument = {
 
 /** P = Present, A = Absent, L = Late */
 type AttendanceStatus = "P" | "A" | "L";
+type AttendanceRecordStatus = "P" | "A" | "E" | "L" | ".";
+type AttendanceSubtree = Record<string, Record<string, { status?: AttendanceRecordStatus }>>;
 
 type AttendanceEventItem = {
   id: string;
@@ -78,6 +80,7 @@ type StoreDomainErrors = {
   rsvps?: string;
   cadets?: string;
   documents?: string;
+  attendance?: string;
 };
 
 // ─── Store shape ─────────────────────────────────────────────────────────────
@@ -98,6 +101,8 @@ export type GlobalFirebaseState = {
   userRsvpStatusByEvent: Record<string, boolean>;
   cadetsByKey: Record<string, CadetProfile>;
   uploadedDocuments: UploadedDocument[];
+  attendancePT: AttendanceSubtree;
+  attendanceLLAB: AttendanceSubtree;
   errors: StoreDomainErrors;
   lastUpdated: Record<string, number | null>;
 };
@@ -125,6 +130,8 @@ const initialState: GlobalFirebaseState = {
   userRsvpStatusByEvent: {},
   cadetsByKey: {},
   uploadedDocuments: [],
+  attendancePT: {},
+  attendanceLLAB: {},
   errors: {},
   lastUpdated: {
     profile: null,
@@ -134,6 +141,7 @@ const initialState: GlobalFirebaseState = {
     rsvps: null,
     cadets: null,
     documents: null,
+    attendance: null,
   },
 };
 
@@ -249,7 +257,7 @@ const inferAttendanceBucket = (eventName?: string): "PT" | "LLAB" | null => {
 
 /**
  * Fetch the permission map for a given AFROTC job title and patch the store.
- * Called automatically when the profile listener detects a job change.
+ * Called once during initialization because job changes are semester-based.
  */
 const fetchPermissionsForJob = async (job?: string) => {
   if (!job) {
@@ -495,13 +503,49 @@ const startDocumentsListener = () => {
   addListener(unsubscribe);
 };
 
+/** Attach realtime listeners to PT and LLAB attendance subtrees. */
+const startAttendanceListeners = () => {
+  const attendancePTRef = ref(db, "attendance/PT");
+  const unsubscribePT = onValue(
+    attendancePTRef,
+    (snapshot) => {
+      const attendancePT = (snapshot.val() as AttendanceSubtree | null) ?? {};
+      patchStore({ attendancePT });
+      patchError("attendance", undefined);
+      touch("attendance");
+    },
+    (error) => {
+      console.error("Attendance PT listener failed:", error);
+      patchError("attendance", "Could not load attendance.");
+    }
+  );
+
+  const attendanceLLABRef = ref(db, "attendance/LLAB");
+  const unsubscribeLLAB = onValue(
+    attendanceLLABRef,
+    (snapshot) => {
+      const attendanceLLAB = (snapshot.val() as AttendanceSubtree | null) ?? {};
+      patchStore({ attendanceLLAB });
+      patchError("attendance", undefined);
+      touch("attendance");
+    },
+    (error) => {
+      console.error("Attendance LLAB listener failed:", error);
+      patchError("attendance", "Could not load attendance.");
+    }
+  );
+
+  addListener(unsubscribePT);
+  addListener(unsubscribeLLAB);
+};
+
 // ─── Public lifecycle API ────────────────────────────────────────────────────
 
 /**
  * Initialize the global store for the logged-in cadet.
  *
  * - If `cadetKeyInput` is omitted, the key is read from AsyncStorage.
- * - Starts all six realtime listeners (profile, events, announcements, RSVPs, cadets, documents).
+ * - Starts all realtime listeners (profile, events, announcements, RSVPs, cadets, documents, attendance).
  * - Safe to call multiple times; re-entrant calls while initializing are ignored.
  */
 export const initializeGlobals = async (cadetKeyInput?: string | null) => {
@@ -538,6 +582,7 @@ export const initializeGlobals = async (cadetKeyInput?: string | null) => {
     startRsvpListener(cadetKey);
     startCadetsListener();
     startDocumentsListener();
+    startAttendanceListeners();
 
     // Cadet jobs change infrequently (semester cadence), so load permissions once at init.
     const initialProfileSnap = await get(ref(db, `cadets/${cadetKey}`));
