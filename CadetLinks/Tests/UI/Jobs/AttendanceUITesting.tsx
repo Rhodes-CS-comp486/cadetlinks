@@ -154,7 +154,7 @@ describe('AttendanceModal UI', () => {
 		const { getByText, getAllByText } = render(<AttendanceModal {...props} />);
 
 		expect(getByText('Quick Summary')).toBeTruthy();
-		expect(getByText('Everyone is Present by default.')).toBeTruthy();
+		expect(getByText('Everyone is Absent by default.')).toBeTruthy();
 		expect(getByText('Absent marked: 2')).toBeTruthy();
 		expect(getByText('Late marked: 1')).toBeTruthy();
 
@@ -176,7 +176,7 @@ describe('AttendanceModal UI', () => {
 		expect(props.setCadetStatus).toHaveBeenCalledWith('cadet-l', 'L');
 	});
 
-	it('supports footer actions when not saving or clearing', () => {
+	it('supports footer confirm action when not saving', () => {
 		const props = buildAttendanceModalProps({
 			savingAttendance: false,
 			clearingAttendance: false,
@@ -184,45 +184,28 @@ describe('AttendanceModal UI', () => {
 
 		const { getByText } = render(<AttendanceModal {...props} />);
 
-		fireEvent.press(getByText('Cancel'));
-		expect(props.onRequestClose).toHaveBeenCalledTimes(1);
-
-		fireEvent.press(getByText('Clear Attendance'));
-		expect(props.onClearAttendance).toHaveBeenCalledTimes(1);
-
-		fireEvent.press(getByText('Save Attendance'));
+		fireEvent.press(getByText('Confirm Attendance'));
 		expect(props.onSubmitAttendance).toHaveBeenCalledTimes(1);
 	});
 
-	it('disables footer actions and shows spinner for clear branch while clearing', () => {
+	it('still allows confirm action while clearing state is set', () => {
 		const props = buildAttendanceModalProps({
 			clearingAttendance: true,
 			savingAttendance: false,
 		});
 
-		const { getByText, queryByText } = render(<AttendanceModal {...props} />);
-
-		fireEvent.press(getByText('Cancel'));
-		fireEvent.press(getByText('Save Attendance'));
-
-		expect(props.onRequestClose).not.toHaveBeenCalled();
-		expect(props.onSubmitAttendance).not.toHaveBeenCalled();
-		expect(queryByText('Clear Attendance')).toBeNull();
+		const { getByText } = render(<AttendanceModal {...props} />);
+		fireEvent.press(getByText('Confirm Attendance'));
+		expect(props.onSubmitAttendance).toHaveBeenCalledTimes(1);
 	});
 
-	it('disables footer actions and shows spinner for save branch while saving', () => {
+	it('disables confirm action and shows spinner while saving', () => {
 		const props = buildAttendanceModalProps({
 			savingAttendance: true,
 			clearingAttendance: false,
 		});
 
-		const { getByText, queryByText } = render(<AttendanceModal {...props} />);
-
-		fireEvent.press(getByText('Cancel'));
-		fireEvent.press(getByText('Clear Attendance'));
-
-		expect(props.onRequestClose).not.toHaveBeenCalled();
-		expect(props.onClearAttendance).not.toHaveBeenCalled();
-		expect(queryByText('Save Attendance')).toBeNull();
+		const { queryByText } = render(<AttendanceModal {...props} />);
+		expect(queryByText('Confirm Attendance')).toBeNull();
 	});
 });

@@ -103,6 +103,8 @@ function buildDefaultUseEventsReturn(overrides: Partial<any> = {}) {
 		rsvpStatus: {},
 		addEventsModalVisible: false,
 		allEvents: [sampleEvent],
+		selectedOptions: [],
+		setSelectedOptions: jest.fn(),
 		newEvent: {
 			id: '',
 			title: '',
@@ -124,7 +126,10 @@ function buildDefaultUseEventsReturn(overrides: Partial<any> = {}) {
 		handleAddEvent: jest.fn(),
 		handleConfirmAddEvent: jest.fn(),
 		handleCancelAddEvent: jest.fn(),
+		handleDeleteEvent: jest.fn(),
+		canDeleteEvent: jest.fn(() => false),
 		getLabelTextAndStyle: jest.fn(() => [{ color: 'white' }, 'RSVP']),
+		eventConfig: { mode: 'free', type: 'either', title: '', options: [] },
 		...overrides,
 	};
 }

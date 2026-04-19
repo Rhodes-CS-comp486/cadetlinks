@@ -37,9 +37,8 @@ describe('UploadDocsModal UI', () => {
 		const { getByText, UNSAFE_getByType } = render(<UploadDocsModal {...props} />);
 
 		expect(getByText('Upload Documents')).toBeTruthy();
-		expect(getByText('Choose a local file, then upload it to Firebase.')).toBeTruthy();
 		expect(getByText('Choose Local File')).toBeTruthy();
-		expect(getByText('Upload to Firebase')).toBeTruthy();
+		expect(getByText('Upload')).toBeTruthy();
 
 		fireEvent.press(getByText('icon-close'));
 		expect(props.onClose).toHaveBeenCalledTimes(1);
@@ -56,7 +55,7 @@ describe('UploadDocsModal UI', () => {
 		fireEvent.press(getByText('Choose Local File'));
 		expect(props.onPickDocument).toHaveBeenCalledTimes(1);
 
-		fireEvent.press(getByText('Upload to Firebase'));
+		fireEvent.press(getByText('Upload'));
 		expect(props.onUploadDocument).toHaveBeenCalledTimes(1);
 	});
 
@@ -143,7 +142,7 @@ describe('UploadDocsModal UI', () => {
 		const { queryByText, getByText } = render(<UploadDocsModal {...props} />);
 
 		expect(queryByText('Choose Local File')).toBeNull();
-		fireEvent.press(getByText('Upload to Firebase'));
+		fireEvent.press(getByText('Upload'));
 		expect(props.onUploadDocument).not.toHaveBeenCalled();
 	});
 
@@ -160,7 +159,7 @@ describe('UploadDocsModal UI', () => {
 
 		const { getByText, queryByText } = render(<UploadDocsModal {...props} />);
 
-		expect(queryByText('Upload to Firebase')).toBeNull();
+		expect(queryByText('Upload')).toBeNull();
 		fireEvent.press(getByText('Choose Local File'));
 		expect(props.onPickDocument).not.toHaveBeenCalled();
 
