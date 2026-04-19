@@ -27,8 +27,8 @@ jest.mock('../../src/firebase/globals', () => ({
   },
   globals: () => mockGlobalState,
   initializeGlobals: () => mockInitializeGlobals(),
-  upsertAnnouncement: (...args: any[]) => mockUpsertAnnouncement(...args),
-  deleteAnnouncement: (...args: any[]) => mockDeleteAnnouncement(...args),
+  upsertAnnouncement: (announcement: any) => (mockUpsertAnnouncement as any)(announcement),
+  deleteAnnouncement: (announcementId: string) => (mockDeleteAnnouncement as any)(announcementId),
 }));
 
 function buildGlobalState(overrides: Partial<any> = {}) {

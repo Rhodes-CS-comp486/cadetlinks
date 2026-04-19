@@ -99,6 +99,7 @@ export type GlobalFirebaseState = {
   announcements: Announcement[];
   userRsvpEventIds: Set<string>;
   userRsvpStatusByEvent: Record<string, boolean>;
+  rsvpCadetKeysByEvent: Record<string, string[]>;
   cadetsByKey: Record<string, CadetProfile>;
   uploadedDocuments: UploadedDocument[];
   attendancePT: AttendanceSubtree;
@@ -128,6 +129,7 @@ const initialState: GlobalFirebaseState = {
   announcements: [],
   userRsvpEventIds: new Set<string>(),
   userRsvpStatusByEvent: {},
+  rsvpCadetKeysByEvent: {},
   cadetsByKey: {},
   uploadedDocuments: [],
   attendancePT: {},
@@ -417,8 +419,14 @@ const startRsvpListener = (cadetKey: string) => {
       const rsvpData = (snapshot.val() as Record<string, any>) || {};
       const selectedIds = new Set<string>();
       const statusByEvent: Record<string, boolean> = {};
+      const rsvpCadetKeysByEvent: Record<string, string[]> = {};
 
       Object.entries(rsvpData).forEach(([eventId, eventNode]) => {
+        const eventEntries = Object.entries((eventNode as Record<string, any>) || {});
+        rsvpCadetKeysByEvent[eventId] = eventEntries
+          .filter(([, attendeeNode]) => attendeeNode?.status === "Y")
+          .map(([attendeeCadetKey]) => attendeeCadetKey);
+
         const userNode = (eventNode as Record<string, any>)[cadetKey];
         const status = userNode?.status;
         if (status === "Y") {
@@ -429,7 +437,11 @@ const startRsvpListener = (cadetKey: string) => {
         }
       });
 
-      patchStore({ userRsvpEventIds: selectedIds, userRsvpStatusByEvent: statusByEvent });
+      patchStore({
+        userRsvpEventIds: selectedIds,
+        userRsvpStatusByEvent: statusByEvent,
+        rsvpCadetKeysByEvent,
+      });
       patchError("rsvps", undefined);
       touch("rsvps");
     },

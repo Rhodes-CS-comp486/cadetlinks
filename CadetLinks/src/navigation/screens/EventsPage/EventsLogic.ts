@@ -36,6 +36,7 @@ export function useEvents() {
   const profile = globalState.profile;
   const allEvents = globalState.events as Event[];
   const cadetPermissionsMap = globalState.permissionsMap;
+  const cadetsByKey = globalState.cadetsByKey;
 
   const [newEvent, setNewEvent] = useState<Event>({
     id: '',
@@ -68,6 +69,19 @@ export function useEvents() {
       .filter((ev) => formatDate(ev.date) === selectedDate)
       .sort((a, b) => a.time.getTime() - b.time.getTime());
   }, [allEvents, selectedDate]);
+
+  const rsvpList = useMemo(() => {
+    return Object.fromEntries(
+      Object.entries(globalState.rsvpCadetKeysByEvent).map(([eventId, cadetKeys]) => [
+        eventId,
+        cadetKeys.map((cadetKey) => {
+          const cadet = cadetsByKey[cadetKey];
+          const fullName = `${cadet?.firstName ?? ""} ${cadet?.lastName ?? ""}`.trim();
+          return fullName || cadetKey;
+        }),
+      ])
+    ) as Record<string, string[]>;
+  }, [globalState.rsvpCadetKeysByEvent, cadetsByKey]);
 
   const handleEventPress = (event: Event) => {
     setSelectedEvent(event);
@@ -250,8 +264,6 @@ export function useEvents() {
 
   return {
     selectedDate,
-    rsvpList,
-    setRsvpList,
     setSelectedDate,
     selectedEvent,
     eventInfoModalVisible,
@@ -277,5 +289,6 @@ export function useEvents() {
     canManageEvents,
     getLabelTextAndStyle,
     eventConfig: getEventConfig(profile?.job),
+    rsvpList,
   };
 }

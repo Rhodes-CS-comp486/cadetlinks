@@ -8,8 +8,6 @@ import TimePicker from './Components/timePicker';
 import DatePicker from './Components/datePicker';
 import { DarkColors as colors } from '../../../styles/colors';
 import { ScreenLayout } from '../../Components/ScreenLayout';
-import { PERMISSIONS } from '../../../assets/constants';
-import { useHomeLogic } from '../HomePage/HomeLogic';
 import Checkbox from 'expo-checkbox';
 
 export function Events(): React.ReactElement {
@@ -38,10 +36,9 @@ export function Events(): React.ReactElement {
     canManageEvents,
     getLabelTextAndStyle,
     eventConfig,
-    rsvpList
+    rsvpList,
+    
   } = useEvents();
-
-  const { cadetPermissionsMap } = useHomeLogic();
 
   return (
     <ScreenLayout>

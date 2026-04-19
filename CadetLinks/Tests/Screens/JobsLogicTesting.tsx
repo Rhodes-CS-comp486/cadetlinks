@@ -101,8 +101,8 @@ describe('useActionsLogic', () => {
 
     const { result } = renderHook(() => useActionsLogic());
 
-    const attendanceAction = result.current.actions.find((a: any) => a.id === PERMISSIONS.ATTENDANCE_EDITING);
-    const uploadAction = result.current.actions.find((a: any) => a.id === PERMISSIONS.FILE_UPLOADING);
+    const attendanceAction = result.current.actions.find((a: any) => a.id === PERMISSIONS.ATTENDANCE_EDITING)!;
+    const uploadAction = result.current.actions.find((a: any) => a.id === PERMISSIONS.FILE_UPLOADING)!;
 
     act(() => {
       void result.current.onPressAction(attendanceAction);

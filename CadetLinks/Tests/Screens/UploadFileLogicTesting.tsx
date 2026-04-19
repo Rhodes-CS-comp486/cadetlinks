@@ -10,7 +10,7 @@ jest.mock('expo-document-picker', () => ({
 }));
 
 jest.mock('../../src/firebase/globals', () => ({
-  uploadDocumentFromUri: (...args: any[]) => mockUploadDocumentFromUri(...args),
+  uploadDocumentFromUri: (input: any) => (mockUploadDocumentFromUri as any)(input),
 }));
 
 describe('useDocumentUploadingLogic', () => {

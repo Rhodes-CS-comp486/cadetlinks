@@ -4,16 +4,11 @@ import { fireEvent, render } from '@testing-library/react-native';
 import { Events } from '../../src/navigation/screens/EventsPage/EventScreen';
 
 const mockUseEvents = jest.fn();
-const mockUseHomeLogic = jest.fn();
 
 let capturedCalendarProps: any = null;
 
 jest.mock('../../src/navigation/screens/EventsPage/EventsLogic', () => ({
 	useEvents: () => mockUseEvents(),
-}));
-
-jest.mock('../../src/navigation/screens/HomePage/HomeLogic', () => ({
-	useHomeLogic: () => mockUseHomeLogic(),
 }));
 
 jest.mock('../../src/navigation/Components/ScreenLayout', () => ({
@@ -130,6 +125,8 @@ function buildDefaultUseEventsReturn(overrides: Partial<any> = {}) {
 		canDeleteEvent: jest.fn(() => false),
 		getLabelTextAndStyle: jest.fn(() => [{ color: 'white' }, 'RSVP']),
 		eventConfig: { mode: 'free', type: 'either', title: '', options: [] },
+		rsvpList: {},
+		canManageEvents: true,
 		...overrides,
 	};
 }
@@ -138,9 +135,6 @@ describe('EventScreen UI', () => {
 	beforeEach(() => {
 		capturedCalendarProps = null;
 		jest.clearAllMocks();
-		mockUseHomeLogic.mockReturnValue({
-			cadetPermissionsMap: new Map<string, boolean>([['Event Making', true]]),
-		});
 	});
 
 	it('renders events and pushes DB-marked dates into the calendar', () => {
@@ -187,7 +181,7 @@ describe('EventScreen UI', () => {
 		expect(queryByText('Drill Briefing')).toBeNull();
 	});
 
-	it('shows and uses add-event floating button only when event-making permission is enabled', () => {
+	it('shows and uses add-event floating button only when event management is enabled', () => {
 		const enabledState = buildDefaultUseEventsReturn();
 		mockUseEvents.mockReturnValue(enabledState);
 
@@ -196,10 +190,7 @@ describe('EventScreen UI', () => {
 		fireEvent.press(getByText('+'));
 		expect(enabledState.handleAddEvent).toHaveBeenCalledTimes(1);
 
-		mockUseHomeLogic.mockReturnValue({
-			cadetPermissionsMap: new Map<string, boolean>([['Event Making', false]]),
-		});
-		mockUseEvents.mockReturnValue(buildDefaultUseEventsReturn());
+		mockUseEvents.mockReturnValue(buildDefaultUseEventsReturn({ canManageEvents: false }));
 
 		rerender(<Events />);
 		expect(queryByText('+')).toBeNull();
@@ -220,10 +211,13 @@ describe('EventScreen UI', () => {
 			selectedEvent: rsvpEvent,
 			eventInfoModalVisible: true,
 			rsvpStatus: {},
+			rsvpList: { 'e-rsvp-1': ['Sadie Gray', 'Ryan Whitfield'] },
 		});
 		mockUseEvents.mockReturnValue(state);
 
 		const { getByText, UNSAFE_getAllByType } = render(<Events />);
+
+		expect(getByText('Sadie Gray, Ryan Whitfield')).toBeTruthy();
 
 		fireEvent.press(getByText('Confirm'));
 		expect(state.handleRSVP).toHaveBeenCalledWith('e-rsvp-1', true);

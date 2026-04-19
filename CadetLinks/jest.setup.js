@@ -36,7 +36,7 @@ jest.mock('@expo/vector-icons', () => {
 jest.mock('expo-checkbox', () => {
   const React = require('react');
   const { View } = require('react-native');
-  return ({ value, onValueChange }: any) =>
+  return ({ value, onValueChange }) =>
     React.createElement(View, {
       testID: 'mock-checkbox',
       value,

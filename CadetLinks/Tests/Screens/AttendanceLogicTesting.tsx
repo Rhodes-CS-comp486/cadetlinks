@@ -7,9 +7,10 @@ const mockSaveAttendanceForEvent = jest.fn(() => Promise.resolve());
 const mockClearAttendanceForEvent = jest.fn(() => Promise.resolve());
 
 jest.mock('../../src/firebase/globals', () => ({
-  loadAttendanceToolsData: (...args: any[]) => mockLoadAttendanceToolsData(...args),
-  saveAttendanceForEvent: (...args: any[]) => mockSaveAttendanceForEvent(...args),
-  clearAttendanceForEvent: (...args: any[]) => mockClearAttendanceForEvent(...args),
+  loadAttendanceToolsData: () => mockLoadAttendanceToolsData(),
+  saveAttendanceForEvent: (eventId: string, absentCadetKeys: string[], excusedCadetKeys: string[], statusByCadetKey: Record<string, string>) =>
+    (mockSaveAttendanceForEvent as any)(eventId, absentCadetKeys, excusedCadetKeys, statusByCadetKey),
+  clearAttendanceForEvent: (eventId: string) => (mockClearAttendanceForEvent as any)(eventId),
 }));
 
 describe('useAttendanceLogic', () => {

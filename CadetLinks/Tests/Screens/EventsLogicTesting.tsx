@@ -18,9 +18,9 @@ jest.mock('../../src/firebase/globals', () => ({
   },
   globals: () => mockGlobalState,
   initializeGlobals: () => mockInitializeGlobals(),
-  addEvent: (...args: any[]) => mockAddEvent(...args),
-  removeEvent: (...args: any[]) => mockRemoveEvent(...args),
-  setUserRsvpStatus: (...args: any[]) => mockSetUserRsvpStatus(...args),
+  addEvent: (event: any) => (mockAddEvent as any)(event),
+  removeEvent: (eventId: string) => (mockRemoveEvent as any)(eventId),
+  setUserRsvpStatus: (eventId: string, confirming: boolean) => (mockSetUserRsvpStatus as any)(eventId, confirming),
 }));
 
 function buildGlobalState(overrides: Partial<any> = {}) {
@@ -29,6 +29,9 @@ function buildGlobalState(overrides: Partial<any> = {}) {
     isInitializing: false,
     profile: { job: 'Special Projects Officer' },
     permissionsMap: new Map<string, boolean>([['Event Making', true], ['Admin', false]]),
+    cadetsByKey: {
+      cadet_1: { firstName: 'Sadie', lastName: 'Gray' },
+    },
     events: [
       {
         id: 'e1',
@@ -41,6 +44,7 @@ function buildGlobalState(overrides: Partial<any> = {}) {
       },
     ],
     userRsvpStatusByEvent: { e1: true },
+    rsvpCadetKeysByEvent: { e1: ['cadet_1'] },
     ...overrides,
   };
 }
@@ -77,6 +81,12 @@ describe('useEvents', () => {
 
     expect(result.current.rsvpStatus.e1).toBe(false);
     expect(mockSetUserRsvpStatus).toHaveBeenCalledWith('e1', false);
+  });
+
+  it('builds RSVP name lists from global RSVP cadet keys and cached cadet profiles', () => {
+    const { result } = renderHook(() => useEvents());
+
+    expect(result.current.rsvpList).toEqual({ e1: ['Sadie Gray'] });
   });
 
   it('validates required fields before addEvent', async () => {
