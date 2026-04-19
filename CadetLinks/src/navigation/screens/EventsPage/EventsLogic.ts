@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CadetProfile } from '../ProfilePage/ProfileLogic';
 import { db } from '../../../firebase/config';
 import { useHomeLogic } from '../HomePage/HomeLogic';
+import { ADMIN_PERMISSIONS, EVENT_MAKING_PERMISSION } from '../../../assets/constants';
 
 export interface Event {
   id: string
@@ -581,7 +582,7 @@ export function useEvents() {
 
   };
 
-  const canManageEvents = profile?.permissions?.includes('Event Making') || profile?.permissions?.includes('Admin');
+  const canManageEvents = cadetPermissionsMap.get(ADMIN_PERMISSIONS) || cadetPermissionsMap.get(EVENT_MAKING_PERMISSION);
 
   // Return all state, computed values, handlers, and helpers
   return {

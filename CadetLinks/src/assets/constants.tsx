@@ -1,7 +1,7 @@
-const EVENT_MAKING_PERMISSION = "Event Making";
-const FILE_UPLOADING_PERMISSION = "File Uploading";
-const ATTENDANCE_EDITING_PERMISSION = "Attendance Editing";
-const ADMIN_PERMISSIONS = "Admin";
+export const EVENT_MAKING_PERMISSION = "Event Making";
+export const FILE_UPLOADING_PERMISSION = "File Uploading";
+export const ATTENDANCE_EDITING_PERMISSION = "Attendance Editing";
+export const ADMIN_PERMISSIONS = "Admin";
 
 export const DEFAULT_PERMISSIONS_MAP = new Map<string, boolean>([
     [EVENT_MAKING_PERMISSION, false],
