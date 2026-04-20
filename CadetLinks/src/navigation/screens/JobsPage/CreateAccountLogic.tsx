@@ -99,6 +99,8 @@ export function useCreateAccountLogic() {
       return "Phone number must be 10 digits, e.g. (555) 000-0000.";
     if (!password || password.length < 6)
       return "Password must be at least 6 characters.";
+    if (!form.cadetRank.trim())
+      return "Please select a cadet rank.";
 
     return null;
   };

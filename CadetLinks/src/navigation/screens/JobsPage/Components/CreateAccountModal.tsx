@@ -23,11 +23,7 @@ const ALL_PERMISSIONS = [
 
 const YEARS   = ["100", "150", "200", "250"];
 const FLIGHTS = ["Alpha", "Bravo", "POC"];
-const RANKS   = [
-  "CWCD", "CYBERGMCA", "ILLABCC", "PFO", "PFOA",
-  "ALLABCC", "ALPHABCLFITCC", "BRAVOBCFITCC",
-  "RECRUITING", "ACAD", "MXSUPPLY", "CSO", "SPECPROJECTS", "HG",
-];
+const RANKS = ["C/4C", "C/3C"];
 
 interface Props {
   visible: boolean;
@@ -136,6 +132,14 @@ export function CreateAccountModal({
               value={form.firstName}
               onChangeText={(v) => updateField("firstName", v)}
             />
+
+            {/* Cadet Rank dropdown */}
+            <DropdownPicker
+              label="Cadet Rank"
+              options={RANKS}
+              value={form.cadetRank}
+              onSelect={(v) => updateField("cadetRank", v)}
+/>
 
             {/* Class Year dropdown */}
             <DropdownPicker
