@@ -5,7 +5,7 @@ import { useDocumentUploadingLogic } from "./UploadDocsLogic";
 import { useAttendanceLogic } from "./AttendanceLogic";
 import { useNavigation } from "@react-navigation/core";
 import { globals, initializeGlobals } from "../../../firebase/dbController";
-import { useCreateAccountLogic } from "../JobsPage/CreateAccountLogic"; // ← add
+import { useCreateAccountLogic } from "./CreateAccountLogic";
 
 type NavAny = ReturnType<typeof useNavigation<any>>;
 

@@ -21,7 +21,7 @@ import { PERMISSIONS } from "../../../assets/constants";
 import { useActionsLogic, iconForAction } from "../ActionsPage/ActionsLogic";
 import { CadetProfile, Action, NavAny } from "../../../assets/types";
 import { ViewDocumentModal } from "./Components/ViewDocumentModal";
-import { CreateAccountModal } from "../JobsPage/Components/CreateAccountModal";
+import { CreateAccountModal } from "./Components/CreateAccountModal";
 
 export function Actions(): React.ReactElement {
   const navigation: NavAny = useNavigation();
@@ -192,7 +192,7 @@ export function Actions(): React.ReactElement {
         form={createAccount.form}
         updateField={createAccount.updateField}
         updatePhone={createAccount.updatePhone}
-        togglePermission={createAccount.togglePermission}
+        //togglePermission={createAccount.togglePermission}
         saving={createAccount.saving}
         onSubmit={createAccount.submit}
       />
