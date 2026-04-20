@@ -21,6 +21,7 @@ import { PERMISSIONS } from "../../../assets/constants";
 import { useActionsLogic, iconForAction } from "../ActionsPage/ActionsLogic";
 import { CadetProfile, Action, NavAny } from "../../../assets/types";
 import { ViewDocumentModal } from "./Components/ViewDocumentModal";
+import { CreateAccountModal } from "../JobsPage/Components/CreateAccountModal";
 
 export function Actions(): React.ReactElement {
   const navigation: NavAny = useNavigation();
@@ -42,6 +43,7 @@ export function Actions(): React.ReactElement {
     jobText,
     permissionText,
     anyVisibleActions,
+    createAccount,
     canUploadFiles,
   } = useActionsLogic();
 
@@ -184,6 +186,19 @@ export function Actions(): React.ReactElement {
   
       />
 
+      <CreateAccountModal
+        visible={createAccount.modalVisible}
+        onClose={createAccount.closeModal}
+        form={createAccount.form}
+        updateField={createAccount.updateField}
+        updatePhone={createAccount.updatePhone}
+        togglePermission={createAccount.togglePermission}
+        saving={createAccount.saving}
+        onSubmit={createAccount.submit}
+      />
+
+      
+
       {/* VIEW DOCUMENTS MODAL */}
       <ViewDocumentModal
         visible={docListVisible}
@@ -195,6 +210,8 @@ export function Actions(): React.ReactElement {
         onDelete={documentList.deleteDocument}
         canEditFiles={canUploadFiles}
       />
+
+      
 
     </ScreenLayout>
   );
