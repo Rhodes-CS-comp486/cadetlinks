@@ -103,7 +103,7 @@ export function useCreateAccountLogic() {
     return null;
   };
 
-  const submit = async () => {
+const submit = async () => {
     const validationError = validate();
     if (validationError) {
       Alert.alert("Invalid input", validationError);
@@ -112,46 +112,66 @@ export function useCreateAccountLogic() {
 
     setSaving(true);
     try {
+      // Step 1 — Auth
+      console.log("Step 1: Getting secondary auth...");
       const secondaryAuth = getSecondaryAuth();
       await createUserWithEmailAndPassword(secondaryAuth, form.schoolEmail.trim(), form.password);
       await secondaryAuth.signOut();
+      console.log("Step 1: Auth done.");
 
+      // Step 2 — Build cadet key
       const cadetId = emailToKey(form.schoolEmail);
+      console.log("Step 2: cadetId =", cadetId);
 
+      // Step 3 — Write cadet profile
       await set(ref(db, `cadets/${cadetId}`), {
         classYear:  form.classYear.trim(),
         lastName:   form.lastName.trim(),
         firstName:  form.firstName.trim(),
         cadetRank:  form.cadetRank.trim(),
-        flight:     sanitizeKey(form.flight),
+        flight:     form.flight.trim(),
+        job:        form.cadetRank.trim(), // cadetRank holds the job/role
         contact: {
           schoolEmail:   form.schoolEmail.trim().toLowerCase(),
           personalEmail: form.personalEmail.trim().toLowerCase(),
           cellPhone:     formatPhone(form.cellPhone),
         },
       });
+      console.log("Step 3: Cadet profile written.");
 
-      await set(
-        ref(db, `indexes/flight/${sanitizeKey(form.flight)}/${cadetId}`),
-        true
-      );
-
-      if (form.classYear.trim()) {
+      // Step 4 — classYear index
+      const classYearKey = sanitizeKey(form.classYear.trim());
+      console.log("Step 4: classYearKey =", classYearKey);
+      if (classYearKey) {
         await set(
-          ref(db, `indexes/classYear/${sanitizeKey(form.classYear)}/${cadetId}`),
+          ref(db, `indexes/classYear/${classYearKey}/${cadetId}`),
           true
         );
+        console.log("Step 4: classYear index written.");
+      } else {
+        console.log("Step 4: SKIPPED — classYear was empty.");
       }
 
+      // Step 5 — flight index
+      const flightKey = sanitizeKey(form.flight.trim());
+      console.log("Step 5: flightKey =", flightKey);
+      if (flightKey) {
+        await set(
+          ref(db, `indexes/flight/${flightKey}/${cadetId}`),
+          true
+        );
+        console.log("Step 5: flight index written.");
+      } else {
+        console.log("Step 5: SKIPPED — flight was empty.");
+      }
+
+      console.log("All steps complete!");
       Alert.alert("Account created", `${form.firstName} ${form.lastName} can now log in.`);
       closeModal();
     } catch (e: any) {
-      // ── Error logging ──────────────────────────────────────────
-      console.log("Error code:", e?.code);
-      console.log("Error message:", e?.message);
-      // ──────────────────────────────────────────────────────────
-      const msg = e?.message ?? "Could not create account. Please try again.";
-      Alert.alert("Error", msg);
+      console.log("ERROR code:", e?.code);
+      console.log("ERROR message:", e?.message);
+      Alert.alert("Error", e?.message ?? "Could not create account. Please try again.");
     } finally {
       setSaving(false);
     }
