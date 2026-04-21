@@ -11,7 +11,7 @@ import { Events } from './screens/EventsPage/EventScreen';
 import { NotFound } from './screens/NotFound';
 import { Search } from "./screens/SearchPage/Search";
 import { PublicProfile } from "./screens/SearchPage/PublicProfiles";
-import { QuickLinks } from "./screens/quickLinks";
+import { QuickLinks } from "./screens/QuickLinks";
 import { DarkColors as colors } from '../styles/colors';
 
 import calendar from '../assets/calendar.png';
