@@ -9,6 +9,7 @@ import { Profile } from './screens/ProfilePage/Profile';
 import { Actions } from './screens/ActionsPage/Actions';
 import { Events } from './screens/EventsPage/EventScreen';
 import { NotFound } from './screens/NotFound';
+import { AdminPage } from './screens/AdminPage/Admin';
 import { Search } from "./screens/SearchPage/Search";
 import { PublicProfile } from "./screens/SearchPage/PublicProfiles";
 import { DarkColors as colors } from '../styles/colors';
@@ -99,6 +100,14 @@ const RootStack = createNativeStackNavigator({
         headerShown: false,
       },
     },
+    Admin: {
+      screen: AdminPage,
+      options: {
+        title: "Admin Page",
+        headerShown: false,
+      },
+    },
+
     PublicProfile: {
       screen: PublicProfile,
       options: {
@@ -123,6 +132,7 @@ export type RootStackParamList = {
   Login: undefined;
   HomeTabs: undefined;
   Search: undefined;
+  Admin: undefined;
   PublicProfile: { cadetKey: string };
   ChangePassword: undefined;
   NotFound: undefined;

@@ -110,8 +110,8 @@ export type UploadedDocument = {
 };
 
 export type AttendanceStatus = "P" | "A" | "L";
-export type AttendanceRecordStatus = "P" | "A" | "E" | "L" | ".";
-export type AttendanceSubtree = Record<string, Record<string, { status?: AttendanceRecordStatus }>>;
+export type AttendanceRecordStatus = "P" | "A" | "E" | "L" | "MP" | "MA" | "ME" | "ML" | ".";
+export type AttendanceSubtree = Record<string, Record<string, { status?: AttendanceRecordStatus; Status?: AttendanceRecordStatus }>>;
 
 export type AttendanceEventItem = {
   id: string;
@@ -155,6 +155,7 @@ export type GlobalFirebaseState = {
   uploadedDocuments: UploadedDocument[];
   attendancePT: AttendanceSubtree;
   attendanceLLAB: AttendanceSubtree;
+  attendanceRMP: AttendanceSubtree;
   errors: StoreDomainErrors;
   lastUpdated: Record<string, number | null>;
 };

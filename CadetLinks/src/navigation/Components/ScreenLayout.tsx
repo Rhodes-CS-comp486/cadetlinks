@@ -7,7 +7,8 @@ import { generalStyles as styles } from "../../styles/GeneralStyles";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { signOut } from "firebase/auth";
 import { auth } from "../../firebase/config";
-import { teardownGlobals } from "../../firebase/dbController";
+import { teardownGlobals, globals } from "../../firebase/dbController";
+import { PERMISSIONS } from "../../assets/constants";
 
 export function BaseScreenLayout({
   children, 
@@ -20,6 +21,8 @@ export function BaseScreenLayout({
 }) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  const globalState = globals();
+  const canViewAdminPage = globalState.permissionsMap.get(PERMISSIONS.ADMIN) ?? false;
 
   const [menuOpen, setMenuOpen] = React.useState(false);
 
@@ -41,6 +44,9 @@ export function BaseScreenLayout({
   const menuItems = [
   { label: "Profile Search", onPress: () => navigation.navigate("Search") },
   { label: "Logout", onPress: () => handleLogout() },
+  ...(canViewAdminPage
+    ? [{ label: "Admin Page", onPress: () => navigation.navigate("Admin") }]
+    : []),
   ];
 
   const leftNode = left ?? (

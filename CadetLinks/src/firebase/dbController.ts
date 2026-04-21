@@ -21,6 +21,7 @@ import { ADMIN_PERMISSIONS, ATTENDANCE_EDITING_PERMISSION, EVENT_MAKING_PERMISSI
 import type {
   Announcement,
   AttendanceCadetItem,
+  AttendanceRecordStatus,
   AttendanceEventItem,
   AttendanceStatus,
   AttendanceSubtree,
@@ -80,6 +81,7 @@ const initialState: GlobalFirebaseState = {
   uploadedDocuments: [],
   attendancePT: {},
   attendanceLLAB: {},
+  attendanceRMP: {},
   errors: {},
   lastUpdated: {
     profile: null,
@@ -189,14 +191,16 @@ export const deriveCadetKeyFromEmail = (email: string): string =>
 
 /** Strip non-alphanumeric characters so last names match their attendance DB keys. */
 const normalizeAttendanceKey = (input: string) => input.toLowerCase().replace(/[^a-z0-9]/g, "");
+const sanitizeIndexKey = (input: string) => input.replace(/[\s\/\(\),\-]/g, "_");
 
 /**
  * Determine which attendance subtree (PT or LLAB) an event belongs to
  * based on keywords in its name. Returns null if neither keyword is found.
  */
-const inferAttendanceBucket = (eventName?: string): "PT" | "LLAB" | null => {
+const inferAttendanceBucket = (eventName?: string): "PT" | "LLAB" | "RMP" | null => {
   const normalized = (eventName ?? "").toLowerCase();
   if (normalized.includes("pt")) return "PT";
+  if (normalized.includes("rmp")) return "RMP";
   if (normalized.includes("llab") || normalized.includes("lab")) return "LLAB";
   return null;
 };
@@ -495,6 +499,23 @@ const startAttendanceListeners = () => {
 
   addListener(unsubscribePT);
   addListener(unsubscribeLLAB);
+
+  const attendanceRMPRef = ref(db, "attendance/RMP");
+  const unsubscribeRMP = onValue(
+    attendanceRMPRef,
+    (snapshot) => {
+      const attendanceRMP = (snapshot.val() as AttendanceSubtree | null) ?? {};
+      patchStore({ attendanceRMP });
+      patchError("attendance", undefined);
+      touch("attendance");
+    },
+    (error) => {
+      console.error("Attendance RMP listener failed:", error);
+      patchError("attendance", "Could not load attendance.");
+    }
+  );
+
+  addListener(unsubscribeRMP);
 };
 
 // ─── Public lifecycle API ────────────────────────────────────────────────────
@@ -605,6 +626,58 @@ export const globals = () =>
 
 /** Synchronous permission check against the current store (no React subscription). */
 export const hasPermission = (permission: string): boolean => store.permissionsMap.get(permission) ?? false;
+
+// ─── Admin write helpers ─────────────────────────────────────────────────────
+
+export const updateCadetField = async (
+  cadetKey: string,
+  fieldPath: "firstName" | "lastName" | "cadetRank" | "classYear" | "flight" | "job" | "contact/schoolEmail" | "contact/personalEmail" | "contact/cellPhone",
+  value: string
+) => {
+  const fieldRef = ref(db, `cadets/${cadetKey}/${fieldPath}`);
+  const oldValueSnap = await get(fieldRef);
+  const oldRawValue = oldValueSnap.exists() ? oldValueSnap.val() : "";
+  const normalized = value.trim();
+  await set(fieldRef, normalized);
+
+  if (fieldPath !== "classYear" && fieldPath !== "flight") {
+    return;
+  }
+
+  const oldValue = oldRawValue == null ? "" : String(oldRawValue);
+  const oldKey = sanitizeIndexKey(oldValue);
+  const newKey = sanitizeIndexKey(normalized);
+  const indexRoot = fieldPath === "classYear" ? "indexes/classYear" : "indexes/flight";
+
+  if (oldKey && oldKey !== newKey) {
+    await remove(ref(db, `${indexRoot}/${oldKey}/${cadetKey}`));
+  }
+  if (newKey) {
+    await set(ref(db, `${indexRoot}/${newKey}/${cadetKey}`), true);
+  }
+};
+
+export const updateCadetJobAssignment = async (cadetKey: string, job: string) => {
+  await updateCadetField(cadetKey, "job", job);
+};
+
+export const updateAttendanceCell = async (
+  bucket: "PT" | "LLAB" | "RMP",
+  date: string,
+  cadetRowKey: string,
+  status: AttendanceRecordStatus
+) => {
+  const nextStatus = status.trim().toUpperCase() as AttendanceRecordStatus;
+  const allowed = new Set<AttendanceRecordStatus>(["P", "A", "E", "L", "MP", "MA", "ME", "ML", "."]);
+  if (!allowed.has(nextStatus)) {
+    throw new Error("Attendance status must be one of: P, A, E, L, MP, MA, ME, ML, .");
+  }
+
+  await set(ref(db, `attendance/${bucket}/${date}/${cadetRowKey}`), {
+    status: nextStatus,
+    Status: nextStatus,
+  });
+};
 
 // ─── Write actions ───────────────────────────────────────────────────────────
 
@@ -850,7 +923,9 @@ const getSecondaryAuth = () => {
  *
  * Throws an error if any step fails.
  */
-export const createCadetAccount = async (input: CreateAccountForm) => {
+export const 
+
+createCadetAccount = async (input: CreateAccountForm) => {
   // Step 1 — Auth
   console.log("Step 1: Getting secondary auth...");
   const secondaryAuth = getSecondaryAuth();
@@ -868,7 +943,7 @@ export const createCadetAccount = async (input: CreateAccountForm) => {
     firstName: input.firstName,
     cadetRank: input.cadetRank,
     flight: input.flight,
-    job: input.job,
+    job: "",
     contact: {
       schoolEmail: input.schoolEmail,
       personalEmail: input.personalEmail,
@@ -894,15 +969,6 @@ export const createCadetAccount = async (input: CreateAccountForm) => {
     console.log("Step 3b: flight index written.");
   } else {
     console.log("Step 3b: SKIPPED — flight was empty.");
-  }
-
-  const jobKey = input.job.replace(/[\s\/\(\),\-]/g, "_");
-  console.log("Step 3c: jobKey =", jobKey);
-  if (jobKey) {
-    await set(ref(db, `indexes/job/${jobKey}/${cadetId}`), true);
-    console.log("Step 3c: job index written.");
-  } else {
-    console.log("Step 3c: SKIPPED — job was empty.");
   }
 
   return cadetId;
