@@ -15,7 +15,6 @@ const BLANK: CreateAccountForm = {
   personalEmail: "",
   cadetRank: "",
   flight: "",
-  password: "",
   job: "",
 };
 
@@ -75,7 +74,8 @@ export function useCreateAccountLogic() {
   };
 
   const validate = (): string | null => {
-    const { schoolEmail, personalEmail, firstName, lastName, cellPhone, password } = form;
+    const { schoolEmail, personalEmail, firstName, lastName, cellPhone } = form;
+    console.log("Validating form:", form);
 
     if (!firstName.trim() || !lastName.trim())
       return "First name and last name are required.";
@@ -87,8 +87,6 @@ export function useCreateAccountLogic() {
       return "Personal email is not a valid email address.";
     if (cellPhone.trim() && !isValidPhone(cellPhone))
       return "Phone number must be 10 digits, e.g. (555) 000-0000.";
-    if (!password || password.length < 6)
-      return "Password must be at least 6 characters.";
     if (!form.cadetRank.trim())
       return "Please select a cadet rank.";
     if (!form.job.trim())
@@ -97,6 +95,7 @@ export function useCreateAccountLogic() {
   };
 
 const submit = async () => {
+    console.log("Submitting form:", form);
     const validationError = validate();
     if (validationError) {
       Alert.alert("Invalid input", validationError);
@@ -104,11 +103,13 @@ const submit = async () => {
     }
 
     setSaving(true);
+
+    const password = "cadetlinks"; //TEMPORARY PASSWORD
     try {
       // Step 1 — Auth
       console.log("Step 1: Getting secondary auth...");
       const secondaryAuth = getSecondaryAuth();
-      await createUserWithEmailAndPassword(secondaryAuth, form.schoolEmail.trim(), form.password);
+      await createUserWithEmailAndPassword(secondaryAuth, form.schoolEmail.trim(), password);
       await secondaryAuth.signOut();
       console.log("Step 1: Auth done.");
 
@@ -159,11 +160,11 @@ const submit = async () => {
       }
 
       // Step 5 - Update Jobs
-      const job = sanitizeKey(form.job.trim());
-      if(job) {
+      
+      if(form.job) {
         await set(
-          ref(db, `indexes/job/${job}/${cadetId}`),
-          true
+          ref(db, `indexes/job/${form.job}`),
+          { [cadetId]: true }
         );
       } else{
         console.log(Error,"Skipped Updating jobs")

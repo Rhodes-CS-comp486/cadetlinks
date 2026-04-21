@@ -7,12 +7,12 @@ import {
   Pressable,
   ScrollView,
   ActivityIndicator,
-  Switch,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { CreateAccountForm } from "../../../../assets/types";
-import { YEARS, FLIGHTS, RANKS, JOBS } from "../../../../assets/constants";
+import { YEARS, FLIGHTS, RANKS} from "../../../../assets/constants";
 import { actionStyles as styles } from "../../../../styles/ActionStyles";
+import { eventsStyles } from "../../../../styles/EventStyles";
 
 
 interface Props {
@@ -38,18 +38,22 @@ function DropdownPicker({
   onSelect: (v: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const safeValue = typeof value === "string" ? value : "";
+  const safeOptions = Array.isArray(options)
+    ? options.filter((opt): opt is string => typeof opt === "string")
+    : [];
 
   return (
-    <View style={{ marginBottom: 4 }}>
+    <View style={[styles.dropdownWrapper, open && styles.dropdownWrapperOpen]}>
       <Text style={styles.fieldLabel}>{label}</Text>
 
       {/* Trigger button */}
       <Pressable
-        style={[styles.dropdownButton, { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }]}
+        style={eventsStyles.dropDownBox}
         onPress={() => setOpen((o) => !o)}
       >
-        <Text style={{ color: value ? "white" : "#9AA3B2", fontSize: 14 }}>
-          {value || `Select ${label}`}
+        <Text>
+          {safeValue || `Select ${label}`}
         </Text>
         <Ionicons name={open ? "chevron-up" : "chevron-down"} size={16} color="#9AA3B2" />
       </Pressable>
@@ -57,24 +61,28 @@ function DropdownPicker({
       {/* Options list */}
       {open && (
         <View style={styles.dropdownMenu}>
-          {options.map((opt, index) => (
+          {safeOptions.map((opt, index) => (
             <Pressable
-              key={opt}
+              key={`${opt}-${index}`}
               style={[
                 styles.dropdownItem,
-                value === opt && { backgroundColor: "#1E3A5F" },
-                index === options.length - 1 && { borderBottomWidth: 0 },
+                safeValue === opt && { backgroundColor: "#1E3A5F" },
+                index === safeOptions.length - 1 && { borderBottomWidth: 0 },
               ]}
               onPress={() => {
                 onSelect(opt);
                 setOpen(false);
               }}
             >
-              <Text style={[styles.dropdownItemTitle, value === opt && { color: "#6B9FFF" }]}>
+              <Text style={[styles.dropdownItemTitle, safeValue === opt && { color: "#6B9FFF" }]}>
                 {opt}
               </Text>
             </Pressable>
           ))}
+
+          {safeOptions.length === 0 ? (
+            <Text style={styles.dropdownEmptyText}>No options available</Text>
+          ) : null}
         </View>
       )}
     </View>
@@ -100,13 +108,14 @@ export function CreateAccountModal({
 
           <ScrollView
             showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
+            keyboardShouldPersistTaps="always"
+            keyboardDismissMode="none"
             nestedScrollEnabled
           >
             {/* Last Name */}
             <Text style={styles.fieldLabel}>Last Name</Text>
             <TextInput
-              style={styles.dropdownButton}
+              style={eventsStyles.inputBox}
               placeholder="Smith"
               placeholderTextColor="#9AA3B2"
               value={form.lastName}
@@ -116,7 +125,7 @@ export function CreateAccountModal({
             {/* First Name */}
             <Text style={styles.fieldLabel}>First Name</Text>
             <TextInput
-              style={styles.dropdownButton}
+              style={eventsStyles.inputBox}
               placeholder="John"
               placeholderTextColor="#9AA3B2"
               value={form.firstName}
@@ -147,20 +156,10 @@ export function CreateAccountModal({
               onSelect={(v) => updateField("flight", v)}
             />
 
-            {/* Job Dropdown */}
-             <DropdownPicker
-              label="Job"
-              options={JOBS}
-              value={form.job}
-              onSelect={(v) => updateField("job", v)}
-            />
-
-
-
             {/* Cell Phone */}
             <Text style={styles.fieldLabel}>Cell Phone</Text>
             <TextInput
-              style={styles.dropdownButton}
+              style={eventsStyles.inputBox}
               placeholder="(555) 000-0000"
               placeholderTextColor="#9AA3B2"
               keyboardType="phone-pad"
@@ -171,7 +170,7 @@ export function CreateAccountModal({
             {/* School Email */}
             <Text style={styles.fieldLabel}>School Email</Text>
             <TextInput
-              style={styles.dropdownButton}
+              style={eventsStyles.inputBox}
               placeholder="jsmith@university.edu"
               placeholderTextColor="#9AA3B2"
               keyboardType="email-address"
@@ -183,7 +182,7 @@ export function CreateAccountModal({
             {/* Personal Email */}
             <Text style={styles.fieldLabel}>Personal Email</Text>
             <TextInput
-              style={styles.dropdownButton}
+              style={eventsStyles.inputBox}
               placeholder="jsmith@gmail.com"
               placeholderTextColor="#9AA3B2"
               keyboardType="email-address"
@@ -191,19 +190,6 @@ export function CreateAccountModal({
               value={form.personalEmail}
               onChangeText={(v) => updateField("personalEmail", v)}
             />
-
-            {/* Password */}
-            <Text style={styles.fieldLabel}>Password</Text>
-            <TextInput
-              style={styles.dropdownButton}
-              placeholder="Min. 6 characters"
-              placeholderTextColor="#9AA3B2"
-              secureTextEntry
-              autoCapitalize="none"
-              value={form.password}
-              onChangeText={(v) => updateField("password", v)}
-            />
-
        
             {/* Buttons */}
             <View style={styles.footerButtons}>

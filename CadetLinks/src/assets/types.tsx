@@ -166,3 +166,15 @@ export type UploadDocumentInput = {
   uri: string;
   originalFileName: string;
 };
+
+export interface CreateAccountForm {
+  classYear: string;
+  lastName: string;
+  firstName: string;
+  cellPhone: string;
+  schoolEmail: string;
+  personalEmail: string;
+  cadetRank: string;
+  flight: string;
+  job:string;
+}
