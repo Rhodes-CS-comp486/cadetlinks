@@ -185,6 +185,7 @@ export function Actions(): React.ReactElement {
         onUploadDocument={documentUploading.uploadSelectedDocument}
   
       />
+      
 
       <CreateAccountModal
         visible={createAccount.modalVisible}
