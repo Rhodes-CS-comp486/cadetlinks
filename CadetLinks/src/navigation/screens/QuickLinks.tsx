@@ -15,10 +15,6 @@ export function QuickLinks(): React.ReactElement {
   return (
     <ScreenLayout>
       <View style={styles.body_container}>
-        <Text>
-          <Text style={[styles.header_text, {textAlign: "left"}]}> Quick Links: </Text>
-        </Text>
-        <View style={[styles.container, { marginLeft: 12 }]}>
           <TouchableOpacity onPress={() => Linking.openURL(igLine)}>
             <Text style={[styles.sectionTitle, {textDecorationLine: "underline"}]}>IG Action Line</Text>
           </TouchableOpacity>
@@ -40,7 +36,6 @@ export function QuickLinks(): React.ReactElement {
           <TouchableOpacity onPress={() => Linking.openURL(quizlet)}>
             <Text style={[styles.sectionTitle, {textDecorationLine: "underline"}]}>Quizlet</Text>
           </TouchableOpacity>
-        </View>
       </View>
     </ScreenLayout>
   );
