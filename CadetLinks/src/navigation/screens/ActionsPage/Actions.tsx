@@ -183,6 +183,7 @@ export function Actions(): React.ReactElement {
         onUploadDocument={documentUploading.uploadSelectedDocument}
   
       />
+      
 
       {/* VIEW DOCUMENTS MODAL */}
       <ViewDocumentModal
@@ -195,6 +196,8 @@ export function Actions(): React.ReactElement {
         onDelete={documentList.deleteDocument}
         canEditFiles={canUploadFiles}
       />
+
+      
 
     </ScreenLayout>
   );

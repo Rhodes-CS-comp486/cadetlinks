@@ -10,6 +10,7 @@ import {
     Image,
     Dimensions,
     Platform,
+    TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { generalStyles as g_styles } from "../../../../styles/GeneralStyles";
@@ -74,6 +75,11 @@ export function ViewDocumentModal({
     const [previewURL, setPreviewURL] = React.useState<string | null>(null);
     const [previewMime, setPreviewMime] = React.useState<string | null>(null);
     const [previewName, setPreviewName] = React.useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = React.useState<string>("");
+
+    const filteredDocuments = documents.filter((doc) =>
+        doc.displayName.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     const openPreview = (url: string, mime: string, name: string) => {
         setPreviewURL(url);
@@ -90,7 +96,6 @@ export function ViewDocumentModal({
     const renderPreviewContent = () => {
         if (!previewURL || !previewMime) return null;
 
-        // Mobile only
         if (isImage(previewMime)) {
             return (
                 <Image
@@ -134,13 +139,46 @@ export function ViewDocumentModal({
                         </Pressable>
                     </View>
 
+                    {/* Search bar */}
+                    <View style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        backgroundColor: "#2A3140",
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: "#3A4357",
+                        paddingHorizontal: 10,
+                        marginBottom: 8,
+                    }}>
+                        <Ionicons name="search-outline" size={16} color="#9AA3B2" style={{ marginRight: 6 }} />
+                        <TextInput
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            placeholder="Search documents..."
+                            placeholderTextColor="#9AA3B2"
+                            style={{
+                                flex: 1,
+                                color: "white",
+                                paddingVertical: 10,
+                                fontSize: 14,
+                            }}
+                        />
+                        {searchQuery.length > 0 && (
+                            <Pressable onPress={() => setSearchQuery("")}>
+                                <Ionicons name="close-circle" size={16} color="#9AA3B2" />
+                            </Pressable>
+                        )}
+                    </View>
+
                     {isLoading ? (
                         <ActivityIndicator color={colors.text} style={{ marginTop: 20 }} />
                     ) : documents.length === 0 ? (
                         <Text style={styles.summaryText}>No documents uploaded yet.</Text>
+                    ) : filteredDocuments.length === 0 ? (
+                        <Text style={styles.summaryText}>No documents match "{searchQuery}".</Text>
                     ) : (
                         <FlatList
-                            data={documents}
+                            data={filteredDocuments}
                             keyExtractor={(item) => item.dbKey}
                             renderItem={({ item }) => (
                                 <View style={[styles.summaryCard, { marginVertical: 6 }]}>
@@ -213,7 +251,6 @@ export function ViewDocumentModal({
                         flexDirection: "column",
                     } as any}>
 
-                        {/* Header */}
                         <div style={{
                             display: "flex",
                             flexDirection: "row",
@@ -238,7 +275,6 @@ export function ViewDocumentModal({
                             </Pressable>
                         </div>
 
-                        {/* Content */}
                         {isImage(previewMime ?? "") ? (
                             <img
                                 src={previewURL}
@@ -266,7 +302,6 @@ export function ViewDocumentModal({
                             />
                         ) : null}
 
-                        {/* Download button */}
                         <Pressable
                             onPress={() => previewURL && Linking.openURL(previewURL)}
                             style={{
@@ -287,7 +322,6 @@ export function ViewDocumentModal({
 
                     </div>
                 ) : (
-                    // Mobile Modal
                     <Modal
                         visible={!!previewURL}
                         transparent
