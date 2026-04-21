@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Alert } from "react-native";
 import { CreateAccountForm } from "../../../assets/types";
-import { createCadetAccount, formatPhoneNumber } from "../../../firebase/dbController";
+import { createCadetAccount } from "../../../firebase/dbController";
 
 const BLANK: CreateAccountForm = {
   classYear: "",
@@ -34,6 +34,23 @@ export function useCreateAccountLogic() {
     value: CreateAccountForm[K]
   ) => setForm((prev) => ({ ...prev, [key]: value }));
 
+  // /** Sanitize a string for use as a Firebase key. */
+  // const sanitizeKeyForIndex = (str: string): string =>
+  //   str.replace(/[\s\/\(\),\-]/g, "_");
+
+  /** Clean form data: trim, lowercase emails. */
+  const cleanFormData = (form: CreateAccountForm) => ({
+    firstName: form.firstName.trim(),
+    lastName: form.lastName.trim(),
+    cadetRank: form.cadetRank.trim(),
+    classYear: form.classYear.trim(),
+    flight: form.flight.trim(),
+    job: form.job.trim(),
+    schoolEmail: form.schoolEmail.trim().toLowerCase(),
+    personalEmail: form.personalEmail.trim().toLowerCase(),
+    cellPhone: form.cellPhone.trim(),
+  });
+
   const updatePhone = (raw: string) => {
     const digits = raw.replace(/\D/g, "").slice(0, 10);
     let formatted = digits;
@@ -63,8 +80,6 @@ export function useCreateAccountLogic() {
       return "Phone number must be 10 digits, e.g. (555) 000-0000.";
     if (!form.cadetRank.trim())
       return "Please select a cadet rank.";
-    if (!form.job.trim())
-      return "Please select a job.";
     return null;
   };
 
@@ -77,16 +92,17 @@ const submit = async () => {
 
     setSaving(true);
     try {
+      const cleaned = cleanFormData(form);
       await createCadetAccount({
-        firstName: form.firstName,
-        lastName: form.lastName,
-        cadetRank: form.cadetRank,
-        classYear: form.classYear,
-        flight: form.flight,
-        job: form.job,
-        schoolEmail: form.schoolEmail,
-        personalEmail: form.personalEmail,
-        cellPhone: form.cellPhone,
+        firstName: cleaned.firstName,
+        lastName: cleaned.lastName,
+        cadetRank: cleaned.cadetRank,
+        classYear: cleaned.classYear,
+        flight: cleaned.flight,
+        job: cleaned.job,
+        schoolEmail: cleaned.schoolEmail,
+        personalEmail: cleaned.personalEmail,
+        cellPhone: cleaned.cellPhone,
       });
 
       Alert.alert("Account created", `${form.firstName} ${form.lastName} can now log in.`);

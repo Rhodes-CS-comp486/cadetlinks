@@ -26,7 +26,7 @@ export function DropdownPicker({
         style={genStyles.dropDownBox}
         onPress={() => setOpen((o) => !o)}
       >
-        <Text style={{ color: safeValue ? "white" : "#9AA3B2", fontSize: 14 }}>
+        <Text>
           {safeValue || `Select ${label}`}
         </Text>
         <Ionicons name={open ? "chevron-up" : "chevron-down"} size={16} color="#9AA3B2" />

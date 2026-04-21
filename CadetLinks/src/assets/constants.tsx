@@ -9,6 +9,8 @@ export const PERMISSIONS = {
 	ATTENDANCE_EDITING: ATTENDANCE_EDITING_PERMISSION,
 	ADMIN: ADMIN_PERMISSIONS,
 };
+
+export const TEMP_PASSWORD = "cadetlinks";
 export const YEARS   = ["100", "150", "200", "250", "300", "400", "500"];
 export const FLIGHTS = ["Alpha", "Bravo", "POC"];
 export const RANKS = ["C/4C", "C/3C","C/Maj", "C/Capt", "C/Lt Col", "C/Col"];

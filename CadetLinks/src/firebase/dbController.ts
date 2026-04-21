@@ -17,7 +17,7 @@ import { remove, update } from "firebase/database";
 import { deleteObject, getDownloadURL, ref as storageRef, uploadBytes } from "firebase/storage";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { initializeApp, getApps } from "firebase/app";
-import { ADMIN_PERMISSIONS, ATTENDANCE_EDITING_PERMISSION, EVENT_MAKING_PERMISSION, FILE_UPLOADING_PERMISSION } from "../assets/constants";
+import { ADMIN_PERMISSIONS, ATTENDANCE_EDITING_PERMISSION, EVENT_MAKING_PERMISSION, FILE_UPLOADING_PERMISSION, TEMP_PASSWORD } from "../assets/constants";
 import type {
   Announcement,
   AttendanceCadetItem,
@@ -30,6 +30,7 @@ import type {
   StoreDomainErrors,
   UploadDocumentInput,
   UploadedDocument,
+  CreateAccountForm
 } from "../assets/types";
 import { db, storage } from "./config";
 
@@ -824,21 +825,6 @@ export const getProfileByCadetKey = async (cadetKey: string) => {
 // ─── Cadet account creation ──────────────────────────────────────────────────
 
 /**
- * Sanitize a string for use as a Firebase key by removing special characters.
- */
-export const sanitizeKeyForIndex = (str: string): string =>
-  str.trim().replace(/[\s\/\(\),\-]/g, "_");
-
-/**
- * Format a phone number string into (XXX) XXX-XXXX format.
- */
-export const formatPhoneNumber = (raw: string): string => {
-  const digits = raw.replace(/\D/g, "");
-  if (digits.length !== 10) return raw;
-  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-};
-
-/**
  * Get or create a secondary Firebase Auth instance for account creation.
  * (Used to create new user accounts without logging in as them.)
  */
@@ -853,18 +839,6 @@ const getSecondaryAuth = () => {
   return getAuth(secondary);
 };
 
-export interface CreateCadetAccountInput {
-  firstName: string;
-  lastName: string;
-  cadetRank: string;
-  classYear: string;
-  flight: string;
-  job: string;
-  schoolEmail: string;
-  personalEmail: string;
-  cellPhone: string;
-  password: string;
-}
 
 /**
  * Create a new cadet account with auth and database entries.
@@ -876,11 +850,11 @@ export interface CreateCadetAccountInput {
  *
  * Throws an error if any step fails.
  */
-export const createCadetAccount = async (input: CreateCadetAccountInput) => {
+export const createCadetAccount = async (input: CreateAccountForm) => {
   // Step 1 — Auth
   console.log("Step 1: Getting secondary auth...");
   const secondaryAuth = getSecondaryAuth();
-  await createUserWithEmailAndPassword(secondaryAuth, input.schoolEmail.trim(), input.password);
+  await createUserWithEmailAndPassword(secondaryAuth, input.schoolEmail, TEMP_PASSWORD);
   await secondaryAuth.signOut();
   console.log("Step 1: Auth done.");
 
@@ -889,22 +863,22 @@ export const createCadetAccount = async (input: CreateCadetAccountInput) => {
   console.log("Step 2: cadetId =", cadetId);
 
   await set(ref(db, `cadets/${cadetId}`), {
-    classYear: input.classYear.trim(),
-    lastName: input.lastName.trim(),
-    firstName: input.firstName.trim(),
-    cadetRank: input.cadetRank.trim(),
-    flight: input.flight.trim(),
-    job: input.job.trim(),
+    classYear: input.classYear,
+    lastName: input.lastName,
+    firstName: input.firstName,
+    cadetRank: input.cadetRank,
+    flight: input.flight,
+    job: input.job,
     contact: {
-      schoolEmail: input.schoolEmail.trim().toLowerCase(),
-      personalEmail: input.personalEmail.trim().toLowerCase(),
-      cellPhone: formatPhoneNumber(input.cellPhone),
+      schoolEmail: input.schoolEmail,
+      personalEmail: input.personalEmail,
+      cellPhone: input.cellPhone,
     },
   });
   console.log("Step 2: Cadet profile written.");
 
   // Step 3 — Write indexes
-  const classYearKey = sanitizeKeyForIndex(input.classYear.trim());
+  const classYearKey = input.classYear.replace(/[\s\/\(\),\-]/g, "_");
   console.log("Step 3a: classYearKey =", classYearKey);
   if (classYearKey) {
     await set(ref(db, `indexes/classYear/${classYearKey}/${cadetId}`), true);
@@ -913,7 +887,7 @@ export const createCadetAccount = async (input: CreateCadetAccountInput) => {
     console.log("Step 3a: SKIPPED — classYear was empty.");
   }
 
-  const flightKey = sanitizeKeyForIndex(input.flight.trim());
+  const flightKey = input.flight.replace(/[\s\/\(\),\-]/g, "_");
   console.log("Step 3b: flightKey =", flightKey);
   if (flightKey) {
     await set(ref(db, `indexes/flight/${flightKey}/${cadetId}`), true);
@@ -922,7 +896,7 @@ export const createCadetAccount = async (input: CreateCadetAccountInput) => {
     console.log("Step 3b: SKIPPED — flight was empty.");
   }
 
-  const jobKey = sanitizeKeyForIndex(input.job.trim());
+  const jobKey = input.job.replace(/[\s\/\(\),\-]/g, "_");
   console.log("Step 3c: jobKey =", jobKey);
   if (jobKey) {
     await set(ref(db, `indexes/job/${jobKey}/${cadetId}`), true);
@@ -931,6 +905,5 @@ export const createCadetAccount = async (input: CreateCadetAccountInput) => {
     console.log("Step 3c: SKIPPED — job was empty.");
   }
 
-  console.log("All steps complete!");
   return cadetId;
 };
