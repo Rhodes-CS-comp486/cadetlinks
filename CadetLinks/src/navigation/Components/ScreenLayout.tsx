@@ -40,6 +40,7 @@ export function BaseScreenLayout({
 
   const menuItems = [
   { label: "Profile Search", onPress: () => navigation.navigate("Search") },
+  { label: "Quick Links", onPress: () => navigation.navigate("QuickLinks") },
   { label: "Logout", onPress: () => handleLogout() },
   ];
 
