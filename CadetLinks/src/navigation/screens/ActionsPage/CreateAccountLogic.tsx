@@ -1,10 +1,7 @@
 import { useState } from "react";
 import { Alert } from "react-native";
-import { ref, set } from "firebase/database";
-import { db } from "../../../firebase/config";
-import { initializeApp, getApps } from "firebase/app";
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { CreateAccountForm } from "../../../assets/types";
+import { createCadetAccount, formatPhoneNumber } from "../../../firebase/dbController";
 
 const BLANK: CreateAccountForm = {
   classYear: "",
@@ -23,29 +20,6 @@ const isValidEmail = (email: string) =>
 
 const isValidPhone = (phone: string) =>
   /^\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{4}$/.test(phone.trim());
-
-const formatPhone = (raw: string): string => {
-  const digits = raw.replace(/\D/g, "");
-  if (digits.length !== 10) return raw;
-  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-};
-
-const emailToKey = (email: string) =>
-  email.trim().toLowerCase().replace(/@/g, "_").replace(/\./g, "_").replace(/-/g, "_");
-
-const sanitizeKey = (str: string) =>
-  str.trim().replace(/[\s\/\(\),\-]/g, "_");
-
-const getSecondaryAuth = () => {
-  const existing = getApps().find((a) => a.name === "secondary");
-  if (existing) return getAuth(existing);
-
-  const primaryApp = getApps().find((a) => a.name === "[DEFAULT]");
-  if (!primaryApp) throw new Error("Firebase not initialized yet.");
-
-  const secondary = initializeApp(primaryApp.options, "secondary");
-  return getAuth(secondary);
-};
 
 export function useCreateAccountLogic() {
   const [modalVisible, setModalVisible] = useState(false);
@@ -95,7 +69,6 @@ export function useCreateAccountLogic() {
   };
 
 const submit = async () => {
-    console.log("Submitting form:", form);
     const validationError = validate();
     if (validationError) {
       Alert.alert("Invalid input", validationError);
@@ -103,74 +76,19 @@ const submit = async () => {
     }
 
     setSaving(true);
-
-    const password = "cadetlinks"; //TEMPORARY PASSWORD
     try {
-      // Step 1 — Auth
-      console.log("Step 1: Getting secondary auth...");
-      const secondaryAuth = getSecondaryAuth();
-      await createUserWithEmailAndPassword(secondaryAuth, form.schoolEmail.trim(), password);
-      await secondaryAuth.signOut();
-      console.log("Step 1: Auth done.");
-
-      // Step 2 — Build cadet key
-      const cadetId = emailToKey(form.schoolEmail);
-      console.log("Step 2: cadetId =", cadetId);
-
-      // Step 3 — Write cadet profile
-      await set(ref(db, `cadets/${cadetId}`), {
-        classYear:  form.classYear.trim(),
-        lastName:   form.lastName.trim(),
-        firstName:  form.firstName.trim(),
-        cadetRank:  form.cadetRank.trim(),
-        flight:     form.flight.trim(),
-        job:        form.job.trim(),
-        contact: {
-          schoolEmail:   form.schoolEmail.trim().toLowerCase(),
-          personalEmail: form.personalEmail.trim().toLowerCase(),
-          cellPhone:     formatPhone(form.cellPhone),
-        },
+      await createCadetAccount({
+        firstName: form.firstName,
+        lastName: form.lastName,
+        cadetRank: form.cadetRank,
+        classYear: form.classYear,
+        flight: form.flight,
+        job: form.job,
+        schoolEmail: form.schoolEmail,
+        personalEmail: form.personalEmail,
+        cellPhone: form.cellPhone,
       });
-      console.log("Step 3: Cadet profile written.");
 
-      // Step 4 — classYear index
-      const classYearKey = sanitizeKey(form.classYear.trim());
-      console.log("Step 4: classYearKey =", classYearKey);
-      if (classYearKey) {
-        await set(
-          ref(db, `indexes/classYear/${classYearKey}/${cadetId}`),
-          true
-        );
-        console.log("Step 4: classYear index written.");
-      } else {
-        console.log("Step 4: SKIPPED — classYear was empty.");
-      }
-
-      // Step 5 — flight index
-      const flightKey = sanitizeKey(form.flight.trim());
-      console.log("Step 5: flightKey =", flightKey);
-      if (flightKey) {
-        await set(
-          ref(db, `indexes/flight/${flightKey}/${cadetId}`),
-          true
-        );
-        console.log("Step 5: flight index written.");
-      } else {
-        console.log("Step 5: SKIPPED — flight was empty.");
-      }
-
-      // Step 5 - Update Jobs
-      
-      if(form.job) {
-        await set(
-          ref(db, `indexes/job/${form.job}`),
-          { [cadetId]: true }
-        );
-      } else{
-        console.log(Error,"Skipped Updating jobs")
-      }
-
-      console.log("All steps complete!");
       Alert.alert("Account created", `${form.firstName} ${form.lastName} can now log in.`);
       closeModal();
     } catch (e: any) {
