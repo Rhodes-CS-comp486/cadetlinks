@@ -15,7 +15,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { get, onValue, ref, set } from "firebase/database";
 import { remove, update } from "firebase/database";
 import { deleteObject, getDownloadURL, ref as storageRef, uploadBytes } from "firebase/storage";
-import { ADMIN_PERMISSIONS, ATTENDANCE_EDITING_PERMISSION, EVENT_MAKING_PERMISSION, FILE_UPLOADING_PERMISSION } from "../assets/constants";
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { initializeApp, getApps } from "firebase/app";
+import { ADMIN_PERMISSIONS, ATTENDANCE_EDITING_PERMISSION, EVENT_MAKING_PERMISSION, FILE_UPLOADING_PERMISSION, TEMP_PASSWORD } from "../assets/constants";
 import type {
   Announcement,
   AttendanceCadetItem,
@@ -28,6 +30,7 @@ import type {
   StoreDomainErrors,
   UploadDocumentInput,
   UploadedDocument,
+  CreateAccountForm
 } from "../assets/types";
 import { db, storage } from "./config";
 
@@ -817,4 +820,90 @@ export const getProfileByCadetKey = async (cadetKey: string) => {
   }
   const profileSnap = await get(ref(db, `cadets/${cadetKey}`));
   return (profileSnap.val() as CadetProfile | null) ?? null;
+};
+
+// ─── Cadet account creation ──────────────────────────────────────────────────
+
+/**
+ * Get or create a secondary Firebase Auth instance for account creation.
+ * (Used to create new user accounts without logging in as them.)
+ */
+const getSecondaryAuth = () => {
+  const existing = getApps().find((a: any) => a.name === "secondary");
+  if (existing) return getAuth(existing);
+
+  const primaryApp = getApps().find((a: any) => a.name === "[DEFAULT]");
+  if (!primaryApp) throw new Error("Firebase not initialized yet.");
+
+  const secondary = initializeApp(primaryApp.options, "secondary");
+  return getAuth(secondary);
+};
+
+
+/**
+ * Create a new cadet account with auth and database entries.
+ *
+ * Steps:
+ * 1. Create auth user with secondary Firebase instance
+ * 2. Build cadet key from email and write profile to database
+ * 3. Write indexes for classYear, flight, and job
+ *
+ * Throws an error if any step fails.
+ */
+export const createCadetAccount = async (input: CreateAccountForm) => {
+  // Step 1 — Auth
+  console.log("Step 1: Getting secondary auth...");
+  const secondaryAuth = getSecondaryAuth();
+  await createUserWithEmailAndPassword(secondaryAuth, input.schoolEmail, TEMP_PASSWORD);
+  await secondaryAuth.signOut();
+  console.log("Step 1: Auth done.");
+
+  // Step 2 — Build cadet key and write profile
+  const cadetId = deriveCadetKeyFromEmail(input.schoolEmail);
+  console.log("Step 2: cadetId =", cadetId);
+
+  await set(ref(db, `cadets/${cadetId}`), {
+    classYear: input.classYear,
+    lastName: input.lastName,
+    firstName: input.firstName,
+    cadetRank: input.cadetRank,
+    flight: input.flight,
+    job: input.job,
+    contact: {
+      schoolEmail: input.schoolEmail,
+      personalEmail: input.personalEmail,
+      cellPhone: input.cellPhone,
+    },
+  });
+  console.log("Step 2: Cadet profile written.");
+
+  // Step 3 — Write indexes
+  const classYearKey = input.classYear.replace(/[\s\/\(\),\-]/g, "_");
+  console.log("Step 3a: classYearKey =", classYearKey);
+  if (classYearKey) {
+    await set(ref(db, `indexes/classYear/${classYearKey}/${cadetId}`), true);
+    console.log("Step 3a: classYear index written.");
+  } else {
+    console.log("Step 3a: SKIPPED — classYear was empty.");
+  }
+
+  const flightKey = input.flight.replace(/[\s\/\(\),\-]/g, "_");
+  console.log("Step 3b: flightKey =", flightKey);
+  if (flightKey) {
+    await set(ref(db, `indexes/flight/${flightKey}/${cadetId}`), true);
+    console.log("Step 3b: flight index written.");
+  } else {
+    console.log("Step 3b: SKIPPED — flight was empty.");
+  }
+
+  const jobKey = input.job.replace(/[\s\/\(\),\-]/g, "_");
+  console.log("Step 3c: jobKey =", jobKey);
+  if (jobKey) {
+    await set(ref(db, `indexes/job/${jobKey}/${cadetId}`), true);
+    console.log("Step 3c: job index written.");
+  } else {
+    console.log("Step 3c: SKIPPED — job was empty.");
+  }
+
+  return cadetId;
 };

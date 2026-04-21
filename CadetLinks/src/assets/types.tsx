@@ -166,3 +166,35 @@ export type UploadDocumentInput = {
   uri: string;
   originalFileName: string;
 };
+
+export interface CreateAccountForm {
+  classYear: string;
+  lastName: string;
+  firstName: string;
+  cellPhone: string;
+  schoolEmail: string;
+  personalEmail: string;
+  cadetRank: string;
+  flight: string;
+  job:string;
+}
+
+export interface DropdownPickerProps {
+  label: string;
+  options: string[];
+  value: string;
+  onSelect: (v: string) => void;
+}
+
+export interface CreateAccountModalProps {
+  visible: boolean;
+  onClose: () => void;
+  form: CreateAccountForm;
+  updateField: <K extends keyof CreateAccountForm>(
+    k: K,
+    v: CreateAccountForm[K]
+  ) => void;
+  updatePhone: (raw: string) => void;
+  saving: boolean;
+  onSubmit: () => void;
+}
