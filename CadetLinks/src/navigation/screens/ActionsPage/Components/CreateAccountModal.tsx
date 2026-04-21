@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Modal,
   View,
@@ -9,90 +9,16 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { CreateAccountForm } from "../../../../assets/types";
+import { CreateAccountModalProps } from "../../../../assets/types";
 import { YEARS, FLIGHTS, RANKS} from "../../../../assets/constants";
 import { actionStyles as styles } from "../../../../styles/ActionStyles";
 import { eventsStyles } from "../../../../styles/EventStyles";
-
-
-interface Props {
-  visible: boolean;
-  onClose: () => void;
-  form: CreateAccountForm;
-  updateField: <K extends keyof CreateAccountForm>(k: K, v: CreateAccountForm[K]) => void;
-  updatePhone: (raw: string) => void;
-  saving: boolean;
-  onSubmit: () => void;
-}
-
-// ── Reusable inline dropdown ──────────────────────────────────────────────────
-function DropdownPicker({
-  label,
-  options,
-  value,
-  onSelect,
-}: {
-  label: string;
-  options: string[];
-  value: string;
-  onSelect: (v: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const safeValue = typeof value === "string" ? value : "";
-  const safeOptions = Array.isArray(options)
-    ? options.filter((opt): opt is string => typeof opt === "string")
-    : [];
-
-  return (
-    <View style={[styles.dropdownWrapper, open && styles.dropdownWrapperOpen]}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-
-      {/* Trigger button */}
-      <Pressable
-        style={eventsStyles.dropDownBox}
-        onPress={() => setOpen((o) => !o)}
-      >
-        <Text>
-          {safeValue || `Select ${label}`}
-        </Text>
-        <Ionicons name={open ? "chevron-up" : "chevron-down"} size={16} color="#9AA3B2" />
-      </Pressable>
-
-      {/* Options list */}
-      {open && (
-        <View style={styles.dropdownMenu}>
-          {safeOptions.map((opt, index) => (
-            <Pressable
-              key={`${opt}-${index}`}
-              style={[
-                styles.dropdownItem,
-                safeValue === opt && { backgroundColor: "#1E3A5F" },
-                index === safeOptions.length - 1 && { borderBottomWidth: 0 },
-              ]}
-              onPress={() => {
-                onSelect(opt);
-                setOpen(false);
-              }}
-            >
-              <Text style={[styles.dropdownItemTitle, safeValue === opt && { color: "#6B9FFF" }]}>
-                {opt}
-              </Text>
-            </Pressable>
-          ))}
-
-          {safeOptions.length === 0 ? (
-            <Text style={styles.dropdownEmptyText}>No options available</Text>
-          ) : null}
-        </View>
-      )}
-    </View>
-  );
-}
+import { DropdownPicker } from "./DropdownPicker";
 
 // ── Main modal ────────────────────────────────────────────────────────────────
 export function CreateAccountModal({
   visible, onClose, form, updateField, updatePhone, saving, onSubmit,
-}: Props) {
+}: CreateAccountModalProps) {
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>

@@ -178,3 +178,23 @@ export interface CreateAccountForm {
   flight: string;
   job:string;
 }
+
+export interface DropdownPickerProps {
+  label: string;
+  options: string[];
+  value: string;
+  onSelect: (v: string) => void;
+}
+
+export interface CreateAccountModalProps {
+  visible: boolean;
+  onClose: () => void;
+  form: CreateAccountForm;
+  updateField: <K extends keyof CreateAccountForm>(
+    k: K,
+    v: CreateAccountForm[K]
+  ) => void;
+  updatePhone: (raw: string) => void;
+  saving: boolean;
+  onSubmit: () => void;
+}
