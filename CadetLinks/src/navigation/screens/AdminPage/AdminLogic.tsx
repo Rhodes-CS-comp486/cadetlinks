@@ -25,8 +25,8 @@ export const CADET_FIELDS: Array<{
 	path?: Parameters<typeof updateCadetField>[1];
 	getValue: (profile: CadetProfile) => string;
 }> = [
+    { key: "lastName", label: "Last Name", path: "lastName", getValue: (profile) => profile.lastName ?? "" },
 	{ key: "firstName", label: "First Name", path: "firstName", getValue: (profile) => profile.firstName ?? "" },
-	{ key: "lastName", label: "Last Name", path: "lastName", getValue: (profile) => profile.lastName ?? "" },
 	{ key: "cadetRank", label: "Rank", path: "cadetRank", getValue: (profile) => profile.cadetRank ?? "" },
 	{ key: "classYear", label: "Year", path: "classYear", getValue: (profile) => profile.classYear == null ? "" : String(profile.classYear) },
 	{ key: "flight", label: "Flight", path: "flight", getValue: (profile) => profile.flight ?? "" },
@@ -36,9 +36,8 @@ export const CADET_FIELDS: Array<{
 ];
 
 export const JOB_SHEET_FIELDS: Array<{ key: string; label: string; getValue: (profile: CadetProfile) => string }> = [
+    { key: "lastName", label: "Last Name", getValue: (profile) => profile.lastName ?? "" },
 	{ key: "firstName", label: "First Name", getValue: (profile) => profile.firstName ?? "" },
-	{ key: "lastName", label: "Last Name", getValue: (profile) => profile.lastName ?? "" },
-	{ key: "flight", label: "Flight", getValue: (profile) => profile.flight ?? "" },
 	{ key: "job", label: "Job Title", getValue: (profile) => profile.job ?? "" },
 ];
 

@@ -11,6 +11,7 @@ import { CADET_FIELDS, JOB_SHEET_FIELDS, useAdminLogic, type AdminTab, type Atte
 import { generalStyles } from "../../../styles/GeneralStyles";
 import DatePicker from "../EventsPage/Components/datePicker";
 import { DropdownPicker } from "../ActionsPage/Components/DropdownPicker";
+import { JOBS } from "../../../assets/constants";
 
 export function AdminPage() {
 	const {
@@ -100,7 +101,6 @@ export function AdminPage() {
 		<ScrollView horizontal>
 			<View>
 				<View style={generalStyles.adminSheetHeaderRow}>
-					<Text style={[generalStyles.adminHeaderCell, generalStyles.adminKeyCol]}>Cadet Key</Text>
 					{JOB_SHEET_FIELDS.map((field) => (
 						<Text key={field.key} style={generalStyles.adminHeaderCell}>{field.label}</Text>
 					))}
@@ -110,20 +110,19 @@ export function AdminPage() {
 					const jobValue = getDraftValue(jobKey, row.profile.job ?? "");
 					return (
 						<View key={row.cadetKey} style={generalStyles.adminSheetRow}>
-							<Text style={[generalStyles.adminReadCell, generalStyles.adminKeyCol]}>{row.cadetKey}</Text>
+                            <Text style={generalStyles.adminReadCell}>{row.profile.lastName ?? ""}</Text>
 							<Text style={generalStyles.adminReadCell}>{row.profile.firstName ?? ""}</Text>
-							<Text style={generalStyles.adminReadCell}>{row.profile.lastName ?? ""}</Text>
-							<Text style={generalStyles.adminReadCell}>{row.profile.flight ?? ""}</Text>
-							<TextInput
-								value={jobValue}
-								onChangeText={(text) => setDraftValue(jobKey, text)}
-								onEndEditing={() => saveCadetJob(row.cadetKey, jobValue, jobKey)}
-								onBlur={() => saveCadetJob(row.cadetKey, jobValue, jobKey)}
-								onSubmitEditing={() => saveCadetJob(row.cadetKey, jobValue, jobKey)}
-								style={generalStyles.adminEditCellWide}
-								placeholder="Job title"
-								placeholderTextColor="#7C8699"
-							/>
+							<View style={generalStyles.adminEditCellWide}>
+								<DropdownPicker
+									label=""
+									options={JOBS}
+									value={jobValue}
+									onSelect={(nextJob) => {
+										setDraftValue(jobKey, nextJob);
+										void saveCadetJob(row.cadetKey, nextJob, jobKey);
+									}}
+								/>
+							</View>
 						</View>
 					);
 				})}
@@ -209,13 +208,15 @@ export function AdminPage() {
 				<View style={generalStyles.adminTabRow}>
 					{renderTabButton("attendance", "Attendance")}
 					{renderTabButton("cadets", "Cadet Information")}
-					{renderTabButton("jobs", "Job Title to Cadets")}
+					{renderTabButton("jobs", "Job Assignments")}
 				</View>
 
 				<View style={generalStyles.adminSheetContainer}>
-					{activeTab === "attendance" && renderAttendanceSheet()}
-					{activeTab === "cadets" && renderCadetInfoSheet()}
-					{activeTab === "jobs" && renderJobSheet()}
+					<ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 12 }}>
+						{activeTab === "attendance" && renderAttendanceSheet()}
+						{activeTab === "cadets" && renderCadetInfoSheet()}
+						{activeTab === "jobs" && renderJobSheet()}
+					</ScrollView>
 				</View>
 			</View>
 		</ScreenLayout>
