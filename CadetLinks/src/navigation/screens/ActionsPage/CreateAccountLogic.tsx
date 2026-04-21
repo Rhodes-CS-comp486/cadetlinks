@@ -4,18 +4,7 @@ import { ref, set } from "firebase/database";
 import { db } from "../../../firebase/config";
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
-
-export interface CreateAccountForm {
-  classYear: string;
-  lastName: string;
-  firstName: string;
-  cellPhone: string;
-  schoolEmail: string;
-  personalEmail: string;
-  cadetRank: string;
-  flight: string;
-  password: string;
-}
+import { CreateAccountForm } from "../../../assets/types";
 
 const BLANK: CreateAccountForm = {
   classYear: "",
@@ -27,6 +16,7 @@ const BLANK: CreateAccountForm = {
   cadetRank: "",
   flight: "",
   password: "",
+  job: "",
 };
 
 const isValidEmail = (email: string) =>
@@ -101,7 +91,8 @@ export function useCreateAccountLogic() {
       return "Password must be at least 6 characters.";
     if (!form.cadetRank.trim())
       return "Please select a cadet rank.";
-
+    if (!form.job.trim())
+      return "Please select a job.";
     return null;
   };
 
@@ -132,7 +123,7 @@ const submit = async () => {
         firstName:  form.firstName.trim(),
         cadetRank:  form.cadetRank.trim(),
         flight:     form.flight.trim(),
-        job:        form.cadetRank.trim(), // cadetRank holds the job/role
+        job:        form.job.trim(),
         contact: {
           schoolEmail:   form.schoolEmail.trim().toLowerCase(),
           personalEmail: form.personalEmail.trim().toLowerCase(),
@@ -165,6 +156,14 @@ const submit = async () => {
         console.log("Step 5: flight index written.");
       } else {
         console.log("Step 5: SKIPPED — flight was empty.");
+      }
+
+      // Step 5 - Update Jobs
+      const job = sanitizeKey(form.job.trim());
+      if(job) {
+        await set{
+          ref(db, `indexes/job/${job}/${cadetId}`)
+        }
       }
 
       console.log("All steps complete!");

@@ -10,20 +10,10 @@ import {
   Switch,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { CreateAccountForm } from "../CreateAccountLogic";
-import { PERMISSIONS } from "../../../../assets/constants";
+import { CreateAccountForm } from "../../../../assets/types";
+import { YEARS, FLIGHTS, RANKS, JOBS } from "../../../../assets/constants";
 import { actionStyles as styles } from "../../../../styles/ActionStyles";
 
-const ALL_PERMISSIONS = [
-  PERMISSIONS.ATTENDANCE_EDITING,
-  PERMISSIONS.FILE_UPLOADING,
-  PERMISSIONS.EVENT_MAKING,
-  PERMISSIONS.ADMIN,
-];
-
-const YEARS   = ["100", "150", "200", "250"];
-const FLIGHTS = ["Alpha", "Bravo", "POC"];
-const RANKS = ["C/4C", "C/3C"];
 
 interface Props {
   visible: boolean;
@@ -156,6 +146,16 @@ export function CreateAccountModal({
               value={form.flight}
               onSelect={(v) => updateField("flight", v)}
             />
+
+            {/* Job Dropdown */}
+             <DropdownPicker
+              label="Job"
+              options={JOBS}
+              value={form.job}
+              onSelect={(v) => updateField("job", v)}
+            />
+
+
 
             {/* Cell Phone */}
             <Text style={styles.fieldLabel}>Cell Phone</Text>
