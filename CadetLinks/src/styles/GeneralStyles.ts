@@ -124,6 +124,20 @@ export const generalStyles = StyleSheet.create({
         borderColor: colors.border,
         backgroundColor: colors.text,
     },
+    dropDownBox:{
+        paddingStart: 12,
+        color: colors.inputText,
+        height: 40,
+        borderWidth: 2,
+        borderRadius: 6,
+        marginBottom: 12,
+        borderColor: colors.border,
+        backgroundColor: colors.text,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center" 
+
+    },
     inputPlaceholder: { 
         color: colors.inputText,
         height: 40,

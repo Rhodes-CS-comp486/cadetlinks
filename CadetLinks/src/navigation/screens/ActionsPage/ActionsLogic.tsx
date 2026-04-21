@@ -5,21 +5,17 @@ import { useDocumentUploadingLogic } from "./UploadDocsLogic";
 import { useAttendanceLogic } from "./AttendanceLogic";
 import { useNavigation } from "@react-navigation/core";
 import { globals, initializeGlobals } from "../../../firebase/dbController";
+import { useCreateAccountLogic } from "./CreateAccountLogic";
 
 type NavAny = ReturnType<typeof useNavigation<any>>;
 
-export function iconForAction(id: Action["id"]) { // this function maps icons to actions.
+export function iconForAction(id: Action["id"]) {
   switch (id) {
-    case PERMISSIONS.ATTENDANCE_EDITING:
-      return "checkbox-outline";
-    case PERMISSIONS.FILE_UPLOADING:
-      return "cloud-upload-outline";
-    case PERMISSIONS.ADMIN:
-      return "person-add-outline";
-    case PERMISSIONS.EVENT_MAKING:
-      return "calendar-outline";
-    default:
-      return "briefcase-outline";
+    case PERMISSIONS.ATTENDANCE_EDITING: return "checkbox-outline";
+    case PERMISSIONS.FILE_UPLOADING:     return "cloud-upload-outline";
+    case PERMISSIONS.ADMIN:              return "person-add-outline";
+    case PERMISSIONS.EVENT_MAKING:       return "calendar-outline";
+    default:                             return "briefcase-outline";
   }
 }
 
@@ -32,54 +28,56 @@ export function useActionsLogic() {
   const error = globalState.errors.profile ?? null;
 
   const canTakeAttendance = cadetPermissionsMap.get(PERMISSIONS.ATTENDANCE_EDITING) ?? false;
-  const canUploadFiles = cadetPermissionsMap.get(PERMISSIONS.FILE_UPLOADING) ?? false;
-  const isAll = canTakeAttendance && canUploadFiles;
-  const attendance = useAttendanceLogic();
+  const canUploadFiles    = cadetPermissionsMap.get(PERMISSIONS.FILE_UPLOADING) ?? false;
+  const isAdmin           = cadetPermissionsMap.get(PERMISSIONS.ADMIN) ?? false; // ← changed from isAll
+
+  const attendance        = useAttendanceLogic();
   const documentUploading = useDocumentUploadingLogic();
+  const createAccount     = useCreateAccountLogic(); // ← add
   const navigation: NavAny = useNavigation();
 
   const permissionNames = useMemo(
     () =>
       Array.from(cadetPermissionsMap.entries())
-        .filter(([_, value]) => value === true)
-        .map(([key, _]) => key),
+        .filter(([_, v]) => v === true)
+        .map(([k]) => k),
     [cadetPermissionsMap]
   );
 
-  const permissionText =
-    permissionNames.length > 0 ? permissionNames.join(", ") : "None"; // gets permission names or "none"
+  const permissionText = permissionNames.length > 0 ? permissionNames.join(", ") : "None";
 
   useEffect(() => {
     if (!globalState.isInitialized && !globalState.isInitializing) {
       void initializeGlobals();
     }
   }, [globalState.isInitialized, globalState.isInitializing]);
-  
-  const onPressAction = async (a: Action) => {
-      if (!a.allowed) return;
-  
-      if (a.id === PERMISSIONS.ATTENDANCE_EDITING) {
-        attendance.openAttendanceModal();
-        return;
-      }
-  
-      if (a.id === PERMISSIONS.FILE_UPLOADING) {
-        await documentUploading.openDocumentUploadingModal();
-        return;
-      }
-  
-      if (!a.routeHint) return; 
-      navigation.navigate(a.routeHint);
-    };
 
-    const fullName =
+  const onPressAction = async (a: Action) => {
+    if (!a.allowed) return;
+
+    if (a.id === PERMISSIONS.ATTENDANCE_EDITING) {
+      attendance.openAttendanceModal();
+      return;
+    }
+    if (a.id === PERMISSIONS.FILE_UPLOADING) {
+      await documentUploading.openDocumentUploadingModal();
+      return;
+    }
+    if (a.id === PERMISSIONS.ADMIN) {
+      createAccount.openModal(); // ← handle admin action
+      return;
+    }
+    if (!a.routeHint) return;
+    navigation.navigate(a.routeHint);
+  };
+
+  const fullName =
     profile?.firstName || profile?.lastName
       ? `${profile?.firstName ?? ""} ${profile?.lastName ?? ""}`.trim()
-      : "Cadet"; // grabs cadet name from profile (cadet if no name)
+      : "Cadet";
 
-  const jobText = profile?.job ?? "—"; // grabs job from profile (dash if no job)
+  const jobText = profile?.job ?? "—";
 
-  // only show actions the cadet is actually allowed to use
   const actions: Action[] = [];
 
   if (canTakeAttendance) {
@@ -90,19 +88,15 @@ export function useActionsLogic() {
       allowed: true,
     });
   }
-
   if (canUploadFiles) {
     actions.push({
       id: PERMISSIONS.FILE_UPLOADING,
       title: "Upload Files",
       subtitle: "Upload PDFs and other documents for cadets",
-      routeHint: "Files",
       allowed: true,
     });
   }
-
-  // Create Accounts = All only
-  if (isAll) {
+  if (isAdmin) { // ← was isAll, now just admin permission
     actions.push({
       id: PERMISSIONS.ADMIN,
       title: "Create Accounts",
@@ -115,34 +109,16 @@ export function useActionsLogic() {
 
   return useMemo(
     () => ({
-      cadetKey,
-      profile,
-      loading,
-      error,
-      permissionNames,
-      isAll,
-      canTakeAttendance,
-      canUploadFiles,
-      actions,
-      onPressAction,
-      attendance,
-      documentUploading,
-      fullName,
-      jobText,
-      permissionText,
-      anyVisibleActions,
-      navigation
+      cadetKey, profile, loading, error,
+      permissionNames, isAdmin,
+      canTakeAttendance, canUploadFiles,
+      actions, onPressAction,
+      attendance, documentUploading,
+      createAccount, // ← expose to Actions.tsx
+      fullName, jobText, permissionText,
+      anyVisibleActions, navigation,
     }),
-    [
-      cadetKey,
-      profile,
-      loading,
-      error,
-      permissionNames,
-      isAll,
-      canTakeAttendance,
-      canUploadFiles,
-      actions,
-    ]
+    [cadetKey, profile, loading, error, permissionNames,
+     isAdmin, canTakeAttendance, canUploadFiles, actions]
   );
 }
