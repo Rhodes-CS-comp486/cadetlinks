@@ -161,9 +161,12 @@ const submit = async () => {
       // Step 5 - Update Jobs
       const job = sanitizeKey(form.job.trim());
       if(job) {
-        await set{
-          ref(db, `indexes/job/${job}/${cadetId}`)
-        }
+        await set(
+          ref(db, `indexes/job/${job}/${cadetId}`),
+          true
+        );
+      } else{
+        console.log(Error,"Skipped Updating jobs")
       }
 
       console.log("All steps complete!");
