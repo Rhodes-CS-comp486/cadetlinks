@@ -5,203 +5,360 @@ import {
   ScrollView,
   ActivityIndicator,
   Pressable,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { profileStyles as styles } from "../../../styles/ProfileStyles";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+
+import { profileStyles as pStyles } from "../../../styles/ProfileStyles";
+import { searchStyles as sStyles } from "../../../styles/SearchStyles";
 import { ScreenLayout } from "../../Components/ScreenLayout";
+import { DarkColors as colors } from "../../../styles/colors";
+
 import { useProfileLogic } from "./ProfileLogic";
+import { useSearchLogic } from "../SearchPage/SearchLogic";
+import type { RootStackParamList } from "../../index";
 
 export function Profile(): React.ReactElement {
-  const [profileView, setProfileView] = useState<"private" | "public">("private"); // toggle between private and public profile views
+  const [profileView, setProfileView] = useState<"myProfile" | "search">("myProfile"); // toggle between "my profile" and "search" views
+  const [isEditingBio, setIsEditingBio] = useState(false); // is user editing bio right now
+  const [showBioMenu, setShowBioMenu] = useState(false); // is the 3-dot menu open
+
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const {
     cadetKey,
-
     profile,
     loadingProfile,
     profileError,
-
     loadingAttendance,
     attendanceError,
-
     ptAttended,
     ptMissed,
     ptExcused,
     ptLate,
     ptAttendancePercent,
-    ptInGoodStanding,
-
     llabAttended,
     llabMissed,
     llabExcused,
     llabLate,
     llabAttendancePercent,
-    llabInGoodStanding,
+    rmpAttended,
+    rmpMissed,
+    rmpExcused,
+    rmpLate,
+    rmpAttendancePercent,
+    bioDraft,
+    setBioDraft,
+    savingBio,
+    bioMessage,
+    handleSaveBio,
   } = useProfileLogic();
 
-  const bioText = "This is where the cadet bio will go!";
+  const {
+    query,
+    setQuery,
+    selectedFlight,
+    setSelectedFlight,
+    flightOptions,
+    filteredCadets,
+    loadingCadets,
+    searchError,
+  } = useSearchLogic();
 
   function getAttendanceColor(percent: number) {
-    if (percent >= 90) return "good";     // green
-    if (percent >= 80) return "warning";  // yellow
-    return "bad";                         // red
+    if (percent >= 90) return "good";
+    if (percent >= 80) return "warning";
+    return "bad";
   }
 
   const ptColor = getAttendanceColor(ptAttendancePercent);
   const llabColor = getAttendanceColor(llabAttendancePercent);
+  const rmpColor = getAttendanceColor(rmpAttendancePercent);
 
   return (
     <ScreenLayout>
       <ScrollView
-        style={styles.body_container}
+        style={pStyles.body_container}
         contentContainerStyle={{ paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* PROFILE TOGGLE BUTTON AT THE TOP */}
-        <View style={styles.profileToggleRow}>
+        {/* TOP TOGGLE */}
+        <View style={pStyles.profileToggleRow}>
           <Pressable
-            onPress={() => setProfileView("private")}
+            onPress={() => setProfileView("myProfile")}
             style={[
-              styles.profileToggleButton,
-              profileView === "private" && styles.profileToggleButtonActive,
-            ]}
-          >
-            <Text
-              style={[ // if profileView is "private", apply active text style
-                styles.profileToggleText,
-                profileView === "private" && styles.profileToggleTextActive,
-              ]}
-            >
-              Private
-            </Text>
-          </Pressable>
-          {/* Public profile button */}
-          <Pressable
-            onPress={() => setProfileView("public")}
-            style={[
-              styles.profileToggleButton,
-              profileView === "public" && styles.profileToggleButtonActive,
+              pStyles.profileToggleButton,
+              profileView === "myProfile" && pStyles.profileToggleButtonActive,
             ]}
           >
             <Text
               style={[
-                styles.profileToggleText,
-                profileView === "public" && styles.profileToggleTextActive,
+                pStyles.profileToggleText,
+                profileView === "myProfile" && pStyles.profileToggleTextActive,
               ]}
             >
-              Public
+              My Profile
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setProfileView("search")}
+            style={[
+              pStyles.profileToggleButton,
+              profileView === "search" && pStyles.profileToggleButtonActive,
+            ]}
+          >
+            <Text
+              style={[
+                pStyles.profileToggleText,
+                profileView === "search" && pStyles.profileToggleTextActive,
+              ]}
+            >
+              Search
             </Text>
           </Pressable>
         </View>
 
-        {/* PRIVATE PROFILE TAB */}
-        {profileView === "private" ? (
+        {/* MY PROFILE TAB */}
+        {profileView === "myProfile" ? (
           <>
-            <View style={styles.userinfo_card}>
-              <View style={styles.avatar_container}>
+            <View style={pStyles.userinfo_card}>
+              <View style={pStyles.avatar_container}>
                 <Ionicons name="person" size={28} color="white" />
               </View>
 
-              <View style={styles.userinfo_text_container}>
+              <View style={pStyles.userinfo_text_container}>
                 {loadingProfile ? (
                   <View style={{ marginTop: 4 }}>
                     <ActivityIndicator />
-                    <Text style={styles.userinfo_sub}>Loading profile…</Text>
+                    <Text style={pStyles.userinfo_sub}>Loading profile…</Text>
                   </View>
                 ) : profileError ? (
                   <>
-                    <Text style={styles.userinfo_sub}>{profileError}</Text>
+                    <Text style={pStyles.userinfo_sub}>{profileError}</Text>
                     {cadetKey ? (
-                      <Text style={styles.userinfo_sub}>
-                        <Text style={styles.label_bold}>Key: </Text>
+                      <Text style={pStyles.userinfo_sub}>
+                        <Text style={pStyles.label_bold}>Key: </Text>
                         {cadetKey}
                       </Text>
                     ) : null}
                   </>
                 ) : !profile ? (
-                  <Text style={styles.userinfo_sub}>No profile found.</Text>
+                  <Text style={pStyles.userinfo_sub}>No profile found.</Text>
                 ) : (
                   <>
-                    <Text style={styles.userinfo_name}>
+                    <Text style={pStyles.userinfo_name}>
                       {profile.firstName ?? "First"} {profile.lastName ?? "Last"}
                     </Text>
 
-                    <Text style={styles.userinfo_sub}>
-                      <Text style={styles.label_bold}>Rank: </Text>
+                    <Text style={pStyles.userinfo_sub}>
+                      <Text style={pStyles.label_bold}>Rank: </Text>
                       {profile.cadetRank ?? "—"}
                     </Text>
 
-                    <Text style={styles.userinfo_sub}>
-                      <Text style={styles.label_bold}>Class Year: </Text>
+                    <Text style={pStyles.userinfo_sub}>
+                      <Text style={pStyles.label_bold}>Class Year: </Text>
                       {profile.classYear ?? "—"}
                     </Text>
 
-                    <Text style={styles.userinfo_sub}>
-                      <Text style={styles.label_bold}>Flight: </Text>
+                    <Text style={pStyles.userinfo_sub}>
+                      <Text style={pStyles.label_bold}>Flight: </Text>
                       {profile.flight ?? "—"}
                     </Text>
 
-                    <Text style={styles.userinfo_sub}>
-                      <Text style={styles.label_bold}>Job: </Text>
+                    <Text style={pStyles.userinfo_sub}>
+                      <Text style={pStyles.label_bold}>Job: </Text>
                       {profile.job ?? "—"}
                     </Text>
 
-                    <Text style={styles.userinfo_sub}>
-                      <Text style={styles.label_bold}>School Email: </Text>
+                    <Text style={pStyles.userinfo_sub}>
+                      <Text style={pStyles.label_bold}>School Email: </Text>
                       {profile.contact?.schoolEmail ?? "—"}
                     </Text>
 
-                    <Text style={styles.userinfo_sub}>
-                      <Text style={styles.label_bold}>Phone Number: </Text>
+                    <Text style={pStyles.userinfo_sub}>
+                      <Text style={pStyles.label_bold}>Phone Number: </Text>
                       {profile.contact?.cellPhone ?? "—"}
                     </Text>
 
-                    <Text style={styles.userinfo_sub}>
-                      <Text style={styles.label_bold}>Last PT Score: </Text>
+                    <Text style={pStyles.userinfo_sub}>
+                      <Text style={pStyles.label_bold}>Last PT Score: </Text>
                       {profile.lastPTScore ?? "—"}
                     </Text>
                   </>
                 )}
 
                 {loadingAttendance ? (
-                  <Text style={styles.userinfo_sub}>Loading attendance…</Text>
+                  <Text style={pStyles.userinfo_sub}>Loading attendance…</Text>
                 ) : attendanceError ? (
-                  <Text style={styles.userinfo_sub}>{attendanceError}</Text>
+                  <Text style={pStyles.userinfo_sub}>{attendanceError}</Text>
                 ) : null}
               </View>
             </View>
 
-            <Text style={styles.sectionTitle}>PT Attendance</Text>
+            {/* BIO SECTION */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginTop: 4,
+              }}
+            >
+              <Text style={sStyles.sectionTitle}>My Bio</Text>
 
-            <View style={styles.attendance_card}>
-              <View style={styles.attendance_top_row}>
-                <View
+              {!isEditingBio ? (
+                <View style={{ position: "relative" }}>
+                  <Pressable
+                    onPress={() => setShowBioMenu((prev) => !prev)}
+                    hitSlop={8}
+                    style={{ padding: 6 }}
+                  >
+                    <Ionicons
+                      name="ellipsis-horizontal"
+                      size={20}
+                      color={colors.text}
+                    />
+                  </Pressable>
+
+                  {showBioMenu ? (
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: 34,
+                        right: 0,
+                        backgroundColor: colors.card,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                        borderRadius: 12,
+                        paddingVertical: 6,
+                        minWidth: 110,
+                        zIndex: 20,
+                      }}
+                    >
+                      <Pressable
+                        onPress={() => {
+                          setIsEditingBio(true);
+                          setShowBioMenu(false);
+                        }}
+                        style={{ paddingVertical: 10, paddingHorizontal: 14 }}
+                      >
+                        <Text style={{ color: colors.text, fontSize: 15 }}>
+                          Edit Bio
+                        </Text>
+                      </Pressable>
+                    </View>
+                  ) : null}
+                </View>
+              ) : null}
+            </View>
+
+            {/* Bio Card */}
+            <View style={sStyles.bioCard}>
+              {isEditingBio ? (
+                <TextInput
+                  value={bioDraft}
+                  onChangeText={setBioDraft}
+                  multiline
+                  placeholder="Write your bio here..."
+                  placeholderTextColor={colors.muted}
+                  editable={!savingBio}
                   style={[
-                    styles.attendance_circle,
-                    ptColor === "good"
-                      ? styles.circle_good
-                      : ptColor === "warning"
-                      ? styles.circle_warning
-                      : styles.circle_bad,
+                    sStyles.bioText,
+                    {
+                      minHeight: 90,
+                      textAlignVertical: "top",
+                    },
+                  ]}
+                />
+              ) : (
+                <Text
+                  style={[
+                    sStyles.bioText,
+                    {
+                      minHeight: 90,
+                    },
                   ]}
                 >
-                  <Text style={styles.attendance_percent_text}>
+                  {bioDraft?.trim() ? bioDraft : "No bio yet."}
+                </Text>
+              )}
+            </View>
+
+            {isEditingBio ? (
+              <Pressable
+                onPress={async () => {
+                  const didSave = await handleSaveBio();
+                  if (didSave) {
+                    setIsEditingBio(false);
+                    setShowBioMenu(false);
+                  }
+                }}
+                disabled={savingBio}
+                style={[
+                  sStyles.flightChip,
+                  {
+                    alignSelf: "flex-start",
+                    marginTop: 10,
+                    marginBottom: 6,
+                    opacity: savingBio ? 0.7 : 1,
+                  },
+                  sStyles.flightChipActive,
+                ]}
+              >
+                <Text style={sStyles.flightChipTextActive}>
+                  {savingBio ? "Saving..." : "Save Bio"}
+                </Text>
+              </Pressable>
+            ) : null}
+
+            {bioMessage ? (
+              <Text
+                style={[
+                  sStyles.stateText,
+                  { textAlign: "left", marginBottom: 12 },
+                ]}
+              >
+                {bioMessage}
+              </Text>
+            ) : null}
+
+            {/* ATTENDANCE SECTION */}
+            {/* PT ATTENDANCE */}
+            <Text style={pStyles.sectionTitle}>PT Attendance</Text>
+
+            <View style={pStyles.attendance_card}>
+              <View style={pStyles.attendance_top_row}>
+                <View
+                  style={[
+                    pStyles.attendance_circle,
+                    ptColor === "good"
+                      ? pStyles.circle_good
+                      : ptColor === "warning"
+                      ? pStyles.circle_warning
+                      : pStyles.circle_bad,
+                  ]}
+                >
+                  <Text style={pStyles.attendance_percent_text}>
                     {ptAttendancePercent}%
                   </Text>
                 </View>
 
-                <View style={styles.standing_container}>
+                <View style={pStyles.standing_container}>
                   <View
                     style={[
-                      styles.standing_pill,
+                      pStyles.standing_pill,
                       ptColor === "good"
-                        ? styles.pill_good
+                        ? pStyles.pill_good
                         : ptColor === "warning"
-                        ? styles.pill_warning
-                        : styles.pill_bad,
+                        ? pStyles.pill_warning
+                        : pStyles.pill_bad,
                     ]}
                   >
-                    <Text style={styles.standing_pill_text}>
+                    <Text style={pStyles.standing_pill_text}>
                       {ptColor === "good"
                         ? "Good Standing"
                         : ptColor === "warning"
@@ -210,92 +367,93 @@ export function Profile(): React.ReactElement {
                     </Text>
                   </View>
 
-                  <Text style={styles.standing_hint}>
+                  <Text style={pStyles.standing_hint}>
                     Good standing requires ≥ 90%
                   </Text>
-                  <Text style={styles.standing_hint}>
+                  <Text style={pStyles.standing_hint}>
                     Excused does not count against you
                   </Text>
                 </View>
               </View>
 
-              <View style={styles.stacked_bar}>
+              <View style={pStyles.stacked_bar}>
                 <View
                   style={[
-                    styles.bar_segment,
-                    styles.bar_attended,
+                    pStyles.bar_segment,
+                    pStyles.bar_attended,
                     { flex: Math.max(ptAttended, 0.001) },
                   ]}
                 />
                 <View
                   style={[
-                    styles.bar_segment,
-                    styles.bar_missed,
+                    pStyles.bar_segment,
+                    pStyles.bar_missed,
                     { flex: Math.max(ptMissed, 0.001) },
                   ]}
                 />
               </View>
 
-              <View style={styles.legend_row}>
-                <View style={styles.legend_item}>
-                  <View style={[styles.legend_dot, styles.bar_attended]} />
-                  <Text style={styles.legend_text}>Attended ({ptAttended})</Text>
+              <View style={pStyles.legend_row}>
+                <View style={pStyles.legend_item}>
+                  <View style={[pStyles.legend_dot, pStyles.bar_attended]} />
+                  <Text style={pStyles.legend_text}>Attended ({ptAttended})</Text>
                 </View>
 
-                <View style={styles.legend_item}>
-                  <View style={[styles.legend_dot, styles.bar_missed]} />
-                  <Text style={styles.legend_text}>Missed ({ptMissed})</Text>
+                <View style={pStyles.legend_item}>
+                  <View style={[pStyles.legend_dot, pStyles.bar_missed]} />
+                  <Text style={pStyles.legend_text}>Missed ({ptMissed})</Text>
                 </View>
               </View>
 
-              <View style={[styles.legend_row, { marginTop: 6 }]}>
-                <View style={styles.legend_item}>
+              <View style={[pStyles.legend_row, { marginTop: 6 }]}>
+                <View style={pStyles.legend_item}>
                   <View
-                    style={[styles.legend_dot, { backgroundColor: "#9AA3B2" }]}
+                    style={[pStyles.legend_dot, { backgroundColor: "#9AA3B2" }]}
                   />
-                  <Text style={styles.legend_text}>Excused ({ptExcused})</Text>
+                  <Text style={pStyles.legend_text}>Excused ({ptExcused})</Text>
                 </View>
 
-                <View style={styles.legend_item}>
+                <View style={pStyles.legend_item}>
                   <View
-                    style={[styles.legend_dot, { backgroundColor: "#9AA3B2" }]}
+                    style={[pStyles.legend_dot, { backgroundColor: "#9AA3B2" }]}
                   />
-                  <Text style={styles.legend_text}>Late ({ptLate})</Text>
+                  <Text style={pStyles.legend_text}>Late ({ptLate})</Text>
                 </View>
               </View>
             </View>
 
-            <Text style={styles.sectionTitle}>LLAB Attendance</Text>
+            {/* LLAB ATTENDANCE */}
+            <Text style={pStyles.sectionTitle}>LLAB Attendance</Text>
 
-            <View style={styles.attendance_card}>
-              <View style={styles.attendance_top_row}>
+            <View style={pStyles.attendance_card}>
+              <View style={pStyles.attendance_top_row}>
                 <View
                   style={[
-                    styles.attendance_circle,
+                    pStyles.attendance_circle,
                     llabColor === "good"
-                      ? styles.circle_good
+                      ? pStyles.circle_good
                       : llabColor === "warning"
-                      ? styles.circle_warning
-                      : styles.circle_bad,
+                      ? pStyles.circle_warning
+                      : pStyles.circle_bad,
                   ]}
                 >
-                  <Text style={styles.attendance_percent_text}>
+                  <Text style={pStyles.attendance_percent_text}>
                     {llabAttendancePercent}%
                   </Text>
                 </View>
 
-                <View style={styles.standing_container}>
+                <View style={pStyles.standing_container}>
                   <View
                     style={[
-                      styles.standing_pill,
+                      pStyles.standing_pill,
                       llabColor === "good"
-                        ? styles.pill_good
+                        ? pStyles.pill_good
                         : llabColor === "warning"
-                        ? styles.pill_warning
-                        : styles.pill_bad,
+                        ? pStyles.pill_warning
+                        : pStyles.pill_bad,
                     ]}
                   >
-                    <Text style={styles.standing_pill_text}>
+                    <Text style={pStyles.standing_pill_text}>
                       {llabColor === "good"
                         ? "Good Standing"
                         : llabColor === "warning"
@@ -304,132 +462,283 @@ export function Profile(): React.ReactElement {
                     </Text>
                   </View>
 
-                  <Text style={styles.standing_hint}>
+                  <Text style={pStyles.standing_hint}>
                     Good standing requires ≥ 90%
                   </Text>
-                  <Text style={styles.standing_hint}>
+                  <Text style={pStyles.standing_hint}>
                     Excused does not count against you
                   </Text>
                 </View>
               </View>
 
-              <View style={styles.stacked_bar}>
+              <View style={pStyles.stacked_bar}>
                 <View
                   style={[
-                    styles.bar_segment,
-                    styles.bar_attended,
+                    pStyles.bar_segment,
+                    pStyles.bar_attended,
                     { flex: Math.max(llabAttended, 0.001) },
                   ]}
                 />
                 <View
                   style={[
-                    styles.bar_segment,
-                    styles.bar_missed,
+                    pStyles.bar_segment,
+                    pStyles.bar_missed,
                     { flex: Math.max(llabMissed, 0.001) },
                   ]}
                 />
               </View>
 
-              <View style={styles.legend_row}>
-                <View style={styles.legend_item}>
-                  <View style={[styles.legend_dot, styles.bar_attended]} />
-                  <Text style={styles.legend_text}>Attended ({llabAttended})</Text>
+              <View style={pStyles.legend_row}>
+                <View style={pStyles.legend_item}>
+                  <View style={[pStyles.legend_dot, pStyles.bar_attended]} />
+                  <Text style={pStyles.legend_text}>Attended ({llabAttended})</Text>
                 </View>
 
-                <View style={styles.legend_item}>
-                  <View style={[styles.legend_dot, styles.bar_missed]} />
-                  <Text style={styles.legend_text}>Missed ({llabMissed})</Text>
+                <View style={pStyles.legend_item}>
+                  <View style={[pStyles.legend_dot, pStyles.bar_missed]} />
+                  <Text style={pStyles.legend_text}>Missed ({llabMissed})</Text>
                 </View>
               </View>
 
-              <View style={[styles.legend_row, { marginTop: 6 }]}>
-                <View style={styles.legend_item}>
+              <View style={[pStyles.legend_row, { marginTop: 6 }]}>
+                <View style={pStyles.legend_item}>
                   <View
-                    style={[styles.legend_dot, { backgroundColor: "#9AA3B2" }]}
+                    style={[pStyles.legend_dot, { backgroundColor: "#9AA3B2" }]}
                   />
-                  <Text style={styles.legend_text}>Excused ({llabExcused})</Text>
+                  <Text style={pStyles.legend_text}>Excused ({llabExcused})</Text>
                 </View>
 
-                <View style={styles.legend_item}>
+                <View style={pStyles.legend_item}>
                   <View
-                    style={[styles.legend_dot, { backgroundColor: "#9AA3B2" }]}
+                    style={[pStyles.legend_dot, { backgroundColor: "#9AA3B2" }]}
                   />
-                  <Text style={styles.legend_text}>Late ({llabLate})</Text>
+                  <Text style={pStyles.legend_text}>Late ({llabLate})</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* RMP ATTENDANCE */}
+            <Text style={pStyles.sectionTitle}>RMP Attendance</Text>
+
+            <View style={pStyles.attendance_card}>
+              <View style={pStyles.attendance_top_row}>
+                <View
+                  style={[
+                    pStyles.attendance_circle,
+                    rmpColor === "good"
+                      ? pStyles.circle_good
+                      : rmpColor === "warning"
+                      ? pStyles.circle_warning
+                      : pStyles.circle_bad,
+                  ]}
+                >
+                  <Text style={pStyles.attendance_percent_text}>
+                    {rmpAttendancePercent}%
+                  </Text>
+                </View>
+
+                <View style={pStyles.standing_container}>
+                  <View
+                    style={[
+                      pStyles.standing_pill,
+                      rmpColor === "good"
+                        ? pStyles.pill_good
+                        : rmpColor === "warning"
+                        ? pStyles.pill_warning
+                        : pStyles.pill_bad,
+                    ]}
+                  >
+                    <Text style={pStyles.standing_pill_text}>
+                      {rmpColor === "good"
+                        ? "Good Standing"
+                        : rmpColor === "warning"
+                        ? "Warning"
+                        : "Bad Standing"}
+                    </Text>
+                  </View>
+
+                  <Text style={pStyles.standing_hint}>
+                    Good standing requires ≥ 90%
+                  </Text>
+                  <Text style={pStyles.standing_hint}>
+                    Excused does not count against you
+                  </Text>
+                </View>
+              </View>
+
+              <View style={pStyles.stacked_bar}>
+                <View
+                  style={[
+                    pStyles.bar_segment,
+                    pStyles.bar_attended,
+                    { flex: Math.max(rmpAttended, 0.001) },
+                  ]}
+                />
+                <View
+                  style={[
+                    pStyles.bar_segment,
+                    pStyles.bar_missed,
+                    { flex: Math.max(rmpMissed, 0.001) },
+                  ]}
+                />
+              </View>
+
+              <View style={pStyles.legend_row}>
+                <View style={pStyles.legend_item}>
+                  <View style={[pStyles.legend_dot, pStyles.bar_attended]} />
+                  <Text style={pStyles.legend_text}>Attended ({rmpAttended})</Text>
+                </View>
+
+                <View style={pStyles.legend_item}>
+                  <View style={[pStyles.legend_dot, pStyles.bar_missed]} />
+                  <Text style={pStyles.legend_text}>Missed ({rmpMissed})</Text>
+                </View>
+              </View>
+
+              <View style={[pStyles.legend_row, { marginTop: 6 }]}>
+                <View style={pStyles.legend_item}>
+                  <View
+                    style={[pStyles.legend_dot, { backgroundColor: "#9AA3B2" }]}
+                  />
+                  <Text style={pStyles.legend_text}>Excused ({rmpExcused})</Text>
+                </View>
+
+                <View style={pStyles.legend_item}>
+                  <View
+                    style={[pStyles.legend_dot, { backgroundColor: "#9AA3B2" }]}
+                  />
+                  <Text style={pStyles.legend_text}>Late ({rmpLate})</Text>
                 </View>
               </View>
             </View>
           </>
         ) : (
           <>
-            {/* PUBLIC PROFILE TAB */}
-            <View style={styles.publicProfileCard}>
-              <View style={styles.publicInfoColumn}>
-                {loadingProfile ? (
-                  <View style={{ marginTop: 4 }}>
-                    <ActivityIndicator />
-                    <Text style={styles.userinfo_sub}>Loading profile…</Text>
-                  </View>
-                ) : profileError ? (
-                  <>
-                    <Text style={styles.userinfo_sub}>{profileError}</Text>
-                    {cadetKey ? (
-                      <Text style={styles.userinfo_sub}>
-                        <Text style={styles.label_bold}>Key: </Text>
-                        {cadetKey}
+            {/* SEARCH TAB */}
+            <Text style={sStyles.sectionTitle}>Search Cadets</Text>
+
+            <View style={sStyles.searchBar}>
+              <Ionicons
+                name="search"
+                size={18}
+                color={colors.muted}
+                style={sStyles.searchIcon}
+              />
+              <TextInput
+                value={query}
+                onChangeText={setQuery}
+                placeholder="Search by name or job...."
+                placeholderTextColor={colors.muted}
+                style={sStyles.searchInput}
+              />
+              {query.length > 0 ? (
+                <Pressable onPress={() => setQuery("")}>
+                  <Ionicons name="close-circle" size={18} color={colors.muted} />
+                </Pressable>
+              ) : null}
+            </View>
+
+            <Text style={sStyles.filterLabel}>Filter by Flight</Text>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={sStyles.flightFilterRow}
+            >
+              <Pressable
+                style={[
+                  sStyles.flightChip,
+                  selectedFlight === "" && sStyles.flightChipActive,
+                ]}
+                onPress={() => setSelectedFlight("")}
+              >
+                <Text
+                  style={[
+                    sStyles.flightChipText,
+                    selectedFlight === "" && sStyles.flightChipTextActive,
+                  ]}
+                >
+                  All
+                </Text>
+              </Pressable>
+
+              {flightOptions.map((flight) => {
+                const isActive = selectedFlight === flight;
+
+                return (
+                  <Pressable
+                    key={flight}
+                    style={[
+                      sStyles.flightChip,
+                      isActive && sStyles.flightChipActive,
+                    ]}
+                    onPress={() => setSelectedFlight(isActive ? "" : flight)}
+                  >
+                    <Text
+                      style={[
+                        sStyles.flightChipText,
+                        isActive && sStyles.flightChipTextActive,
+                      ]}
+                    >
+                      {flight}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
+            {loadingCadets ? (
+              <View style={sStyles.stateCard}>
+                <ActivityIndicator />
+                <Text style={sStyles.stateText}>Loading cadets…</Text>
+              </View>
+            ) : searchError ? (
+              <View style={sStyles.stateCard}>
+                <Text style={sStyles.stateText}>{searchError}</Text>
+              </View>
+            ) : filteredCadets.length === 0 ? (
+              <View style={sStyles.stateCard}>
+                <Text style={sStyles.stateText}>No cadets found.</Text>
+              </View>
+            ) : (
+              filteredCadets.map((cadet) => (
+                <Pressable
+                  key={cadet.cadetKey}
+                  style={sStyles.resultCard}
+                  onPress={() =>
+                    navigation.navigate("PublicProfile", {
+                      cadetKey: cadet.cadetKey,
+                    })
+                  }
+                >
+                  <View style={sStyles.resultLeft}>
+                    <View style={sStyles.avatar_container}>
+                      <Ionicons name="person" size={22} color="white" />
+                    </View>
+
+                    <View style={sStyles.resultTextContainer}>
+                      <Text style={sStyles.resultName}>
+                        {cadet.firstName ?? "First"} {cadet.lastName ?? "Last"}
                       </Text>
-                    ) : null}
-                  </>
-                ) : !profile ? (
-                  <Text style={styles.userinfo_sub}>No profile found.</Text>
-                ) : (
-                  <>
-                    <Text style={styles.userinfo_name}>
-                      {profile.firstName ?? "First"} {profile.lastName ?? "Last"}
-                    </Text>
 
-                    <Text style={styles.userinfo_sub}>
-                      <Text style={styles.label_bold}>Rank: </Text>
-                      {profile.cadetRank ?? "—"}
-                    </Text>
+                      <Text style={sStyles.resultSub}>
+                        {cadet.cadetRank ?? "—"} • {cadet.job ?? "—"}
+                      </Text>
 
-                    <Text style={styles.userinfo_sub}>
-                      <Text style={styles.label_bold}>Class Year: </Text>
-                      {profile.classYear ?? "—"}
-                    </Text>
+                      <Text style={sStyles.resultSub}>
+                        {cadet.flight ?? "—"} • {cadet.classYear ?? "—"}
+                      </Text>
+                    </View>
+                  </View>
 
-                    <Text style={styles.userinfo_sub}>
-                      <Text style={styles.label_bold}>Flight: </Text>
-                      {profile.flight ?? "—"}
-                    </Text>
-
-                    <Text style={styles.userinfo_sub}>
-                      <Text style={styles.label_bold}>Job: </Text>
-                      {profile.job ?? "—"}
-                    </Text>
-
-                    <Text style={styles.userinfo_sub}>
-                      <Text style={styles.label_bold}>Email: </Text>
-                      {profile.contact?.schoolEmail ?? "—"}
-                    </Text>
-
-                    <Text style={styles.userinfo_sub}>
-                      <Text style={styles.label_bold}>Phone Number: </Text>
-                      {profile.contact?.cellPhone ?? "—"}
-                    </Text>
-                  </>
-                )}
-              </View>
-
-              <View style={styles.publicImagePlaceholder}>
-                <Ionicons name="image-outline" size={34} color="#9AA3B2" />
-                <Text style={styles.publicImagePlaceholderText}>Photo</Text>
-              </View>
-            </View>
-
-            <Text style={styles.sectionTitle}>Bio</Text>
-            <View style={styles.bioCard}>
-              <Text style={styles.bioText}>{bioText}</Text>
-            </View>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={20}
+                    color={colors.muted}
+                  />
+                </Pressable>
+              ))
+            )}
           </>
         )}
       </ScrollView>

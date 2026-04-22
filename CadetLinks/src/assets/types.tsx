@@ -110,7 +110,7 @@ export type UploadedDocument = {
 };
 
 export type AttendanceStatus = "P" | "A" | "L";
-export type AttendanceRecordStatus = "P" | "A" | "E" | "L" | ".";
+export type AttendanceRecordStatus = "P" | "A" | "E" | "L" | "." | "MP" | "ML" | "MA"; // Present, Absent, Excused, Late, Not Recorded, Mandatory Present, Mandatory Late, Mandatory Absent
 export type AttendanceSubtree = Record<string, Record<string, { status?: AttendanceRecordStatus }>>;
 
 export type AttendanceEventItem = {
@@ -155,6 +155,7 @@ export type GlobalFirebaseState = {
   uploadedDocuments: UploadedDocument[];
   attendancePT: AttendanceSubtree;
   attendanceLLAB: AttendanceSubtree;
+  attendanceRMP: AttendanceSubtree;
   errors: StoreDomainErrors;
   lastUpdated: Record<string, number | null>;
 };

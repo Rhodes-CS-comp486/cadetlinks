@@ -39,7 +39,6 @@ export function BaseScreenLayout({
 };
 
   const menuItems = [
-  { label: "Profile Search", onPress: () => navigation.navigate("Search") },
   { label: "Logout", onPress: () => handleLogout() },
   ];
 
