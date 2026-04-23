@@ -10,6 +10,7 @@ export type AttendanceMatrixRow = {
 	lastName: string;
 	displayName: string;
 	recordKey: string;
+	classYear: number;
 	statusesByDate: Record<string, AttendanceRecordStatus>;
 };
 
@@ -77,12 +78,14 @@ export function useAttendancePageLogic() {
 		Object.entries(globalState.cadetsByKey).forEach(([cadetKey, profile]) => {
 			const firstName = profile.firstName ?? "";
 			const lastName = profile.lastName ?? "";
+			const classYear = profile.classYear ?? 0;
 			rowsByCadet.set(cadetKey, {
 				cadetKey,
 				firstName,
 				lastName,
 				displayName: `${lastName}, ${firstName}`.replace(/^,\s*/, "").trim() || cadetKey,
 				recordKey: normalizeAttendanceKey(lastName || cadetKey),
+				classYear,
 				statusesByDate: {},
 			});
 		});
@@ -108,14 +111,22 @@ export function useAttendancePageLogic() {
 					lastName: recordKey,
 					displayName: recordKey,
 					recordKey,
+					classYear: 0,
 					statusesByDate: { [date]: getStatusFromNode(node) },
 				});
 			});
 		});
 
-		return [...rowsByCadet.values()].sort(
-			(a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName) || a.cadetKey.localeCompare(b.cadetKey)
-		);
+		return [...rowsByCadet.values()].sort((a, b) => {
+			if (a.classYear !== b.classYear) {
+				return b.classYear - a.classYear;
+			}
+			const lastNameCmp = a.lastName.localeCompare(b.lastName);
+			if (lastNameCmp !== 0) return lastNameCmp;
+			const firstNameCmp = a.firstName.localeCompare(b.firstName);
+			if (firstNameCmp !== 0) return firstNameCmp;
+			return a.cadetKey.localeCompare(b.cadetKey);
+		});
 	}, [attendanceSnapshot, globalState.cadetsByKey, selectedBucket]);
 
 	const canEditAttendance = globalState.permissionsMap.get(PERMISSIONS.ADMIN) ?? false;
