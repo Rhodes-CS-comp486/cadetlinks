@@ -43,10 +43,10 @@ export function BaseScreenLayout({
 
   const menuItems = [
   { label: "Profile Search", onPress: () => navigation.navigate("Search") },
-  { label: "Logout", onPress: () => handleLogout() },
   ...(canViewAdminPage
     ? [{ label: "Admin Page", onPress: () => navigation.navigate("Admin") }]
     : []),
+  { label: "Logout", onPress: () => handleLogout() },
   ];
 
   const leftNode = left ?? (
