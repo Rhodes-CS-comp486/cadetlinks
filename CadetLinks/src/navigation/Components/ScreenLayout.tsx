@@ -39,6 +39,8 @@ export function BaseScreenLayout({
 };
 
   const menuItems = [
+  { label: "Profile Search", onPress: () => navigation.navigate("Search") },
+  { label: "Quick Links", onPress: () => navigation.navigate("QuickLinks") },
   { label: "Logout", onPress: () => handleLogout() },
   ];
 
@@ -76,7 +78,7 @@ export function BaseScreenLayout({
             <Pressable style={{ flex: 1 }} onPress={() => setMenuOpen(false)}>
 
               {/* Dropdown menu content */}
-              <View style={styles.dropdownMenu}>
+              <View style={[styles.dropdownMenu, {alignItems: 'flex-end'}]}>
                 {menuItems.map((item, index) => (
                   <TouchableOpacity
                     key={index}

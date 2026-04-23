@@ -9,6 +9,7 @@ import { Actions } from './screens/ActionsPage/Actions';
 import { Events } from './screens/EventsPage/EventScreen';
 import { NotFound } from './screens/NotFound';
 import { PublicProfile } from "./screens/SearchPage/PublicProfiles";
+import { QuickLinks } from "./screens/QuickLinks";
 import { DarkColors as colors } from '../styles/colors';
 
 import calendar from '../assets/calendar.png';
@@ -97,6 +98,13 @@ const RootStack = createNativeStackNavigator({
         headerShown: false,
       },
     },
+    QuickLinks: {
+      screen: QuickLinks,
+      options: {
+        title: "Quick Links",
+        headerShown: false,
+      },
+    },
     ChangePassword: {
       screen: ChangePasswordScreen,
       options: { title: "Change Password" },
@@ -115,6 +123,7 @@ export type RootStackParamList = {
   Login: undefined;
   HomeTabs: undefined;
   PublicProfile: { cadetKey: string };
+  QuickLinks: undefined;
   ChangePassword: undefined;
   NotFound: undefined;
 };
