@@ -44,11 +44,12 @@ export function BaseScreenLayout({
 
   const menuItems = [
   ...(canViewAdminPage
-    ? [{ label: "Admin Page", onPress: () => navigation.navigate("Admin") }]
+    ? [{ label: "Admin", onPress: () => navigation.navigate("Admin") }]
     : []),
   ...(canViewAttendance
-    ? [{ label: "Attendance Page", onPress: () => navigation.navigate("Attendance") }]
+    ? [{ label: "Attendance", onPress: () => navigation.navigate("Attendance") }]
     : []),
+  { label: "Quick Links", onPress: () => navigation.navigate("QuickLinks") },
   { label: "Logout", onPress: () => handleLogout() },
   ];
 
@@ -86,7 +87,7 @@ export function BaseScreenLayout({
             <Pressable style={{ flex: 1 }} onPress={() => setMenuOpen(false)}>
 
               {/* Dropdown menu content */}
-              <View style={styles.dropdownMenu}>
+              <View style={[styles.dropdownMenu, {alignItems: 'flex-end'}]}>
                 {menuItems.map((item, index) => (
                   <TouchableOpacity
                     key={index}

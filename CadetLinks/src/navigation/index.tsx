@@ -11,6 +11,7 @@ import { NotFound } from './screens/NotFound';
 import { AdminPage } from './screens/AdminPage/Admin';
 import { AttendancePage } from './screens/AttendancePage/Attendance';
 import { PublicProfile } from "./screens/SearchPage/PublicProfiles";
+import { QuickLinks } from "./screens/QuickLinks";
 import { DarkColors as colors } from '../styles/colors';
 
 import calendar from '../assets/calendar.png';
@@ -113,6 +114,13 @@ const RootStack = createNativeStackNavigator({
         headerShown: false,
       },
     },
+    QuickLinks: {
+      screen: QuickLinks,
+      options: {
+        title: "Quick Links",
+        headerShown: false,
+      },
+    },
     ChangePassword: {
       screen: ChangePasswordScreen,
       options: { title: "Change Password" },
@@ -133,6 +141,7 @@ export type RootStackParamList = {
   Admin: undefined;
   Attendance: undefined;
   PublicProfile: { cadetKey: string };
+  QuickLinks: undefined;
   ChangePassword: undefined;
   NotFound: undefined;
 };
