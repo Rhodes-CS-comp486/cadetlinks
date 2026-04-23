@@ -23,6 +23,7 @@ export function BaseScreenLayout({
   const navigation = useNavigation();
   const globalState = globals();
   const canViewAdminPage = globalState.permissionsMap.get(PERMISSIONS.ADMIN) ?? false;
+  const canViewAttendance = globalState.permissionsMap.get(PERMISSIONS.ATTENDANCE_EDITING) ?? false;
 
   const [menuOpen, setMenuOpen] = React.useState(false);
 
@@ -44,6 +45,9 @@ export function BaseScreenLayout({
   const menuItems = [
   ...(canViewAdminPage
     ? [{ label: "Admin Page", onPress: () => navigation.navigate("Admin") }]
+    : []),
+  ...(canViewAttendance
+    ? [{ label: "Attendance Page", onPress: () => navigation.navigate("Attendance") }]
     : []),
   { label: "Logout", onPress: () => handleLogout() },
   ];

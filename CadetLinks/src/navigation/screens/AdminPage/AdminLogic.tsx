@@ -1,22 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert } from "react-native";
-import { globals, initializeGlobals, updateAttendanceCell, updateCadetField, updateCadetJobAssignment } from "../../../firebase/dbController";
-import type { AttendanceRecordStatus, CadetProfile } from "../../../assets/types";
+import { globals, initializeGlobals, updateCadetField, updateCadetJobAssignment } from "../../../firebase/dbController";
+import type { CadetProfile } from "../../../assets/types";
 
-export type AdminTab = "attendance" | "cadets" | "jobs";
-export type AttendanceType = "PT" | "LLAB" | "RMP";
+export type AdminTab = "cadets" | "jobs";
 
 export type CadetProfileRow = {
 	cadetKey: string;
 	profile: CadetProfile;
-};
-
-export type AttendanceRow = {
-	recordKey: string;
-	cadetKey: string;
-	firstName: string;
-	lastName: string;
-	status: AttendanceRecordStatus;
 };
 
 export const CADET_FIELDS: Array<{
@@ -41,28 +32,9 @@ export const JOB_SHEET_FIELDS: Array<{ key: string; label: string; getValue: (pr
 	{ key: "job", label: "Job Title", getValue: (profile) => profile.job ?? "" },
 ];
 
-const normalizeAttendanceKey = (input: string) => (input ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
-
-const getAllowedStatusOptions = (type: AttendanceType): AttendanceRecordStatus[] =>
-	type === "RMP"
-		? ["MP", "MA", "ME", "ML", "P", "E", "A", "L"]
-		: ["P", "E", "A", "L"];
-
-const getStatusFromNode = (node: any, type: AttendanceType): AttendanceRecordStatus => {
-	const raw = node?.status ?? node?.Status ?? ".";
-	const normalized = String(raw).toUpperCase() as AttendanceRecordStatus;
-	const allowed = new Set<AttendanceRecordStatus>(getAllowedStatusOptions(type));
-	if (allowed.has(normalized)) {
-		return normalized;
-	}
-	return type === "RMP" ? "MA" : "A";
-};
-
 export function useAdminLogic() {
 	const globalState = globals();
-	const [activeTab, setActiveTab] = useState<AdminTab>("attendance");
-	const [selectedAttendanceType, setSelectedAttendanceType] = useState<AttendanceType>("PT");
-	const [selectedAttendanceDate, setSelectedAttendanceDate] = useState<string>("");
+	const [activeTab, setActiveTab] = useState<AdminTab>("cadets");
 	const [drafts, setDrafts] = useState<Record<string, string>>({});
 
 	useEffect(() => {
@@ -80,53 +52,6 @@ export function useAdminLogic() {
 				),
 		[globalState.cadetsByKey]
 	);
-
-	const attendanceByType = useMemo(
-		() => ({
-			PT: globalState.attendancePT,
-			LLAB: globalState.attendanceLLAB,
-			RMP: globalState.attendanceRMP,
-		}),
-		[globalState.attendancePT, globalState.attendanceLLAB, globalState.attendanceRMP]
-	);
-
-	const attendanceDates = useMemo(() => {
-		const dates = Object.keys(attendanceByType[selectedAttendanceType] ?? {});
-		return dates.sort((a, b) => b.localeCompare(a));
-	}, [attendanceByType, selectedAttendanceType]);
-
-	useEffect(() => {
-		if (attendanceDates.length === 0) {
-			if (selectedAttendanceDate !== "") setSelectedAttendanceDate("");
-			return;
-		}
-		if (!selectedAttendanceDate) {
-			setSelectedAttendanceDate(attendanceDates[0]);
-		}
-	}, [attendanceDates, selectedAttendanceDate]);
-
-	const attendanceRows = useMemo(() => {
-		const perDate = attendanceByType[selectedAttendanceType] ?? {};
-		const perCadet = selectedAttendanceDate ? perDate[selectedAttendanceDate] ?? {} : {};
-
-		return Object.entries(perCadet)
-			.map(([recordKey, node]) => {
-				const byCadetKey = cadetRows.find((row) => row.cadetKey === recordKey);
-				const byLastNameKey = cadetRows.find(
-					(row) => normalizeAttendanceKey(row.profile.lastName ?? "") === recordKey
-				);
-				const match = byCadetKey ?? byLastNameKey;
-
-				return {
-					recordKey,
-					cadetKey: match?.cadetKey ?? recordKey,
-					firstName: match?.profile.firstName ?? "",
-					lastName: match?.profile.lastName ?? recordKey,
-					status: getStatusFromNode(node, selectedAttendanceType),
-				};
-			})
-			.sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName));
-	}, [attendanceByType, cadetRows, selectedAttendanceDate, selectedAttendanceType]);
 
 	const getDraftKey = (...parts: string[]) => parts.join("::");
 
@@ -171,36 +96,14 @@ export function useAdminLogic() {
 		}
 	};
 
-	const saveAttendanceStatus = async (row: AttendanceRow, value: string, draftKey: string) => {
-		if (!selectedAttendanceDate) {
-			Alert.alert("Select date", "Please select an attendance date first.");
-			return;
-		}
-
-		try {
-			await updateAttendanceCell(selectedAttendanceType, selectedAttendanceDate, row.recordKey, (value || ".") as AttendanceRecordStatus);
-			clearDraft(draftKey);
-		} catch (e: any) {
-			Alert.alert("Save failed", e?.message ?? "Could not update attendance.");
-		}
-	};
-
 	return {
 		activeTab,
 		setActiveTab,
-		selectedAttendanceType,
-		setSelectedAttendanceType,
-		selectedAttendanceDate,
-		setSelectedAttendanceDate,
-		attendanceDates,
 		cadetRows,
-		attendanceRows,
-		getAllowedStatusOptions,
 		getDraftKey,
 		getDraftValue,
 		setDraftValue,
 		saveCadetField,
 		saveCadetJob,
-		saveAttendanceStatus,
 	};
 }

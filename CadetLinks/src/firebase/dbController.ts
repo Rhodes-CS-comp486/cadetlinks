@@ -38,6 +38,7 @@ import { db, storage } from "./config";
 export type {
   Announcement,
   AttendanceCadetItem,
+  AttendanceRecordStatus,
   AttendanceEventItem,
   AttendanceStatus,
   AttendanceSubtree,
@@ -624,6 +625,24 @@ export const globals = () =>
 
 /** Synchronous permission check against the current store (no React subscription). */
 export const hasPermission = (permission: string): boolean => store.permissionsMap.get(permission) ?? false;
+
+export type AttendanceSnapshot = {
+  PT: AttendanceSubtree;
+  LLAB: AttendanceSubtree;
+  RMP: AttendanceSubtree;
+};
+
+/** Read the full attendance tree once and separate it into PT, LLAB, and RMP buckets. */
+export const getAttendanceSnapshot = async (): Promise<AttendanceSnapshot> => {
+  const attendanceSnap = await get(ref(db, "attendance"));
+  const attendanceRoot = (attendanceSnap.val() as Partial<AttendanceSnapshot> | null) ?? {};
+
+  return {
+    PT: attendanceRoot.PT ?? {},
+    LLAB: attendanceRoot.LLAB ?? {},
+    RMP: attendanceRoot.RMP ?? {},
+  };
+};
 
 // ─── Admin write helpers ─────────────────────────────────────────────────────
 

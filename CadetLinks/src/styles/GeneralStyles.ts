@@ -330,4 +330,60 @@ export const generalStyles = StyleSheet.create({
     adminKeyCol: {
         width: 230,
     },
+    attendanceToolbarRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+        marginBottom: 12,
+    },
+    attendanceSheetRow: {
+        flex: 1,
+        flexDirection: "row",
+    },
+    attendanceFrozenColumn: {
+        borderRightWidth: 1,
+        borderRightColor: colors.border,
+        backgroundColor: colors.card,
+        zIndex: 1,
+    },
+    attendanceRefreshButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        borderRadius: 10,
+        backgroundColor: colors.card,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    attendanceRefreshButtonText: {
+        color: colors.text,
+        fontSize: 13,
+        fontWeight: "600",
+    },
+    attendanceNameCell: {
+        width: 180,
+    },
+    attendanceDateCell: {
+        width: 90,
+        textAlign: "center",
+    },
+    attendanceStatusCell: {
+        borderLeftWidth: 1,
+        borderLeftColor: colors.border,
+    },
+    attendanceCellButton: {
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    attendanceCellReadOnly: {
+        opacity: 0.8,
+    },
+    attendanceCellSaving: {
+        opacity: 0.55,
+    },
+    attendanceStatusValue: {
+        fontWeight: "700",
+        color: colors.text,
+        textAlignVertical: "center",
+    },
 });
