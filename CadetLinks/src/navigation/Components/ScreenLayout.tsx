@@ -7,6 +7,7 @@ import { generalStyles as styles } from "../../styles/GeneralStyles";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { signOut } from "firebase/auth";
 import { auth } from "../../firebase/config";
+import { teardownGlobals } from "../../firebase/dbController";
 
 export function BaseScreenLayout({
   children, 
@@ -24,7 +25,8 @@ export function BaseScreenLayout({
 
   const handleLogout = async () => {
   try {
-    await AsyncStorage.removeItem("cadetKey");
+    await AsyncStorage.removeItem("currentCadetKey");
+    teardownGlobals();
     await signOut(auth);
 
     navigation.reset({
@@ -37,8 +39,7 @@ export function BaseScreenLayout({
 };
 
   const menuItems = [
-  { label: "Profile Search", onPress: () => navigation.navigate("Search") },
-  { label: "Settings", onPress: () => navigation.navigate("Settings") },
+  { label: "Quick Links", onPress: () => navigation.navigate("QuickLinks") },
   { label: "Logout", onPress: () => handleLogout() },
   ];
 
@@ -76,7 +77,7 @@ export function BaseScreenLayout({
             <Pressable style={{ flex: 1 }} onPress={() => setMenuOpen(false)}>
 
               {/* Dropdown menu content */}
-              <View style={styles.dropdownMenu}>
+              <View style={[styles.dropdownMenu, {alignItems: 'flex-end'}]}>
                 {menuItems.map((item, index) => (
                   <TouchableOpacity
                     key={index}
