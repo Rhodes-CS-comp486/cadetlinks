@@ -496,10 +496,6 @@ const startAttendanceListeners = () => {
       patchError("attendance", "Could not load attendance.");
     }
   );
-
-  addListener(unsubscribePT);
-  addListener(unsubscribeLLAB);
-
   const attendanceRMPRef = ref(db, "attendance/RMP");
   const unsubscribeRMP = onValue(
     attendanceRMPRef,
@@ -515,6 +511,8 @@ const startAttendanceListeners = () => {
     }
   );
 
+  addListener(unsubscribePT);
+  addListener(unsubscribeLLAB);
   addListener(unsubscribeRMP);
 };
 

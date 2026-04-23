@@ -42,7 +42,6 @@ export function BaseScreenLayout({
 };
 
   const menuItems = [
-  { label: "Profile Search", onPress: () => navigation.navigate("Search") },
   ...(canViewAdminPage
     ? [{ label: "Admin Page", onPress: () => navigation.navigate("Admin") }]
     : []),

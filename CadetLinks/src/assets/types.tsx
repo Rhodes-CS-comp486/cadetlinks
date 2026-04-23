@@ -110,8 +110,8 @@ export type UploadedDocument = {
 };
 
 export type AttendanceStatus = "P" | "A" | "L";
-export type AttendanceRecordStatus = "P" | "A" | "E" | "L" | "MP" | "MA" | "ME" | "ML" | ".";
-export type AttendanceSubtree = Record<string, Record<string, { status?: AttendanceRecordStatus; Status?: AttendanceRecordStatus }>>;
+export type AttendanceRecordStatus = "P" | "A" | "E" | "L" | "." | "MP" | "ML" | "MA"; // Present, Absent, Excused, Late, Not Recorded, Mandatory Present, Mandatory Late, Mandatory Absent
+export type AttendanceSubtree = Record<string, Record<string, { status?: AttendanceRecordStatus }>>;
 
 export type AttendanceEventItem = {
   id: string;

@@ -1,6 +1,5 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { HeaderButton, Text } from '@react-navigation/elements';
-import { createStaticNavigation, StaticParamList } from '@react-navigation/native';
+import { createStaticNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Image } from 'react-native';
 import { HomePage } from './screens/HomePage/Home';
@@ -10,7 +9,6 @@ import { Actions } from './screens/ActionsPage/Actions';
 import { Events } from './screens/EventsPage/EventScreen';
 import { NotFound } from './screens/NotFound';
 import { AdminPage } from './screens/AdminPage/Admin';
-import { Search } from "./screens/SearchPage/Search";
 import { PublicProfile } from "./screens/SearchPage/PublicProfiles";
 import { DarkColors as colors } from '../styles/colors';
 
@@ -37,7 +35,7 @@ const HomeTabs = createBottomTabNavigator({
     },
     tabBarActiveTintColor: '#FFFFFF',
     tabBarInactiveTintColor: '#9AA3B2',
-    },
+  },
   screens: {
     Home: {
       screen: HomePage,
@@ -73,7 +71,7 @@ const HomeTabs = createBottomTabNavigator({
       screen: Profile,
       options: {
         title: 'Profile',
-        headerShown:false,
+        headerShown: false,
         ...createTabIcon(profile),
       },
     },
@@ -90,13 +88,6 @@ const RootStack = createNativeStackNavigator({
       screen: HomeTabs,
       options: {
         title: "Home",
-        headerShown: false,
-      },
-    },
-    Search: {
-      screen: Search,
-      options: {
-        title: "Profile Search",
         headerShown: false,
       },
     },
@@ -128,10 +119,10 @@ const RootStack = createNativeStackNavigator({
 });
 
 export const Navigation = createStaticNavigation(RootStack);
+
 export type RootStackParamList = {
   Login: undefined;
   HomeTabs: undefined;
-  Search: undefined;
   Admin: undefined;
   PublicProfile: { cadetKey: string };
   ChangePassword: undefined;

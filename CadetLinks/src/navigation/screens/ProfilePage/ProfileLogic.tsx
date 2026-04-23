@@ -1,5 +1,7 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { globals, initializeGlobals } from "../../../firebase/dbController";
+import { ref, update } from "firebase/database";
+import { db } from "../../../firebase/config";
 
 // USER INFO STRUCTURE (from FB)
 export type CadetProfile = {
@@ -18,10 +20,13 @@ export type CadetProfile = {
 
   directSupervisor?: string;
   lastPTScore?: string;
+
+  bio?: string;
+  photoUrl?: string;
 };
 
 // ATTENDANCE STATUS
-type AttendanceStatus = "P" | "A" | "E" | "L" | ".";
+type AttendanceStatus = "P" | "A" | "E" | "L" | "." | "MP" | "ML" | "MA"; // Present, Absent, Excused, Late, Not Recorded, Mandatory Present, Mandatory Late, Mandatory Absent
 
 // attendance subtree: date -> cadetKey -> { status }
 type AttendanceSubtree = Record<
@@ -34,7 +39,9 @@ function normalizePTKey(input: string) {
 }
 
 // returns cadet attendance counts for PT or LLAB
-function countAttendance(tree: AttendanceSubtree, cadetId: string) {
+function countAttendance(tree: AttendanceSubtree | undefined, cadetId: string) {
+  if (!tree) return { attended: 0, missed: 0, excused: 0, late: 0 };
+
   let p = 0;
   let a = 0;
   let e = 0;
@@ -53,6 +60,28 @@ function countAttendance(tree: AttendanceSubtree, cadetId: string) {
   return { attended: p, missed: a, excused: e, late: l };
 }
 
+// RMP has additional "Mandatory" attendance statuses, so we need a separate counting function
+function countRMPAttendance(tree: AttendanceSubtree | undefined, cadetId: string) {
+  if (!tree) return { attended: 0, missed: 0, excused: 0, late: 0 };
+
+  let p = 0;
+  let a = 0;
+  let e = 0;
+  let l = 0;
+
+  for (const date of Object.keys(tree)) {
+    const status = tree?.[date]?.[cadetId]?.status;
+    if (!status || status === ".") continue;
+
+    if (status === "P" || status === "MP") p++;
+    else if (status === "A" || status === "MA") a++;
+    else if (status === "E") e++;
+    else if (status === "L" || status === "ML") l++;
+  }
+
+  return { attended: p, missed: a, excused: e, late: l };
+}
+
 export function useProfileLogic() {
   const globalState = globals();
   const globalProfile = globalState.profile;
@@ -63,28 +92,44 @@ export function useProfileLogic() {
   const profileError = !cadetKey ? "No user is logged in." : globalState.errors.profile ?? null;
 
   const attendanceError = !cadetKey ? "No user is logged in." : globalState.errors.attendance ?? null;
-  const loadingAttendance = globalState.isInitializing || (!globalState.lastUpdated.attendance && !attendanceError);
+  const loadingAttendance =
+    globalState.isInitializing ||
+    (!globalState.lastUpdated.attendance && !attendanceError);
 
-  useEffect(() => {
+  const [bioDraft, setBioDraft] = useState(""); // is user typing
+  const [savingBio, setSavingBio] = useState(false); // is user saving
+  const [bioMessage, setBioMessage] = useState<string | null>(null); // did it successfully save
+
+  useEffect(() => { // loads in fb data on app start
     if (!globalState.isInitialized && !globalState.isInitializing) {
       void initializeGlobals();
     }
   }, [globalState.isInitialized, globalState.isInitializing]);
 
-  const attendanceLookupKey = profile?.lastName
+  useEffect(() => { // when profile loads, set bioDraft to current bio (or empty string if no bio)
+    setBioDraft(profile?.bio ?? "");
+  }, [profile?.bio]);
+
+  const attendanceLookupKey = profile?.lastName // look up attendance by normalized last name if possible, otherwise fall back to cadetKey
     ? normalizePTKey(profile.lastName)
     : cadetKey ?? "";
 
-  const ptCounts = useMemo(
+  const ptCounts = useMemo( // calculate PT attendance counts
     () => countAttendance(globalState.attendancePT, attendanceLookupKey),
     [globalState.attendancePT, attendanceLookupKey]
   );
 
-  const llabCounts = useMemo(
+  const llabCounts = useMemo( // calculate LLAB attendance counts
     () => countAttendance(globalState.attendanceLLAB, attendanceLookupKey),
     [globalState.attendanceLLAB, attendanceLookupKey]
   );
 
+  const rmpCounts = useMemo( // calculate RMP attendance counts
+    () => countRMPAttendance(globalState.attendanceRMP, attendanceLookupKey),
+    [globalState.attendanceRMP, attendanceLookupKey]
+  );
+
+  // extract counts for easier use later
   const ptAttended = ptCounts.attended;
   const ptMissed = ptCounts.missed;
   const ptExcused = ptCounts.excused;
@@ -94,6 +139,11 @@ export function useProfileLogic() {
   const llabMissed = llabCounts.missed;
   const llabExcused = llabCounts.excused;
   const llabLate = llabCounts.late;
+
+  const rmpAttended = rmpCounts.attended;
+  const rmpMissed = rmpCounts.missed;
+  const rmpExcused = rmpCounts.excused;
+  const rmpLate = rmpCounts.late;
 
   // --- PT attendance percentage (excused doesn't count toward missed) ---
   const ptCountedTotal = ptAttended + ptMissed + ptLate;
@@ -110,6 +160,42 @@ export function useProfileLogic() {
       ? 0
       : Math.round(((llabAttended + llabLate / 2) / llabCountedTotal) * 100);
   const llabInGoodStanding = llabAttendancePercent >= 90;
+
+  // --- RMP attendance percentage (excused doesn't count toward missed) ---
+  const rmpCountedTotal = rmpAttended + rmpMissed + rmpLate;
+  const rmpAttendancePercent =
+    rmpCountedTotal === 0
+      ? 0
+      : Math.round(((rmpAttended + rmpLate / 2) / rmpCountedTotal) * 100);
+  const rmpInGoodStanding = rmpAttendancePercent >= 90;
+
+  async function handleSaveBio() {
+    if (!cadetKey) {
+      setBioMessage("No user is logged in.");
+      return false;
+    }
+
+    setSavingBio(true);
+    setBioMessage(null);
+
+    // writes to FB under the cadet's name
+    try {
+      await update(ref(db, `cadets/${cadetKey}`), {
+        bio: bioDraft.trim(),
+      });
+
+      await initializeGlobals();
+      setBioMessage("Bio saved!");
+      return true;
+    } 
+    catch (error) {
+      console.error("❌ Error saving bio:", error);
+      setBioMessage("Could not save bio.");
+      return false;
+    } finally {
+      setSavingBio(false);
+    }
+  }
 
   return useMemo(
     () => ({
@@ -135,6 +221,19 @@ export function useProfileLogic() {
       llabLate,
       llabAttendancePercent,
       llabInGoodStanding,
+
+      rmpAttended,
+      rmpMissed,
+      rmpExcused,
+      rmpLate,
+      rmpAttendancePercent,
+      rmpInGoodStanding,
+
+      bioDraft,
+      setBioDraft,
+      savingBio,
+      bioMessage,
+      handleSaveBio,
     }),
     [
       cadetKey,
@@ -157,6 +256,17 @@ export function useProfileLogic() {
       llabLate,
       llabAttendancePercent,
       llabInGoodStanding,
+
+      rmpAttended,
+      rmpMissed,
+      rmpExcused,
+      rmpLate,
+      rmpAttendancePercent,
+      rmpInGoodStanding,
+
+      bioDraft,
+      savingBio,
+      bioMessage,
     ]
   );
 }
