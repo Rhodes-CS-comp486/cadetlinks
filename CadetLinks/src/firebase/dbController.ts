@@ -632,6 +632,12 @@ export type AttendanceSnapshot = {
   RMP: AttendanceSubtree;
 };
 
+export type AbsenceAllowedSnapshot = {
+  PT: number;
+  LLAB: number;
+  RMP: number;
+};
+
 /** Read the full attendance tree once and separate it into PT, LLAB, and RMP buckets. */
 export const getAttendanceSnapshot = async (): Promise<AttendanceSnapshot> => {
   const attendanceSnap = await get(ref(db, "attendance"));
@@ -641,6 +647,23 @@ export const getAttendanceSnapshot = async (): Promise<AttendanceSnapshot> => {
     PT: attendanceRoot.PT ?? {},
     LLAB: attendanceRoot.LLAB ?? {},
     RMP: attendanceRoot.RMP ?? {},
+  };
+};
+
+/** Read configured per-bucket allowed absences. */
+export const getAbsenceAllowedSnapshot = async (): Promise<AbsenceAllowedSnapshot> => {
+  const absenceAllowedSnap = await get(ref(db, "absenceAllowed"));
+  const raw = (absenceAllowedSnap.val() as Partial<Record<keyof AbsenceAllowedSnapshot, unknown>> | null) ?? {};
+
+  const toNonNegativeNumber = (value: unknown) => {
+    const numeric = typeof value === "number" ? value : Number(value);
+    return Number.isFinite(numeric) && numeric >= 0 ? numeric : 0;
+  };
+
+  return {
+    PT: toNonNegativeNumber(raw.PT),
+    LLAB: toNonNegativeNumber(raw.LLAB),
+    RMP: toNonNegativeNumber(raw.RMP),
   };
 };
 
@@ -685,15 +708,24 @@ export const updateAttendanceCell = async (
   status: AttendanceRecordStatus
 ) => {
   const nextStatus = status.trim().toUpperCase() as AttendanceRecordStatus;
-  const allowed = new Set<AttendanceRecordStatus>(["P", "A", "E", "L", "MP", "MA", "ME", "ML", "."]);
+  const allowed = new Set<AttendanceRecordStatus>(["P", "A", "E", "L", "MP", "MA", "ML", "."]);
   if (!allowed.has(nextStatus)) {
-    throw new Error("Attendance status must be one of: P, A, E, L, MP, MA, ME, ML, .");
+    throw new Error("Attendance status must be one of: P, A, E, L, MP, MA, ML, .");
   }
 
   await set(ref(db, `attendance/${bucket}/${date}/${cadetRowKey}`), {
     status: nextStatus,
     Status: nextStatus,
   });
+};
+
+/** Update allowed absences for a single bucket. */
+export const updateAbsenceAllowed = async (
+  bucket: keyof AbsenceAllowedSnapshot,
+  allowed: number
+) => {
+  const nextAllowed = Number.isFinite(allowed) && allowed >= 0 ? allowed : 0;
+  await set(ref(db, `absenceAllowed/${bucket}`), nextAllowed);
 };
 
 // ─── Write actions ───────────────────────────────────────────────────────────

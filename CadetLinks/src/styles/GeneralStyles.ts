@@ -336,6 +336,37 @@ export const generalStyles = StyleSheet.create({
         justifyContent: "space-between",
         gap: 12,
         marginBottom: 12,
+        flexWrap: "wrap",
+    },
+    attendanceToolbarActions: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        flexWrap: "wrap",
+    },
+    attendanceAllowanceControl: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+    },
+    attendanceAllowanceLabel: {
+        color: colors.text,
+        fontSize: 13,
+        fontWeight: "600",
+    },
+    attendanceAllowanceInput: {
+        minWidth: 72,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.card,
+        color: colors.text,
+        fontSize: 13,
+    },
+    attendanceAllowanceInputReadOnly: {
+        opacity: 0.8,
     },
     attendanceSheetRow: {
         flex: 1,
@@ -362,6 +393,13 @@ export const generalStyles = StyleSheet.create({
     },
     attendanceNameCell: {
         width: 180,
+    },
+    attendanceRemainingCell: {
+        width: 110,
+        textAlign: "center",
+    },
+    attendanceRemainingValue: {
+        fontWeight: "700",
     },
     attendanceDateCell: {
         width: 90,

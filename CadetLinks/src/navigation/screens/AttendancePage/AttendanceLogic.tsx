@@ -31,7 +31,7 @@ const getStatusFromNode = (node: unknown): AttendanceRecordStatus => {
 
 	const raw = (node as { status?: string; Status?: string }).status ?? (node as { status?: string; Status?: string }).Status ?? ".";
 	const normalized = String(raw).toUpperCase();
-	const allowed = new Set<AttendanceRecordStatus>(["P", "A", "E", "L", ".", "MP", "ML", "MA", "ME"]);
+	const allowed = new Set<AttendanceRecordStatus>(["P", "A", "E", "L", ".", "MP", "ML", "MA"]);
 	return allowed.has(normalized as AttendanceRecordStatus) ? (normalized as AttendanceRecordStatus) : ".";
 };
 
