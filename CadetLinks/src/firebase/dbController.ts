@@ -80,6 +80,7 @@ const initialState: GlobalFirebaseState = {
   uploadedDocuments: [],
   attendancePT: {},
   attendanceLLAB: {},
+  attendanceRMP: {},
   errors: {},
   lastUpdated: {
     profile: null,
@@ -492,9 +493,24 @@ const startAttendanceListeners = () => {
       patchError("attendance", "Could not load attendance.");
     }
   );
+  const attendanceRMPRef = ref(db, "attendance/RMP");
+  const unsubscribeRMP = onValue(
+    attendanceRMPRef,
+    (snapshot) => {
+      const attendanceRMP = (snapshot.val() as AttendanceSubtree | null) ?? {};
+      patchStore({ attendanceRMP });
+      patchError("attendance", undefined);
+      touch("attendance");
+    },
+    (error) => {
+      console.error("Attendance RMP listener failed:", error);
+      patchError("attendance", "Could not load attendance.");
+    }
+  );
 
   addListener(unsubscribePT);
   addListener(unsubscribeLLAB);
+  addListener(unsubscribeRMP);
 };
 
 // ─── Public lifecycle API ────────────────────────────────────────────────────
