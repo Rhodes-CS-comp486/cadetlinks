@@ -6,6 +6,7 @@ import { useAttendanceLogic } from "./AttendanceLogic";
 import { useNavigation } from "@react-navigation/core";
 import { globals, initializeGlobals } from "../../../firebase/dbController";
 import { useCreateAccountLogic } from "./CreateAccountLogic";
+import { usePTScoreLogic } from "./PTScoreLogic";  // ← add
 
 type NavAny = ReturnType<typeof useNavigation<any>>;
 
@@ -19,6 +20,9 @@ export function iconForAction(id: Action["id"]) {
   }
 }
 
+// Icon override for PT score action (not a permission id, just a display action)
+export const PT_SCORE_ACTION_ID = "pt_score" as const;
+
 export function useActionsLogic() {
   const globalState = globals();
   const cadetPermissionsMap = globalState.permissionsMap;
@@ -29,11 +33,12 @@ export function useActionsLogic() {
 
   const canTakeAttendance = cadetPermissionsMap.get(PERMISSIONS.ATTENDANCE_EDITING) ?? false;
   const canUploadFiles    = cadetPermissionsMap.get(PERMISSIONS.FILE_UPLOADING) ?? false;
-  const isAdmin           = cadetPermissionsMap.get(PERMISSIONS.ADMIN) ?? false; // ← changed from isAll
+  const isAdmin           = cadetPermissionsMap.get(PERMISSIONS.ADMIN) ?? false;
 
   const attendance        = useAttendanceLogic();
   const documentUploading = useDocumentUploadingLogic();
-  const createAccount     = useCreateAccountLogic(); // ← add
+  const createAccount     = useCreateAccountLogic();
+  const ptScore           = usePTScoreLogic();  // ← add
   const navigation: NavAny = useNavigation();
 
   const permissionNames = useMemo(
@@ -64,7 +69,12 @@ export function useActionsLogic() {
       return;
     }
     if (a.id === PERMISSIONS.ADMIN) {
-      createAccount.openModal(); // ← handle admin action
+      createAccount.openModal();
+      return;
+    }
+    // PT Score action is keyed separately since it shares ATTENDANCE_EDITING permission
+    if ((a as any).id === PT_SCORE_ACTION_ID) {
+      await ptScore.openModal();
       return;
     }
     if (!a.routeHint) return;
@@ -87,6 +97,13 @@ export function useActionsLogic() {
       subtitle: "Mark PT / LLAB attendance for cadets",
       allowed: true,
     });
+    // PT Score entry also lives under the attendance permission
+    actions.push({
+      id: PT_SCORE_ACTION_ID as any,
+      title: "Update PT Scores",
+      subtitle: "Enter latest PT scores for cadets (00.0 format)",
+      allowed: true,
+    });
   }
   if (canUploadFiles) {
     actions.push({
@@ -96,7 +113,7 @@ export function useActionsLogic() {
       allowed: true,
     });
   }
-  if (isAdmin) { // ← was isAll, now just admin permission
+  if (isAdmin) {
     actions.push({
       id: PERMISSIONS.ADMIN,
       title: "Create Accounts",
@@ -114,7 +131,8 @@ export function useActionsLogic() {
       canTakeAttendance, canUploadFiles,
       actions, onPressAction,
       attendance, documentUploading,
-      createAccount, // ← expose to Actions.tsx
+      createAccount,
+      ptScore,       // ← expose to Actions.tsx
       fullName, jobText, permissionText,
       anyVisibleActions, navigation,
     }),
