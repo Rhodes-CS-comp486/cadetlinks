@@ -26,11 +26,30 @@ export const CADET_FIELDS: Array<{
 	{ key: "cellPhone", label: "Cell Phone", path: "contact/cellPhone", getValue: (profile) => profile.contact?.cellPhone ?? "" },
 ];
 
-export const JOB_SHEET_FIELDS: Array<{ key: string; label: string; getValue: (profile: CadetProfile) => string }> = [
-    { key: "lastName", label: "Last Name", getValue: (profile) => profile.lastName ?? "" },
-	{ key: "firstName", label: "First Name", getValue: (profile) => profile.firstName ?? "" },
-	{ key: "job", label: "Job Title", getValue: (profile) => profile.job ?? "" },
-];
+export const JOB_POSITIONS = [
+	"Cadet Wing Commander",
+	"Cadet Vice Wing Commander",
+	"Inspector General",
+	"A1 Director",
+	"A3 Director",
+	"A4, A5 Director",
+	"PA/Projos",
+	"A8, A9 Commander",
+	"Alpha Flight Commander",
+	"Bravo Flight Commander",
+	"LLAB Commander",
+	"Physical Fitness Officer",
+	"PFOA",
+	"RMP Commander",
+	"Honor Guard Officer",
+	"Morale Officer",
+	"Supply Officer",
+	"MX Officer",
+	"A9 Director",
+	"Safety Officer",
+	"Recruiting Officer",
+	"Community Service Officer",
+] as const;
 
 export function useAdminLogic() {
 	const globalState = globals();
@@ -52,6 +71,69 @@ export function useAdminLogic() {
 				),
 		[globalState.cadetsByKey]
 	);
+
+	const allCadetNames = useMemo(
+		() =>
+			cadetRows
+				.map(({ profile }) =>
+					[profile.firstName, profile.lastName].filter(Boolean).join(" ")
+				)
+				.filter(Boolean),
+		[cadetRows]
+	);
+
+	const cadetNameToKey = useMemo(() => {
+		const map = new Map<string, string>();
+		for (const { cadetKey, profile } of cadetRows) {
+			const name = [profile.firstName, profile.lastName].filter(Boolean).join(" ");
+			if (name) map.set(name, cadetKey);
+		}
+		return map;
+	}, [cadetRows]);
+
+	const cadetForJob = useMemo(() => {
+		const map: Record<string, { cadetKey: string; name: string }> = {};
+		for (const { cadetKey, profile } of cadetRows) {
+			if (profile.job) {
+				const name = [profile.firstName, profile.lastName].filter(Boolean).join(" ");
+				map[profile.job] = { cadetKey, name };
+			}
+		}
+		return map;
+	}, [cadetRows]);
+
+	const getJobCadet = (jobTitle: string) => cadetForJob[jobTitle]?.name ?? "";
+
+	const handleJobSelect = async (jobTitle: string, fullName: string) => {
+		const newCadetKey = cadetNameToKey.get(fullName);
+		if (!newCadetKey) return;
+
+		const oldHolder = cadetForJob[jobTitle];
+		if (oldHolder && oldHolder.cadetKey !== newCadetKey) {
+			try {
+				await updateCadetField(oldHolder.cadetKey, "job", "");
+			} catch (e: any) {
+				Alert.alert("Save failed", e?.message ?? "Could not clear old job assignment.");
+				return;
+			}
+		}
+
+		try {
+			await updateCadetJobAssignment(newCadetKey, jobTitle);
+		} catch (e: any) {
+			Alert.alert("Save failed", e?.message ?? "Could not update job assignment.");
+		}
+	};
+
+	const handleJobClear = async (jobTitle: string) => {
+		const oldHolder = cadetForJob[jobTitle];
+		if (!oldHolder) return;
+		try {
+			await updateCadetField(oldHolder.cadetKey, "job", "");
+		} catch (e: any) {
+			Alert.alert("Save failed", e?.message ?? "Could not clear job assignment.");
+		}
+	};
 
 	const getDraftKey = (...parts: string[]) => parts.join("::");
 
@@ -105,5 +187,9 @@ export function useAdminLogic() {
 		setDraftValue,
 		saveCadetField,
 		saveCadetJob,
+		allCadetNames,
+		getJobCadet,
+		handleJobSelect,
+		handleJobClear,
 	};
 }

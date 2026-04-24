@@ -68,10 +68,12 @@ export function BaseScreenLayout({
       <View style={[styles.header_container, { paddingTop: insets.top + 10 }]}>
         <View style={styles.header_row}>
           {leftNode}
-          <Text>
-            <Text style={[styles.header_text, styles.titleCadet]}>Cadet</Text>
-            <Text style={[styles.header_text, styles.titleLinks]}>Links</Text>
-          </Text>
+          <Pressable onPress={() => navigation.navigate("HomeTabs")}>
+            <Text>
+              <Text style={[styles.header_text, styles.titleCadet]}>Cadet</Text>
+              <Text style={[styles.header_text, styles.titleLinks]}>Links</Text>
+            </Text>
+          </Pressable>
           <Pressable onPress={() => setMenuOpen(!menuOpen)} style={styles.header_button}>
             <Ionicons name="menu-outline" size={26} color="white" />
           </Pressable>

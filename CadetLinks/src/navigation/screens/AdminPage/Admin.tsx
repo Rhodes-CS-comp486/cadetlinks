@@ -7,10 +7,9 @@ import {
   View,
 } from "react-native";
 import { ScreenLayout } from "../../Components/ScreenLayout";
-import { CADET_FIELDS, JOB_SHEET_FIELDS, useAdminLogic, type AdminTab } from "./AdminLogic";
+import { CADET_FIELDS, JOB_POSITIONS, useAdminLogic, type AdminTab } from "./AdminLogic";
 import { generalStyles as styles } from "../../../styles/GeneralStyles";
-import { DropdownPicker } from "../ActionsPage/Components/DropdownPicker";
-import { JOBS } from "../../../assets/constants";
+import { CadetAutocomplete } from "./CadetAutocomplete";
 
 export function AdminPage() {
 	const {
@@ -21,7 +20,10 @@ export function AdminPage() {
 		getDraftValue,
 		setDraftValue,
 		saveCadetField,
-		saveCadetJob,
+		allCadetNames,
+		getJobCadet,
+		handleJobSelect,
+		handleJobClear,
 	} = useAdminLogic();
 
 	const renderTabButton = (tab: AdminTab, label: string) => (
@@ -67,36 +69,25 @@ export function AdminPage() {
 	);
 
 	const renderJobSheet = () => (
-		<ScrollView horizontal>
-			<View>
-				<View style={styles.adminSheetHeaderRow}>
-					{JOB_SHEET_FIELDS.map((field) => (
-						<Text key={field.key} style={styles.adminHeaderCell}>{field.label}</Text>
-					))}
-				</View>
-				{cadetRows.map((row) => {
-					const jobKey = getDraftKey("job", row.cadetKey, "job");
-					const jobValue = getDraftValue(jobKey, row.profile.job ?? "");
-					return (
-						<View key={row.cadetKey} style={styles.adminSheetRow}>
-                            <Text style={styles.adminReadCell}>{row.profile.lastName ?? ""}</Text>
-							<Text style={styles.adminReadCell}>{row.profile.firstName ?? ""}</Text>
-							<View style={styles.adminEditCellWide}>
-								<DropdownPicker
-									label=""
-									options={JOBS}
-									value={jobValue}
-									onSelect={(nextJob) => {
-										setDraftValue(jobKey, nextJob);
-										void saveCadetJob(row.cadetKey, nextJob, jobKey);
-									}}
-								/>
-							</View>
-						</View>
-					);
-				})}
+		<View>
+			<View style={styles.adminSheetHeaderRow}>
+				<Text style={styles.adminJobTitleCell}>Job Title</Text>
+				<Text style={styles.adminHeaderCell}>Assigned Cadet</Text>
 			</View>
-		</ScrollView>
+			{JOB_POSITIONS.map((jobTitle) => (
+				<View key={jobTitle} style={styles.adminSheetRow}>
+					<Text style={styles.adminJobTitleCell}>{jobTitle}</Text>
+					<View style={styles.adminCadetCellWrapper}>
+						<CadetAutocomplete
+							value={getJobCadet(jobTitle)}
+							cadetNames={allCadetNames}
+							onSelect={(name) => void handleJobSelect(jobTitle, name)}
+							onClear={() => void handleJobClear(jobTitle)}
+						/>
+					</View>
+				</View>
+			))}
+		</View>
 	);
 
 	return (

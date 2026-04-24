@@ -96,14 +96,14 @@ const RootStack = createNativeStackNavigator({
     Admin: {
       screen: AdminPage,
       options: {
-        title: "Admin Page",
+        title: "Admin",
         headerShown: false,
       },
     },
     Attendance: {
       screen: AttendancePage,
       options: {
-        title: "Attendance Page",
+        title: "Attendance",
         headerShown: false,
       }
     },
