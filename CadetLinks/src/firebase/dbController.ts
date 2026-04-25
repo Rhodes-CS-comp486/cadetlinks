@@ -56,11 +56,14 @@ export type {
   UploadedDocument,
 } from "../assets/types";
 
+export const PT_SCORE_EDITING_PERMISSION = "PT Score Editing";
+
 // Permission string constants re-exported for convenient access in screens.
 export const PERMISSIONS = {
   EVENT_MAKING: EVENT_MAKING_PERMISSION,
   FILE_UPLOADING: FILE_UPLOADING_PERMISSION,
   ATTENDANCE_EDITING: ATTENDANCE_EDITING_PERMISSION,
+  PT_SCORE_EDITING: PT_SCORE_EDITING_PERMISSION,
   ADMIN: ADMIN_PERMISSIONS,
 };
 
@@ -72,6 +75,7 @@ const defaultPermissionsMap = () =>
     [PERMISSIONS.EVENT_MAKING, false],
     [PERMISSIONS.FILE_UPLOADING, false],
     [PERMISSIONS.ATTENDANCE_EDITING, false],
+    [PERMISSIONS.PT_SCORE_EDITING, false], 
     [PERMISSIONS.ADMIN, false],
   ]);
 
