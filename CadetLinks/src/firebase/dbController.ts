@@ -17,7 +17,13 @@ import { remove, update } from "firebase/database";
 import { deleteObject, getDownloadURL, ref as storageRef, uploadBytes } from "firebase/storage";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { initializeApp, getApps } from "firebase/app";
-import { ADMIN_PERMISSIONS, ATTENDANCE_EDITING_PERMISSION, EVENT_MAKING_PERMISSION, FILE_UPLOADING_PERMISSION, TEMP_PASSWORD } from "../assets/constants";
+import {
+  ADMIN_PERMISSIONS,
+  ATTENDANCE_EDITING_PERMISSION,
+  EVENT_MAKING_PERMISSION,
+  FILE_UPLOADING_PERMISSION,
+  TEMP_PASSWORD,
+} from "../assets/constants";
 import type {
   Announcement,
   AttendanceCadetItem,
@@ -27,10 +33,12 @@ import type {
   CadetProfile,
   Event as CadetEvent,
   GlobalFirebaseState,
+  PTScoreEntry,
+  PTScoresSubtree,
   StoreDomainErrors,
   UploadDocumentInput,
   UploadedDocument,
-  CreateAccountForm
+  CreateAccountForm,
 } from "../assets/types";
 import { db, storage } from "./config";
 
@@ -41,16 +49,21 @@ export type {
   AttendanceStatus,
   AttendanceSubtree,
   GlobalFirebaseState,
+  PTScoreEntry,
+  PTScoresSubtree,
   StoreDomainErrors,
   UploadDocumentInput,
   UploadedDocument,
 } from "../assets/types";
+
+export const PT_SCORE_EDITING_PERMISSION = "PT Score Editing";
 
 // Permission string constants re-exported for convenient access in screens.
 export const PERMISSIONS = {
   EVENT_MAKING: EVENT_MAKING_PERMISSION,
   FILE_UPLOADING: FILE_UPLOADING_PERMISSION,
   ATTENDANCE_EDITING: ATTENDANCE_EDITING_PERMISSION,
+  PT_SCORE_EDITING: PT_SCORE_EDITING_PERMISSION,
   ADMIN: ADMIN_PERMISSIONS,
 };
 
@@ -62,6 +75,7 @@ const defaultPermissionsMap = () =>
     [PERMISSIONS.EVENT_MAKING, false],
     [PERMISSIONS.FILE_UPLOADING, false],
     [PERMISSIONS.ATTENDANCE_EDITING, false],
+    [PERMISSIONS.PT_SCORE_EDITING, false], 
     [PERMISSIONS.ADMIN, false],
   ]);
 
@@ -81,6 +95,8 @@ const initialState: GlobalFirebaseState = {
   attendancePT: {},
   attendanceLLAB: {},
   attendanceRMP: {},
+  ptScores: {},
+  absencesAllowed: { PT: 0, LLAB: 0, RMP: 0 },
   errors: {},
   lastUpdated: {
     profile: null,
@@ -91,6 +107,8 @@ const initialState: GlobalFirebaseState = {
     cadets: null,
     documents: null,
     attendance: null,
+    ptScores: null,
+    absencesAllowed: null,
   },
 };
 
@@ -160,7 +178,15 @@ const parseLocalDateTime = (dateStr: string, timeStr: string): Date | null => {
     .split(":")
     .map(Number);
 
-  const localDate = new Date(year, (month ?? 1) - 1, day ?? 1, hours, minutes, seconds, 0);
+  const localDate = new Date(
+    year,
+    (month ?? 1) - 1,
+    day ?? 1,
+    hours,
+    minutes,
+    seconds,
+    0
+  );
   if (isNaN(localDate.getTime())) {
     return null;
   }
@@ -189,7 +215,8 @@ export const deriveCadetKeyFromEmail = (email: string): string =>
   email.trim().toLowerCase().replace(/@/g, "_").replace(/\./g, "_").replace(/-/g, "_");
 
 /** Strip non-alphanumeric characters so last names match their attendance DB keys. */
-const normalizeAttendanceKey = (input: string) => input.toLowerCase().replace(/[^a-z0-9]/g, "");
+const normalizeAttendanceKey = (input: string) =>
+  input.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 /**
  * Determine which attendance subtree (PT or LLAB) an event belongs to
@@ -225,7 +252,9 @@ const fetchPermissionsForJob = async (job?: string) => {
     }
 
     const next = defaultPermissionsMap();
-    Object.entries(permissionsSnap.val() as Record<string, unknown>).forEach(([permission, value]) => {
+    Object.entries(
+      permissionsSnap.val() as Record<string, unknown>
+    ).forEach(([permission, value]) => {
       next.set(permission, value === true);
     });
 
@@ -289,7 +318,10 @@ const startEventsListener = () => {
             time: combinedDateTime,
             description: event.details,
             location: event.locationId,
-            type: event.mandatory === true || event.mandatory === "true" ? "Mandatory" : "RSVP",
+            type:
+              event.mandatory === true || event.mandatory === "true"
+                ? "Mandatory"
+                : "RSVP",
           } as CadetEvent;
         })
         .filter((event): event is CadetEvent => event !== null);
@@ -335,14 +367,19 @@ const startAnnouncementsListener = () => {
             retirementDate: parsedDate,
           } as Announcement;
         })
-        .filter((announcement): announcement is Announcement => announcement !== null);
+        .filter(
+          (announcement): announcement is Announcement => announcement !== null
+        );
 
       const importanceOrder: Record<string, number> = {
         High: 3,
         Medium: 2,
         Low: 1,
       };
-      parsedAnnouncements.sort((a, b) => importanceOrder[b.importance] - importanceOrder[a.importance]);
+      parsedAnnouncements.sort(
+        (a, b) =>
+          importanceOrder[b.importance] - importanceOrder[a.importance]
+      );
 
       patchStore({ announcements: parsedAnnouncements });
       patchError("announcements", undefined);
@@ -357,7 +394,7 @@ const startAnnouncementsListener = () => {
   addListener(unsubscribe);
 };
 
-/** Attach a realtime listener to the full RSVPs node and extract the current cadet's status for each event. */
+/** Attach a realtime listener to the full RSVPs node and extract the current cadet's status. */
 const startRsvpListener = (cadetKey: string) => {
   const rsvpRef = ref(db, "rsvps");
   const unsubscribe = onValue(
@@ -369,7 +406,9 @@ const startRsvpListener = (cadetKey: string) => {
       const rsvpCadetKeysByEvent: Record<string, string[]> = {};
 
       Object.entries(rsvpData).forEach(([eventId, eventNode]) => {
-        const eventEntries = Object.entries((eventNode as Record<string, any>) || {});
+        const eventEntries = Object.entries(
+          (eventNode as Record<string, any>) || {}
+        );
         rsvpCadetKeysByEvent[eventId] = eventEntries
           .filter(([, attendeeNode]) => attendeeNode?.status === "Y")
           .map(([attendeeCadetKey]) => attendeeCadetKey);
@@ -401,13 +440,14 @@ const startRsvpListener = (cadetKey: string) => {
   addListener(unsubscribe);
 };
 
-/** Attach a realtime listener to all cadet profiles; used as a lookup cache by Search and Public Profile. */
+/** Attach a realtime listener to all cadet profiles; used as a lookup cache. */
 const startCadetsListener = () => {
   const cadetsRef = ref(db, "cadets");
   const unsubscribe = onValue(
     cadetsRef,
     (snapshot) => {
-      const cadets = (snapshot.val() as Record<string, CadetProfile>) || {};
+      const cadets =
+        (snapshot.val() as Record<string, CadetProfile>) || {};
       patchStore({ cadetsByKey: cadets });
       patchError("cadets", undefined);
       touch("cadets");
@@ -421,7 +461,7 @@ const startCadetsListener = () => {
   addListener(unsubscribe);
 };
 
-/** Attach a realtime listener to uploadedDocuments, sorted alphabetically by display name. */
+/** Attach a realtime listener to uploadedDocuments, sorted alphabetically. */
 const startDocumentsListener = () => {
   const uploadsRef = ref(db, "uploadedDocuments");
   const unsubscribe = onValue(
@@ -435,19 +475,25 @@ const startDocumentsListener = () => {
         return;
       }
 
-      const parsedDocuments: UploadedDocument[] = Object.entries(data).map(([key, value]) => ({
-        dbKey: key,
-        displayName: value.displayName ?? value.fileName,
-        fileName: value.fileName,
-        mimeType: value.mimeType,
-        sizeBytes: value.sizeBytes,
-        uploadedAt: value.uploadedAt,
-        downloadURL: value.downloadURL,
-        storagePath: value.storagePath,
-        uploadedBy: value.uploadedBy,
-      }));
+      const parsedDocuments: UploadedDocument[] = Object.entries(data).map(
+        ([key, value]) => ({
+          dbKey: key,
+          displayName: value.displayName ?? value.fileName,
+          fileName: value.fileName,
+          mimeType: value.mimeType,
+          sizeBytes: value.sizeBytes,
+          uploadedAt: value.uploadedAt,
+          downloadURL: value.downloadURL,
+          storagePath: value.storagePath,
+          uploadedBy: value.uploadedBy,
+        })
+      );
 
-      parsedDocuments.sort((a, b) => a.displayName.localeCompare(b.displayName, undefined, { sensitivity: "base" }));
+      parsedDocuments.sort((a, b) =>
+        a.displayName.localeCompare(b.displayName, undefined, {
+          sensitivity: "base",
+        })
+      );
 
       patchStore({ uploadedDocuments: parsedDocuments });
       patchError("documents", undefined);
@@ -462,7 +508,7 @@ const startDocumentsListener = () => {
   addListener(unsubscribe);
 };
 
-/** Attach realtime listeners to PT and LLAB attendance subtrees. */
+/** Attach realtime listeners to PT, LLAB, and RMP attendance subtrees. */
 const startAttendanceListeners = () => {
   const attendancePTRef = ref(db, "attendance/PT");
   const unsubscribePT = onValue(
@@ -483,7 +529,8 @@ const startAttendanceListeners = () => {
   const unsubscribeLLAB = onValue(
     attendanceLLABRef,
     (snapshot) => {
-      const attendanceLLAB = (snapshot.val() as AttendanceSubtree | null) ?? {};
+      const attendanceLLAB =
+        (snapshot.val() as AttendanceSubtree | null) ?? {};
       patchStore({ attendanceLLAB });
       patchError("attendance", undefined);
       touch("attendance");
@@ -493,11 +540,13 @@ const startAttendanceListeners = () => {
       patchError("attendance", "Could not load attendance.");
     }
   );
+
   const attendanceRMPRef = ref(db, "attendance/RMP");
   const unsubscribeRMP = onValue(
     attendanceRMPRef,
     (snapshot) => {
-      const attendanceRMP = (snapshot.val() as AttendanceSubtree | null) ?? {};
+      const attendanceRMP =
+        (snapshot.val() as AttendanceSubtree | null) ?? {};
       patchStore({ attendanceRMP });
       patchError("attendance", undefined);
       touch("attendance");
@@ -513,14 +562,57 @@ const startAttendanceListeners = () => {
   addListener(unsubscribeRMP);
 };
 
+
+/**
+ * Attach a realtime listener to the ptScores subtree across all cadets.
+ *
+ * Firebase path: cadets/{cadetKey}/ptScores/{recordKey}
+ *
+ * Because we listen to the top-level `cadets` node already (startCadetsListener),
+ * we could derive ptScores from cadetsByKey — but keeping a dedicated listener
+ * here mirrors the attendance pattern and lets ProfileLogic read ptScores
+ * independently of the full cadet cache.
+ *
+ * The listener reads cadets/{cadetKey}/ptScores for every cadet and
+ * assembles a PTScoresSubtree map in the store.
+ */
+const startPTScoresListener = () => {
+  // We listen to the entire cadets node and extract ptScores from each child.
+  // This avoids N separate listeners while still reacting to every write.
+  const cadetsRef = ref(db, "cadets");
+  const unsubscribe = onValue(
+    cadetsRef,
+    (snapshot) => {
+      const allCadets =
+        (snapshot.val() as Record<string, any> | null) ?? {};
+      const ptScores: PTScoresSubtree = {};
+
+      for (const [cadetKey, cadetData] of Object.entries(allCadets)) {
+        if (cadetData?.ptScores && typeof cadetData.ptScores === "object") {
+          ptScores[cadetKey] = cadetData.ptScores as Record<
+            string,
+            PTScoreEntry
+          >;
+        }
+      }
+
+      patchStore({ ptScores });
+      patchError("ptScores", undefined);
+      touch("ptScores");
+    },
+    (error) => {
+      console.error("PT scores listener failed:", error);
+      patchError("ptScores", "Could not load PT scores.");
+    }
+  );
+
+  addListener(unsubscribe);
+};
+
 // ─── Public lifecycle API ────────────────────────────────────────────────────
 
 /**
  * Initialize the global store for the logged-in cadet.
- *
- * - If `cadetKeyInput` is omitted, the key is read from AsyncStorage.
- * - Starts all realtime listeners (profile, events, announcements, RSVPs, cadets, documents, attendance).
- * - Safe to call multiple times; re-entrant calls while initializing are ignored.
  */
 export const initializeGlobals = async (cadetKeyInput?: string | null) => {
   if (store.isInitializing) {
@@ -530,7 +622,8 @@ export const initializeGlobals = async (cadetKeyInput?: string | null) => {
   patchStore({ isInitializing: true });
 
   try {
-    const cadetKey = cadetKeyInput ?? (await AsyncStorage.getItem("currentCadetKey"));
+    const cadetKey =
+      cadetKeyInput ?? (await AsyncStorage.getItem("currentCadetKey"));
 
     clearListeners();
 
@@ -557,10 +650,11 @@ export const initializeGlobals = async (cadetKeyInput?: string | null) => {
     startCadetsListener();
     startDocumentsListener();
     startAttendanceListeners();
+    startPTScoresListener();
 
-    // Cadet jobs change infrequently (semester cadence), so load permissions once at init.
     const initialProfileSnap = await get(ref(db, `cadets/${cadetKey}`));
-    const initialProfile = (initialProfileSnap.val() as CadetProfile | null) ?? null;
+    const initialProfile =
+      (initialProfileSnap.val() as CadetProfile | null) ?? null;
     await fetchPermissionsForJob(initialProfile?.job);
 
     patchStore({
@@ -582,7 +676,6 @@ export const initializeGlobals = async (cadetKeyInput?: string | null) => {
 
 /**
  * Stop all realtime listeners and reset the store to its initial (logged-out) state.
- * Call this on logout.
  */
 export const teardownGlobals = () => {
   clearListeners();
@@ -593,17 +686,11 @@ export const teardownGlobals = () => {
   });
 };
 
-/** Non-hook snapshot access for use outside React components (e.g. write actions). */
+/** Non-hook snapshot access for use outside React components. */
 export const getGlobalsSnapshot = () => store;
 
 /**
  * React hook that subscribes a component to the global store.
- *
- * IMPORTANT: Must be called inside a React component or custom hook body —
- * never at module scope, as it calls useSyncExternalStore internally.
- *
- * The snapshot getter returns `store` directly (not a spread copy) to maintain
- * referential stability and avoid an infinite render loop.
  */
 export const globals = () =>
   useSyncExternalStore(
@@ -620,12 +707,15 @@ export const globals = () =>
 // ─── Convenience helpers ─────────────────────────────────────────────────────
 
 /** Synchronous permission check against the current store (no React subscription). */
-export const hasPermission = (permission: string): boolean => store.permissionsMap.get(permission) ?? false;
+export const hasPermission = (permission: string): boolean =>
+  store.permissionsMap.get(permission) ?? false;
 
 // ─── Write actions ───────────────────────────────────────────────────────────
 
 /** Create or update an announcement. Returns the DB key used. */
-export const upsertAnnouncement = async (announcement: Omit<Announcement, "id"> & { id?: string }) => {
+export const upsertAnnouncement = async (
+  announcement: Omit<Announcement, "id"> & { id?: string }
+) => {
   const id = announcement.id || generateAnnouncementId();
   await set(ref(db, `announcements/${id}`), {
     title: announcement.title,
@@ -642,7 +732,10 @@ export const deleteAnnouncement = async (announcementId: string) => {
 };
 
 /** Set the logged-in cadet's RSVP for an event to Y (confirming=true) or N. */
-export const setUserRsvpStatus = async (eventId: string, confirming: boolean) => {
+export const setUserRsvpStatus = async (
+  eventId: string,
+  confirming: boolean
+) => {
   if (!store.cadetKey) {
     throw new Error("No user is logged in.");
   }
@@ -654,10 +747,10 @@ export const setUserRsvpStatus = async (eventId: string, confirming: boolean) =>
 
 /**
  * Persist a new event to the database.
- * For RSVP events, also initialises the rsvps node.
- * For special events (LLAB / PT / RMP), seeds the attendance subtree.
  */
-export const addEvent = async (event: Omit<CadetEvent, "id"> & { id?: string }) => {
+export const addEvent = async (
+  event: Omit<CadetEvent, "id"> & { id?: string }
+) => {
   const id = event.id || generateEventId();
   const eventDate = formatDateOnly(event.date);
 
@@ -692,15 +785,16 @@ export const removeEvent = async (eventId: string) => {
 
 /**
  * Fetch today's events and build the cadet list needed by the Attendance tool.
- * Cadets are derived from the in-memory cadetsByKey cache (startCadetsListener must
- * have run first). Events are fetched fresh from the DB to guarantee up-to-date times.
  */
 export const loadAttendanceToolsData = async () => {
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
   const eventsSnap = await get(ref(db, "events"));
-  const eventsData = (eventsSnap.val() ?? {}) as Record<string, AttendanceEventItem>;
+  const eventsData = (eventsSnap.val() ?? {}) as Record<
+    string,
+    AttendanceEventItem
+  >;
   const todayEvents = Object.entries(eventsData)
     .map(([id, value]) => {
       const { id: _ignoredId, ...rest } = value;
@@ -734,7 +828,6 @@ export const loadAttendanceToolsData = async () => {
 
 /**
  * Write attendance statuses for all cadets for a given event.
- * The event name must contain "PT" or "LLAB" so the correct bucket can be inferred.
  */
 export const saveAttendanceForEvent = async (
   eventId: string,
@@ -749,7 +842,9 @@ export const saveAttendanceForEvent = async (
 
   const bucket = inferAttendanceBucket(chosenEvent.eventName);
   if (!bucket) {
-    throw new Error('Could not tell whether this event is PT or LLAB. Add "PT" or "LLAB" to the event name.');
+    throw new Error(
+      'Could not tell whether this event is PT or LLAB. Add "PT" or "LLAB" to the event name.'
+    );
   }
 
   const date = chosenEvent.date;
@@ -769,7 +864,10 @@ export const saveAttendanceForEvent = async (
 };
 
 /** Remove all attendance records for a given event date from the database. */
-export const clearAttendanceForEvent = async (eventId: string, todayEvents: AttendanceEventItem[]) => {
+export const clearAttendanceForEvent = async (
+  eventId: string,
+  todayEvents: AttendanceEventItem[]
+) => {
   const chosenEvent = todayEvents.find((event) => event.id === eventId);
   if (!chosenEvent) {
     throw new Error("Please select an event.");
@@ -777,7 +875,9 @@ export const clearAttendanceForEvent = async (eventId: string, todayEvents: Atte
 
   const bucket = inferAttendanceBucket(chosenEvent.eventName);
   if (!bucket) {
-    throw new Error('Could not tell whether this event is PT or LLAB. Add "PT" or "LLAB" to the event name.');
+    throw new Error(
+      'Could not tell whether this event is PT or LLAB. Add "PT" or "LLAB" to the event name.'
+    );
   }
 
   if (!chosenEvent.date) {
@@ -788,11 +888,49 @@ export const clearAttendanceForEvent = async (eventId: string, todayEvents: Atte
 };
 
 /**
- * Upload a local file URI to Firebase Storage and record its metadata in the database.
- * Returns the generated DB key and the uploads root ref.
+ * Save PT scores for a batch of cadets.
+ *
+ * For each cadet this writes TWO locations atomically:
+ *   1. cadets/{cadetKey}/ptScores/latestPT  — structured entry for history/store
+ *   2. cadets/{cadetKey}/lastPTScore        — flat string for quick profile display
+ *
+ * The realtime listener (startPTScoresListener) picks up change (1) and updates
+ * the store's `ptScores` map, which ProfileLogic reads reactively.
+ * Change (2) keeps the profile card's "Last PT Score" field in sync via the
+ * existing startCadetsListener / startProfileListener.
+ */
+export const savePTScores = async (
+  entries: Array<{ cadetKey: string; score: number }>
+) => {
+  if (entries.length === 0) return;
+
+  const recordedAt = new Date().toISOString();
+  const updates: Record<string, any> = {};
+
+  for (const { cadetKey, score } of entries) {
+    const formatted = score.toFixed(1); // "85.5"
+
+    // Structured history entry (readable by store + ProfileLogic)
+    updates[`cadets/${cadetKey}/ptScores/latestPT`] = {
+      score,
+      recordedAt,
+    } satisfies PTScoreEntry;
+
+    // Flat convenience field (readable by Profile screen directly)
+    updates[`cadets/${cadetKey}/lastPTScore`] = formatted;
+  }
+
+  await update(ref(db), updates);
+};
+
+/**
+ * Upload a local file URI to Firebase Storage and record its metadata.
  */
 export const uploadDocumentFromUri = async (input: UploadDocumentInput) => {
-  const cadetKey = store.cadetKey ?? (await AsyncStorage.getItem("currentCadetKey")) ?? "unknown";
+  const cadetKey =
+    store.cadetKey ??
+    (await AsyncStorage.getItem("currentCadetKey")) ??
+    "unknown";
   const extension = input.originalFileName.match(/\.[^/.]+$/)?.[0] ?? "";
   const fileName = `${Date.now()}_${input.displayName}${extension}`;
   const storagePath = `uploadedDocuments/${fileName}`;
@@ -820,7 +958,10 @@ export const uploadDocumentFromUri = async (input: UploadDocumentInput) => {
 };
 
 /** Delete a document from both Firebase Storage and the database index. */
-export const deleteUploadedDocument = async (dbKey: string, path: string) => {
+export const deleteUploadedDocument = async (
+  dbKey: string,
+  path: string
+) => {
   await deleteObject(storageRef(storage, path));
   await remove(ref(db, `uploadedDocuments/${dbKey}`));
 };
@@ -840,10 +981,6 @@ export const getProfileByCadetKey = async (cadetKey: string) => {
 
 // ─── Cadet account creation ──────────────────────────────────────────────────
 
-/**
- * Get or create a secondary Firebase Auth instance for account creation.
- * (Used to create new user accounts without logging in as them.)
- */
 const getSecondaryAuth = () => {
   const existing = getApps().find((a: any) => a.name === "secondary");
   if (existing) return getAuth(existing);
@@ -855,26 +992,17 @@ const getSecondaryAuth = () => {
   return getAuth(secondary);
 };
 
-
-/**
- * Create a new cadet account with auth and database entries.
- *
- * Steps:
- * 1. Create auth user with secondary Firebase instance
- * 2. Build cadet key from email and write profile to database
- * 3. Write indexes for classYear, flight, and job
- *
- * Throws an error if any step fails.
- */
 export const createCadetAccount = async (input: CreateAccountForm) => {
-  // Step 1 — Auth
   console.log("Step 1: Getting secondary auth...");
   const secondaryAuth = getSecondaryAuth();
-  await createUserWithEmailAndPassword(secondaryAuth, input.schoolEmail, TEMP_PASSWORD);
+  await createUserWithEmailAndPassword(
+    secondaryAuth,
+    input.schoolEmail,
+    TEMP_PASSWORD
+  );
   await secondaryAuth.signOut();
   console.log("Step 1: Auth done.");
 
-  // Step 2 — Build cadet key and write profile
   const cadetId = deriveCadetKeyFromEmail(input.schoolEmail);
   console.log("Step 2: cadetId =", cadetId);
 
@@ -893,32 +1021,19 @@ export const createCadetAccount = async (input: CreateAccountForm) => {
   });
   console.log("Step 2: Cadet profile written.");
 
-  // Step 3 — Write indexes
   const classYearKey = input.classYear.replace(/[\s\/\(\),\-]/g, "_");
-  console.log("Step 3a: classYearKey =", classYearKey);
   if (classYearKey) {
     await set(ref(db, `indexes/classYear/${classYearKey}/${cadetId}`), true);
-    console.log("Step 3a: classYear index written.");
-  } else {
-    console.log("Step 3a: SKIPPED — classYear was empty.");
   }
 
   const flightKey = input.flight.replace(/[\s\/\(\),\-]/g, "_");
-  console.log("Step 3b: flightKey =", flightKey);
   if (flightKey) {
     await set(ref(db, `indexes/flight/${flightKey}/${cadetId}`), true);
-    console.log("Step 3b: flight index written.");
-  } else {
-    console.log("Step 3b: SKIPPED — flight was empty.");
   }
 
   const jobKey = input.job.replace(/[\s\/\(\),\-]/g, "_");
-  console.log("Step 3c: jobKey =", jobKey);
   if (jobKey) {
     await set(ref(db, `indexes/job/${jobKey}/${cadetId}`), true);
-    console.log("Step 3c: job index written.");
-  } else {
-    console.log("Step 3c: SKIPPED — job was empty.");
   }
 
   return cadetId;

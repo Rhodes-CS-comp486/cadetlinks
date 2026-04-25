@@ -6,6 +6,7 @@ import { useAttendanceLogic } from "./AttendanceLogic";
 import { useNavigation } from "@react-navigation/core";
 import { globals, initializeGlobals } from "../../../firebase/dbController";
 import { useCreateAccountLogic } from "./CreateAccountLogic";
+import { usePTScoreLogic } from "./PTScoreLogic";
 
 type NavAny = ReturnType<typeof useNavigation<any>>;
 
@@ -15,9 +16,12 @@ export function iconForAction(id: Action["id"]) {
     case PERMISSIONS.FILE_UPLOADING:     return "cloud-upload-outline";
     case PERMISSIONS.ADMIN:              return "person-add-outline";
     case PERMISSIONS.EVENT_MAKING:       return "calendar-outline";
+    case PERMISSIONS.PT_SCORE_EDITING:   return "fitness-outline";
     default:                             return "briefcase-outline";
   }
 }
+
+export const PT_SCORE_ACTION_ID = PERMISSIONS.PT_SCORE_EDITING;
 
 export function useActionsLogic() {
   const globalState = globals();
@@ -29,11 +33,13 @@ export function useActionsLogic() {
 
   const canTakeAttendance = cadetPermissionsMap.get(PERMISSIONS.ATTENDANCE_EDITING) ?? false;
   const canUploadFiles    = cadetPermissionsMap.get(PERMISSIONS.FILE_UPLOADING) ?? false;
-  const isAdmin           = cadetPermissionsMap.get(PERMISSIONS.ADMIN) ?? false; // ← changed from isAll
+  const isAdmin           = cadetPermissionsMap.get(PERMISSIONS.ADMIN) ?? false;
+  const canEditPTScores   = cadetPermissionsMap.get(PERMISSIONS.PT_SCORE_EDITING) ?? false;
 
   const attendance        = useAttendanceLogic();
   const documentUploading = useDocumentUploadingLogic();
-  const createAccount     = useCreateAccountLogic(); // ← add
+  const createAccount     = useCreateAccountLogic();
+  const ptScore           = usePTScoreLogic();
   const navigation: NavAny = useNavigation();
 
   const permissionNames = useMemo(
@@ -64,7 +70,11 @@ export function useActionsLogic() {
       return;
     }
     if (a.id === PERMISSIONS.ADMIN) {
-      createAccount.openModal(); // ← handle admin action
+      createAccount.openModal();
+      return;
+    }
+    if (a.id === PERMISSIONS.PT_SCORE_EDITING) {
+      await ptScore.openModal();
       return;
     }
     if (!a.routeHint) return;
@@ -88,6 +98,16 @@ export function useActionsLogic() {
       allowed: true,
     });
   }
+
+  if (canEditPTScores) {
+    actions.push({
+      id: PERMISSIONS.PT_SCORE_EDITING,
+      title: "Update PT Scores",
+      subtitle: "Enter latest PT scores for cadets (00.0 format)",
+      allowed: true,
+    });
+  }
+
   if (canUploadFiles) {
     actions.push({
       id: PERMISSIONS.FILE_UPLOADING,
@@ -96,7 +116,8 @@ export function useActionsLogic() {
       allowed: true,
     });
   }
-  if (isAdmin) { // ← was isAll, now just admin permission
+
+  if (isAdmin) {
     actions.push({
       id: PERMISSIONS.ADMIN,
       title: "Create Accounts",
@@ -111,14 +132,15 @@ export function useActionsLogic() {
     () => ({
       cadetKey, profile, loading, error,
       permissionNames, isAdmin,
-      canTakeAttendance, canUploadFiles,
+      canTakeAttendance, canUploadFiles, canEditPTScores,
       actions, onPressAction,
       attendance, documentUploading,
-      createAccount, // ← expose to Actions.tsx
+      createAccount,
+      ptScore,
       fullName, jobText, permissionText,
       anyVisibleActions, navigation,
     }),
     [cadetKey, profile, loading, error, permissionNames,
-     isAdmin, canTakeAttendance, canUploadFiles, actions]
+     isAdmin, canTakeAttendance, canUploadFiles, canEditPTScores, actions]
   );
 }

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -14,11 +14,12 @@ import { actionStyles as styles } from "../../../styles/ActionStyles";
 import { ScreenLayout } from "../../Components/ScreenLayout";
 import { AttendanceModal } from "./Components/AttendanceModal";
 import { UploadDocsModal } from "./Components/UploadDocsModal";
+import { PTScoreModal } from "./Components/PTScoreModal";       // ← add
 import { useAttendanceLogic } from "./AttendanceLogic";
 import { useDocumentUploadingLogic } from "./UploadDocsLogic";
 import { ViewDocumentLogic } from "./ViewDocumentLogic";
 import { PERMISSIONS } from "../../../assets/constants";
-import { useActionsLogic, iconForAction } from "../ActionsPage/ActionsLogic";
+import { useActionsLogic, iconForAction, PT_SCORE_ACTION_ID} from "../ActionsPage/ActionsLogic";
 import { CadetProfile, Action, NavAny } from "../../../assets/types";
 import { ViewDocumentModal } from "./Components/ViewDocumentModal";
 import { CreateAccountModal } from "./Components/CreateAccountModal";
@@ -44,6 +45,7 @@ export function Actions(): React.ReactElement {
     permissionText,
     anyVisibleActions,
     createAccount,
+    ptScore,          // ← destructure
     canUploadFiles,
   } = useActionsLogic();
 
@@ -106,7 +108,11 @@ export function Actions(): React.ReactElement {
                   <View style={styles.action_left}>
                     <View style={styles.action_icon_circle}>
                       <Ionicons
-                        name={iconForAction(a.id) as any}
+                        name={
+                          (a as any).id === PT_SCORE_ACTION_ID
+                            ? "fitness-outline"
+                            : (iconForAction(a.id) as any)
+                        }
                         size={22}
                         color="white"
                       />
@@ -171,6 +177,22 @@ export function Actions(): React.ReactElement {
         onSubmitAttendance={attendance.submitAttendance}
       />
 
+      {/* PT SCORE MODAL */}
+      <PTScoreModal
+        visible={ptScore.modalVisible}
+        onRequestClose={ptScore.closeModal}
+        loading={ptScore.loading}
+        allCadets={ptScore.allCadets}
+        scores={ptScore.scores}
+        onScoreChange={ptScore.onScoreChange}
+        selectedFlight={ptScore.selectedFlight}
+        flightDropdownOpen={ptScore.flightDropdownOpen}
+        onToggleFlightDropdown={ptScore.toggleFlightDropdown}
+        onSelectFlight={ptScore.selectFlight}
+        saving={ptScore.saving}
+        onSubmit={ptScore.submit}
+      />
+
       {/* DOCUMENT UPLOADING MODAL */}
       <UploadDocsModal
         visible={documentUploading.documentUploadingModalVisible}
@@ -183,9 +205,7 @@ export function Actions(): React.ReactElement {
         onPickDocument={documentUploading.pickDocument}
         onClearDocument={documentUploading.clearSelectedDocument}
         onUploadDocument={documentUploading.uploadSelectedDocument}
-  
       />
-      
 
       <CreateAccountModal
         visible={createAccount.modalVisible}
@@ -193,12 +213,9 @@ export function Actions(): React.ReactElement {
         form={createAccount.form}
         updateField={createAccount.updateField}
         updatePhone={createAccount.updatePhone}
-        //togglePermission={createAccount.togglePermission}
         saving={createAccount.saving}
         onSubmit={createAccount.submit}
       />
-
-      
 
       {/* VIEW DOCUMENTS MODAL */}
       <ViewDocumentModal
@@ -211,8 +228,6 @@ export function Actions(): React.ReactElement {
         onDelete={documentList.deleteDocument}
         canEditFiles={canUploadFiles}
       />
-
-      
 
     </ScreenLayout>
   );
