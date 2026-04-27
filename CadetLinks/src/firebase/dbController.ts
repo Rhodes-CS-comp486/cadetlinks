@@ -22,6 +22,7 @@ import {
   ATTENDANCE_EDITING_PERMISSION,
   EVENT_MAKING_PERMISSION,
   FILE_UPLOADING_PERMISSION,
+  PT_SCORE_EDITING_PERMISSION,
   TEMP_PASSWORD,
 } from "../assets/constants";
 import type {
@@ -55,8 +56,6 @@ export type {
   UploadDocumentInput,
   UploadedDocument,
 } from "../assets/types";
-
-export const PT_SCORE_EDITING_PERMISSION = "PT Score Editing";
 
 // Permission string constants re-exported for convenient access in screens.
 export const PERMISSIONS = {
