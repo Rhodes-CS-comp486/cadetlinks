@@ -330,6 +330,44 @@ export const generalStyles = StyleSheet.create({
     adminKeyCol: {
         width: 230,
     },
+    adminJobTitleCell: {
+        width: 210,
+        paddingHorizontal: 10,
+        paddingVertical: 12,
+        color: colors.text,
+        fontWeight: "600",
+        fontSize: 12,
+    },
+    adminCadetCellWrapper: {
+        flex: 1,
+        borderLeftWidth: 1,
+        borderLeftColor: colors.border,
+    },
+    adminCadetInput: {
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        color: colors.text,
+        fontSize: 12,
+        minWidth: 200,
+    },
+    adminAutocompleteWrapper: {
+        flex: 1,
+    },
+    adminSuggestionList: {
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+        backgroundColor: colors.background,
+    },
+    adminSuggestionItem: {
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+    },
+    adminSuggestionText: {
+        color: colors.text,
+        fontSize: 12,
+    },
     attendanceToolbarRow: {
         flexDirection: "row",
         alignItems: "center",
