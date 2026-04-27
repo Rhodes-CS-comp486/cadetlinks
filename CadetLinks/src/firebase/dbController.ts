@@ -35,6 +35,7 @@ import type {
 } from "../assets/types";
 import { db, storage } from "./config";
 
+
 export type {
   Announcement,
   AttendanceCadetItem,
@@ -719,6 +720,8 @@ export const updateAttendanceCell = async (
   });
 };
 
+
+
 /** Update allowed absences for a single bucket. */
 export const updateAbsenceAllowed = async (
   bucket: keyof AbsenceAllowedSnapshot,
@@ -780,20 +783,25 @@ export const addEvent = async (event: Omit<CadetEvent, "id"> & { id?: string }) 
     await set(ref(db, `rsvps/${id}`), "");
   }
 
-  const title = event.title.toUpperCase();
-  if (title === "LLAB" || title === "PT" || title === "RMP") {
-    await set(ref(db, `attendance/${title}/${eventDate}/Last Name`), {
-      status: ".",
-    });
-  }
-
   return id;
 };
 
-/** Delete an event and its associated RSVP node. */
+/** Delete an event, its associated RSVP node, and attendance data for PT/LLAB/RMP events. */
 export const removeEvent = async (eventId: string) => {
-  await set(ref(db, `events/${eventId}`), null);
-  await set(ref(db, `rsvps/${eventId}`), null);
+  const eventSnap = await get(ref(db, `events/${eventId}`));
+  const eventData = (eventSnap.val() as AttendanceEventItem | null) ?? null;
+
+  const updates: Record<string, null> = {
+    [`events/${eventId}`]: null,
+    [`rsvps/${eventId}`]: null,
+  };
+
+  const bucket = inferAttendanceBucket(eventData?.eventName);
+  if (bucket && eventData?.date) {
+    updates[`attendance/${bucket}/${eventData.date}`] = null;
+  }
+
+  await update(ref(db), updates);
 };
 
 /**
@@ -812,7 +820,12 @@ export const loadAttendanceToolsData = async () => {
       const { id: _ignoredId, ...rest } = value;
       return { id, ...rest };
     })
-    .filter((event) => event.date === today && !!event.eventName)
+    .filter(
+      (event) =>
+        event.date === today &&
+        !!event.eventName &&
+        inferAttendanceBucket(event.eventName) !== null
+    )
     .sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
 
   const cadets = Object.entries(store.cadetsByKey)
@@ -855,7 +868,7 @@ export const saveAttendanceForEvent = async (
 
   const bucket = inferAttendanceBucket(chosenEvent.eventName);
   if (!bucket) {
-    throw new Error('Could not tell whether this event is PT or LLAB. Add "PT" or "LLAB" to the event name.');
+    throw new Error("Event not RMP, PT, or LLAB.");
   }
 
   const date = chosenEvent.date;
