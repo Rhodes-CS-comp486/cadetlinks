@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -6,6 +6,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { ScreenLayout } from "../../Components/ScreenLayout";
 import { CADET_FIELDS, JOB_POSITIONS, useAdminLogic, type AdminTab } from "./AdminLogic";
 import { generalStyles as styles } from "../../../styles/GeneralStyles";
@@ -13,7 +14,17 @@ import { CadetAutocomplete } from "./CadetAutocomplete";
 import { DropdownPicker } from "../ActionsPage/Components/DropdownPicker";
 import { FLIGHTS, RANKS, YEARS } from "../../../assets/constants";
 
+const isContactField = (fieldPath?: (typeof CADET_FIELDS)[number]["path"]) =>
+	fieldPath === "contact/schoolEmail" ||
+	fieldPath === "contact/personalEmail" ||
+	fieldPath === "contact/cellPhone";
+
+const isEmailField = (fieldPath?: (typeof CADET_FIELDS)[number]["path"]) =>
+	fieldPath === "contact/schoolEmail" || fieldPath === "contact/personalEmail";
+
 export function AdminPage() {
+	const [openDropdownKey, setOpenDropdownKey] = useState<string | null>(null);
+	const [contactEditMode, setContactEditMode] = useState<Record<string, boolean>>({});
 	const {
 		activeTab,
 		setActiveTab,
@@ -27,6 +38,28 @@ export function AdminPage() {
 		handleJobSelect,
 		handleJobClear,
 	} = useAdminLogic();
+
+	const setContactEditing = (key: string, isEditing: boolean) => {
+		setContactEditMode((prev) => ({ ...prev, [key]: isEditing }));
+	};
+
+	const toggleContactEdit = async (
+		cadetKey: string,
+		fieldPath: NonNullable<(typeof CADET_FIELDS)[number]["path"]>,
+		draftKey: string,
+		value: string
+	) => {
+		const isEditing = contactEditMode[draftKey] === true;
+		if (!isEditing) {
+			setContactEditing(draftKey, true);
+			return;
+		}
+
+		const saved = await saveCadetField(cadetKey, fieldPath, value, draftKey);
+		if (saved) {
+			setContactEditing(draftKey, false);
+		}
+	};
 
 	const renderTabButton = (tab: AdminTab, label: string) => (
 		<Pressable
@@ -42,16 +75,38 @@ export function AdminPage() {
 		<ScrollView horizontal>
 			<View>
 				<View style={styles.adminSheetHeaderRow}>
-					{CADET_FIELDS.map((field) => (
-						<Text key={field.key} style={styles.adminHeaderCell}>{field.label}</Text>
-					))}
+					{CADET_FIELDS.map((field) => {
+						const isWideEmailColumn = isEmailField(field.path);
+						return (
+							<Text
+								key={field.key}
+								style={[styles.adminHeaderCell, isWideEmailColumn && styles.adminHeaderCellWide]}
+							>
+								{field.label}
+							</Text>
+						);
+					})}
 				</View>
-				{cadetRows.map((row) => (
-					<View key={row.cadetKey} style={styles.adminSheetRow}>
+				{cadetRows.map((row) => {
+					const rowPrefix = getDraftKey("cadet", row.cadetKey);
+					const rowHasOpenDropdown =
+						typeof openDropdownKey === "string" && openDropdownKey.startsWith(`${rowPrefix}::`);
+
+					return (
+					<View
+						key={row.cadetKey}
+						style={[
+							styles.adminSheetRow,
+							rowHasOpenDropdown && styles.adminSheetRowOpen,
+						]}
+					>
 						{CADET_FIELDS.map((field) => {
 							const key = getDraftKey("cadet", row.cadetKey, String(field.key));
 							const value = getDraftValue(key, field.getValue(row.profile));
 							const fieldPath = field.path;
+							const isContactInfoCell = isContactField(fieldPath);
+							const isWideEmailColumn = isEmailField(fieldPath);
+							const isContactCellEditing = isContactInfoCell && contactEditMode[key] === true;
 							const options =
 								fieldPath === "cadetRank"
 									? RANKS
@@ -68,11 +123,57 @@ export function AdminPage() {
 											label=""
 											options={options}
 											value={value}
+											onOpenChange={(isOpen) => {
+												setOpenDropdownKey((previous) => {
+													if (isOpen) return key;
+													return previous === key ? null : previous;
+												});
+											}}
 											onSelect={(selected) => {
 												setDraftValue(key, selected);
 												void saveCadetField(row.cadetKey, fieldPath, selected, key);
 											}}
 										/>
+									</View>
+								);
+							}
+
+							if (isContactInfoCell && fieldPath) {
+								return (
+									<View
+										key={field.key}
+										style={[
+											styles.adminContactCell,
+											isWideEmailColumn && styles.adminContactCellWide,
+											isContactCellEditing ? styles.adminContactCellEditMode : styles.adminContactCellReadMode,
+										]}
+									>
+										<Pressable
+											style={[
+												styles.adminCellActionButton,
+												isContactCellEditing && styles.adminCellActionButtonEditMode,
+											]}
+											onPress={() => void toggleContactEdit(row.cadetKey, fieldPath, key, value)}
+										>
+											<Ionicons
+												name={isContactCellEditing ? "checkmark" : "create-outline"}
+												size={16}
+												color={isContactCellEditing ? "#0B1220" : "#9AA3B2"}
+											/>
+										</Pressable>
+
+										{isContactCellEditing ? (
+											<TextInput
+												value={value}
+												onChangeText={(text) => setDraftValue(key, text)}
+												style={styles.adminContactCellInput}
+												placeholderTextColor="#7C8699"
+											/>
+										) : (
+											<Text numberOfLines={1} style={styles.adminContactCellText}>
+												{value || "-"}
+											</Text>
+										)}
 									</View>
 								);
 							}
@@ -91,7 +192,8 @@ export function AdminPage() {
 							);
 						})}
 					</View>
-				))}
+					);
+				})}
 			</View>
 		</ScrollView>
 	);
@@ -130,7 +232,11 @@ export function AdminPage() {
 				</View>
 
 				<View style={styles.adminSheetContainer}>
-					<ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 12 }}>
+					<ScrollView
+						nestedScrollEnabled
+						keyboardShouldPersistTaps="handled"
+						contentContainerStyle={styles.adminSheetContentContainer}
+					>
 						{activeTab === "cadets" && renderCadetInfoSheet()}
 						{activeTab === "jobs" && renderJobSheet()}
 					</ScrollView>

@@ -271,7 +271,7 @@ export const generalStyles = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.border,
         borderRadius: 12,
-        overflow: "hidden",
+        overflow: "visible",
         backgroundColor: colors.card,
     },
     adminSheetHeaderRow: {
@@ -285,6 +285,14 @@ export const generalStyles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
     },
+    adminSheetRowOpen: {
+        zIndex: 3000,
+        elevation: 3000,
+        position: "relative",
+    },
+    adminSheetContentContainer: {
+        paddingBottom: 12,
+    },
     adminHeaderCell: {
         width: 150,
         paddingHorizontal: 10,
@@ -292,6 +300,9 @@ export const generalStyles = StyleSheet.create({
         color: colors.text,
         fontWeight: "700",
         fontSize: 12,
+    },
+    adminHeaderCellWide: {
+        width: 240,
     },
     adminReadCell: {
         width: 150,
@@ -308,6 +319,53 @@ export const generalStyles = StyleSheet.create({
         fontSize: 12,
         borderLeftWidth: 1,
         borderLeftColor: colors.border,
+    },
+    adminContactCell: {
+        width: 150,
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        borderLeftWidth: 1,
+        borderLeftColor: colors.border,
+        justifyContent: "center",
+        position: "relative",
+    },
+    adminContactCellWide: {
+        width: 240,
+    },
+    adminContactCellReadMode: {
+        backgroundColor: colors.card,
+    },
+    adminContactCellEditMode: {
+        backgroundColor: colors.background,
+        borderColor: colors.accent,
+        borderWidth: 1,
+    },
+    adminCellActionButton: {
+        position: "absolute",
+        top: 2,
+        right: 4,
+        zIndex: 2,
+        padding: 4,
+    },
+    adminCellActionButtonEditMode: {
+        backgroundColor: colors.accent,
+        borderRadius: 10,
+    },
+    adminContactCellText: {
+        color: colors.text,
+        fontSize: 12,
+        paddingRight: 18,
+        minHeight: 20,
+        paddingTop: 8,
+    },
+    adminContactCellInput: {
+        color: colors.text,
+        fontSize: 12,
+        paddingRight: 18,
+        minHeight: 20,
+        paddingTop: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.accent,
     },
     adminEditCellWide: {
         width: 230,

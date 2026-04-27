@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert } from "react-native";
+import { Alert, Platform } from "react-native";
 import { globals, initializeGlobals, updateCadetField, updateCadetJobAssignment } from "../../../firebase/dbController";
 import type { CadetProfile } from "../../../assets/types";
 
@@ -65,6 +65,14 @@ const isValidPhoneNumber = (value: string) => {
 	if (digitsOnly.length === 10) return true;
 	if (digitsOnly.length === 11 && digitsOnly.startsWith("1")) return true;
 	return false;
+};
+
+const showPopupAlert = (title: string, message: string) => {
+	if (Platform.OS === "web" && typeof window !== "undefined") {
+		window.alert(`${title}\n\n${message}`);
+		return;
+	}
+	Alert.alert(title, message);
 };
 
 export function useAdminLogic() {
@@ -179,23 +187,27 @@ export function useAdminLogic() {
 	) => {
 		if (fieldPath === "contact/schoolEmail" || fieldPath === "contact/personalEmail") {
 			if (!isValidEmail(value)) {
-				Alert.alert("Invalid email", "Please enter a valid email address.");
-				return;
+				showPopupAlert("Invalid email", "Please enter a valid email address.");
+				clearDraft(draftKey);
+				return false;
 			}
 		}
 
 		if (fieldPath === "contact/cellPhone") {
 			if (!isValidPhoneNumber(value)) {
-				Alert.alert("Invalid phone number", "Please enter a valid 10-digit phone number.");
-				return;
+				showPopupAlert("Invalid phone number", "Please enter a valid 10-digit phone number.");
+				clearDraft(draftKey);
+				return false;
 			}
 		}
 
 		try {
 			await updateCadetField(cadetKey, fieldPath, value);
 			clearDraft(draftKey);
+			return true;
 		} catch (e: any) {
 			Alert.alert("Save failed", e?.message ?? "Could not update cadet field.");
+			return false;
 		}
 	};
 

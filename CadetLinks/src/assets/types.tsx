@@ -185,6 +185,7 @@ export interface DropdownPickerProps {
   options: string[];
   value: string;
   onSelect: (v: string) => void;
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
 export interface CreateAccountModalProps {

@@ -151,12 +151,13 @@ export const actionStyles = StyleSheet.create({
 
     dropdownWrapper: {
         marginBottom: 4,
+        position: "relative",
         zIndex: 1,
     },
 
     dropdownWrapperOpen: {
-        zIndex: 50,
-        elevation: 50,
+        zIndex: 1000,
+        elevation: 1000,
     },
 
     dropdownButton: {
@@ -179,8 +180,8 @@ export const actionStyles = StyleSheet.create({
         borderColor: "#3A4357",
         marginBottom: 16,
         overflow: "hidden",
-        zIndex: 60,
-        elevation: 8,
+        zIndex: 1100,
+        elevation: 1100,
     },
 
     dropdownEmptyText: {
