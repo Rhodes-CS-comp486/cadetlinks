@@ -51,6 +51,22 @@ export const JOB_POSITIONS = [
 	"Community Service Officer",
 ] as const;
 
+const isValidEmail = (value: string) => {
+	const trimmed = value.trim();
+	if (!trimmed) return true;
+	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+};
+
+const isValidPhoneNumber = (value: string) => {
+	const trimmed = value.trim();
+	if (!trimmed) return true;
+
+	const digitsOnly = trimmed.replace(/\D/g, "");
+	if (digitsOnly.length === 10) return true;
+	if (digitsOnly.length === 11 && digitsOnly.startsWith("1")) return true;
+	return false;
+};
+
 export function useAdminLogic() {
 	const globalState = globals();
 	const [activeTab, setActiveTab] = useState<AdminTab>("cadets");
@@ -161,6 +177,20 @@ export function useAdminLogic() {
 		value: string,
 		draftKey: string
 	) => {
+		if (fieldPath === "contact/schoolEmail" || fieldPath === "contact/personalEmail") {
+			if (!isValidEmail(value)) {
+				Alert.alert("Invalid email", "Please enter a valid email address.");
+				return;
+			}
+		}
+
+		if (fieldPath === "contact/cellPhone") {
+			if (!isValidPhoneNumber(value)) {
+				Alert.alert("Invalid phone number", "Please enter a valid 10-digit phone number.");
+				return;
+			}
+		}
+
 		try {
 			await updateCadetField(cadetKey, fieldPath, value);
 			clearDraft(draftKey);
