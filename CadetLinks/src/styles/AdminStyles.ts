@@ -158,6 +158,7 @@ export const adminStyles = StyleSheet.create({
         paddingVertical: 12,
         color: colors.text,
         fontSize: 12,
+        height: 44,
     },
     adminEditCell: {
         width: 150,
