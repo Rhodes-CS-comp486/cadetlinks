@@ -12,8 +12,10 @@ export const PERMISSIONS = {
 
 export const TEMP_PASSWORD = "cadetlinks";
 export const YEARS   = ["100", "150", "200","250", "300", "400", "500"];
+export const INTRO_YEARS = ["100", "150", "200"];
 export const FLIGHTS = ["Alpha", "Bravo", "POC"];
-export const RANKS = ["C/4C", "C/3C", "C/2C"];
+export const INTRO_RANKS = ["C/4C", "C/3C", "C/2C"];
+export const RANKS   = ["C/4C", "C/3C", "C/2C", "C/1C", "C/CMSgt", "C/SMSgt", "C/Msgt", "C/Capt", "C/Maj", "C/Lt Col", "C/Col"];
 export const JOBS =[
          "A1 Director",
          "A3 Director",

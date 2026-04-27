@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { CreateAccountModalProps } from "../../../../assets/types";
-import { YEARS, FLIGHTS, RANKS} from "../../../../assets/constants";
+import { INTRO_YEARS, FLIGHTS, INTRO_RANKS} from "../../../../assets/constants";
 import { actionStyles as styles } from "../../../../styles/ActionStyles";
 import { eventsStyles } from "../../../../styles/EventStyles";
 import { DropdownPicker } from "./DropdownPicker";
@@ -66,14 +66,14 @@ export function CreateAccountModal({
 
               <DropdownPicker
                 label="Cadet Rank"
-                options={RANKS}
+                options={INTRO_RANKS}
                 value={form.cadetRank}
                 onSelect={(v) => updateField("cadetRank", v)}
               />
 
               <DropdownPicker
                 label="Class Year"
-                options={YEARS}
+                options={INTRO_YEARS}
                 value={form.classYear}
                 onSelect={(v) => updateField("classYear", v)}
               />

@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
+	Modal,
   Pressable,
   ScrollView,
+	Switch,
   Text,
   TextInput,
   View,
@@ -25,6 +27,8 @@ const isEmailField = (fieldPath?: (typeof CADET_FIELDS)[number]["path"]) =>
 export function AdminPage() {
 	const [openDropdownKey, setOpenDropdownKey] = useState<string | null>(null);
 	const [contactEditMode, setContactEditMode] = useState<Record<string, boolean>>({});
+	const [promotionModalVisible, setPromotionModalVisible] = useState(false);
+	const [deleteFourHundreds, setDeleteFourHundreds] = useState<Record<string, boolean>>({});
 	const {
 		activeTab,
 		setActiveTab,
@@ -33,12 +37,43 @@ export function AdminPage() {
 		getDraftValue,
 		setDraftValue,
 		saveCadetField,
+		confirmBatchPromotion,
 		confirmDeleteCadet,
 		allCadetNames,
 		getJobCadet,
 		handleJobSelect,
 		handleJobClear,
 	} = useAdminLogic();
+
+	const fourHundredCadets = useMemo(
+		() =>
+			cadetRows.filter(
+				(row) => String(row.profile.classYear ?? "").trim() === "400"
+			),
+		[cadetRows]
+	);
+
+	const selectedDeleteFourHundredKeys = useMemo(
+		() =>
+			Object.entries(deleteFourHundreds)
+				.filter(([, shouldDelete]) => shouldDelete)
+				.map(([cadetKey]) => cadetKey),
+		[deleteFourHundreds]
+	);
+
+	const openPromotionModal = () => {
+		const initialSelections: Record<string, boolean> = {};
+		for (const row of fourHundredCadets) {
+			initialSelections[row.cadetKey] = deleteFourHundreds[row.cadetKey] ?? false;
+		}
+		setDeleteFourHundreds(initialSelections);
+		setPromotionModalVisible(true);
+	};
+
+	const runPromotionsFromModal = () => {
+		setPromotionModalVisible(false);
+		confirmBatchPromotion(selectedDeleteFourHundredKeys);
+	};
 
 	const setContactEditing = (key: string, isEditing: boolean) => {
 		setContactEditMode((prev) => ({ ...prev, [key]: isEditing }));
@@ -235,12 +270,66 @@ export function AdminPage() {
 		<ScreenLayout>
 			<View style={styles.body_container}>
 				<Text style={styles.sectionTitle}>Admin Data Sheets</Text>
-				<Text style={styles.adminSubtitle}>Edit any cell and click out of it to save changes to Firebase.</Text>
 
 				<View style={styles.adminTabRow}>
 					{renderTabButton("cadets", "Cadet Information")}
 					{renderTabButton("jobs", "Job Assignments")}
+					<View style={styles.adminTabRowSpacer} />
+					<Pressable
+						style={styles.adminPromotionButton}
+						onPress={openPromotionModal}
+					>
+						<Text style={styles.adminPromotionButtonText}>Run Promotions</Text>
+					</Pressable>
 				</View>
+
+				<Modal
+					visible={promotionModalVisible}
+					animationType="fade"
+					transparent
+					onRequestClose={() => setPromotionModalVisible(false)}
+				>
+					<View style={styles.modalOverlay}>
+						<View style={styles.modalContent}>
+							<Text style={styles.modalTitle}>Batch Promotions</Text>
+							<Text style={styles.adminSubtitle}>Select which 400-level cadets to delete. Unselected 400 cadets will be kept.</Text>
+
+							<ScrollView style={styles.adminPromotionModalList} contentContainerStyle={styles.adminPromotionModalListContent}>
+								{fourHundredCadets.length === 0 ? (
+									<Text style={styles.adminPromotionToggleText}>No 400-level cadets found.</Text>
+								) : (
+									fourHundredCadets.map((row) => {
+										const fullName = [row.profile.firstName, row.profile.lastName].filter(Boolean).join(" ") || row.cadetKey;
+										const shouldDelete = deleteFourHundreds[row.cadetKey] === true;
+										return (
+											<View key={row.cadetKey} style={styles.adminPromotionModalItem}>
+												<Text style={styles.adminPromotionModalItemText}>{fullName}</Text>
+												<View style={styles.adminPromotionToggleGroup}>
+													<Text style={styles.adminPromotionToggleText}>{shouldDelete ? "Delete" : "Keep"}</Text>
+													<Switch
+														value={shouldDelete}
+														onValueChange={(next) =>
+															setDeleteFourHundreds((prev) => ({ ...prev, [row.cadetKey]: next }))
+														}
+													/>
+												</View>
+											</View>
+										);
+									})
+								)}
+							</ScrollView>
+
+							<View style={styles.adminPromotionModalActions}>
+								<Pressable style={styles.adminPromotionModalCancelButton} onPress={() => setPromotionModalVisible(false)}>
+									<Text style={styles.adminPromotionModalCancelText}>Cancel</Text>
+								</Pressable>
+								<Pressable style={styles.adminPromotionButton} onPress={runPromotionsFromModal}>
+									<Text style={styles.adminPromotionButtonText}>Confirm and Run</Text>
+								</Pressable>
+							</View>
+						</View>
+					</View>
+				</Modal>
 
 				<View style={styles.adminSheetContainer}>
 					<ScrollView

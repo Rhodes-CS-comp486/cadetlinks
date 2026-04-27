@@ -75,6 +75,19 @@ const showPopupAlert = (title: string, message: string) => {
 	Alert.alert(title, message);
 };
 
+const getPromotedYear = (classYear: string): string | null => {
+	if (classYear === "100" || classYear === "150") return "200";
+	if (classYear === "200" || classYear === "250") return "300";
+	if (classYear === "300") return "400";
+	return null;
+};
+
+const getPromotedRank = (rank: string): string | null => {
+	if (rank === "C/4C") return "C/3C";
+	if (rank === "C/3C") return "C/2C";
+	return null;
+};
+
 export function useAdminLogic() {
 	const globalState = globals();
 	const [activeTab, setActiveTab] = useState<AdminTab>("cadets");
@@ -248,6 +261,77 @@ export function useAdminLogic() {
 		]);
 	};
 
+	const runBatchPromotion = async (deleteFourHundredCadetKeys: string[]) => {
+		const deleteSet = new Set(deleteFourHundredCadetKeys);
+		let deletedCount = 0;
+		let yearPromotedCount = 0;
+		let rankPromotedCount = 0;
+		let forcedPocFlightCount = 0;
+		let failureCount = 0;
+
+		for (const { cadetKey, profile } of cadetRows) {
+			const currentYear = String(profile.classYear ?? "").trim();
+			const currentRank = String(profile.cadetRank ?? "").trim();
+			const currentFlight = String(profile.flight ?? "").trim();
+
+			try {
+				if (currentYear === "400" && deleteSet.has(cadetKey)) {
+					await deleteCadetUser(cadetKey);
+					deletedCount += 1;
+					continue;
+				}
+
+				const nextYear = getPromotedYear(currentYear);
+				if (nextYear && nextYear !== currentYear) {
+					await updateCadetField(cadetKey, "classYear", nextYear);
+					yearPromotedCount += 1;
+				}
+
+				const nextRank = getPromotedRank(currentRank);
+				if (nextRank && nextRank !== currentRank) {
+					await updateCadetField(cadetKey, "cadetRank", nextRank);
+					rankPromotedCount += 1;
+				}
+
+				if (currentRank === "C/3C" && currentFlight !== "POC") {
+					await updateCadetField(cadetKey, "flight", "POC");
+					forcedPocFlightCount += 1;
+				}
+			} catch {
+				failureCount += 1;
+			}
+		}
+
+		showPopupAlert(
+			"Batch promotion complete",
+			[
+				`Years promoted: ${yearPromotedCount}`,
+				`Ranks promoted: ${rankPromotedCount}`,
+				`Flights set to POC: ${forcedPocFlightCount}`,
+				`Deleted 400-level cadets: ${deletedCount}`,
+				`Failed updates: ${failureCount}`,
+			].join("\n")
+		);
+	};
+
+	const confirmBatchPromotion = (deleteFourHundredCadetKeys: string[]) => {
+		const title = "Run Batch Promotions";
+		const message = "Confirm batch promotions and 400-level deletions?";
+
+		if (Platform.OS === "web" && typeof window !== "undefined") {
+			const confirmed = window.confirm(`${title}\n\n${message}`);
+			if (confirmed) {
+				void runBatchPromotion(deleteFourHundredCadetKeys);
+			}
+			return;
+		}
+
+		Alert.alert(title, message, [
+			{ text: "Cancel", style: "cancel" },
+			{ text: "Run", onPress: () => void runBatchPromotion(deleteFourHundredCadetKeys) },
+		]);
+	};
+
 	return {
 		activeTab,
 		setActiveTab,
@@ -257,6 +341,7 @@ export function useAdminLogic() {
 		setDraftValue,
 		saveCadetField,
 		saveCadetJob,
+		confirmBatchPromotion,
 		confirmDeleteCadet,
 		allCadetNames,
 		getJobCadet,
