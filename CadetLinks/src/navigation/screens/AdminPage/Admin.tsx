@@ -33,6 +33,7 @@ export function AdminPage() {
 		getDraftValue,
 		setDraftValue,
 		saveCadetField,
+		confirmDeleteCadet,
 		allCadetNames,
 		getJobCadet,
 		handleJobSelect,
@@ -86,11 +87,13 @@ export function AdminPage() {
 							</Text>
 						);
 					})}
+					<Text style={styles.adminRowActionHeader}>Delete</Text>
 				</View>
 				{cadetRows.map((row) => {
 					const rowPrefix = getDraftKey("cadet", row.cadetKey);
 					const rowHasOpenDropdown =
 						typeof openDropdownKey === "string" && openDropdownKey.startsWith(`${rowPrefix}::`);
+					const displayName = [row.profile.firstName, row.profile.lastName].filter(Boolean).join(" ");
 
 					return (
 					<View
@@ -191,6 +194,14 @@ export function AdminPage() {
 								/>
 							);
 						})}
+						<View style={styles.adminRowActionCell}>
+							<Pressable
+								style={styles.adminDeleteButton}
+								onPress={() => confirmDeleteCadet(row.cadetKey, displayName)}
+							>
+								<Ionicons name="trash-outline" size={16} color="#FF6B6B" />
+							</Pressable>
+						</View>
 					</View>
 					);
 				})}

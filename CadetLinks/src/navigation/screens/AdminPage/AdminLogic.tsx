@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Platform } from "react-native";
-import { globals, initializeGlobals, updateCadetField, updateCadetJobAssignment } from "../../../firebase/dbController";
+import { deleteCadetUser, globals, initializeGlobals, updateCadetField, updateCadetJobAssignment } from "../../../firebase/dbController";
 import type { CadetProfile } from "../../../assets/types";
 
 export type AdminTab = "cadets" | "jobs";
@@ -220,6 +220,34 @@ export function useAdminLogic() {
 		}
 	};
 
+	const confirmDeleteCadet = (cadetKey: string, fullName: string) => {
+		const displayName = fullName.trim() || cadetKey;
+		const title = "Delete User";
+		const message = `Are you sure you want to delete ${displayName}? This cannot be undone.`;
+
+		const runDelete = async () => {
+			try {
+				await deleteCadetUser(cadetKey);
+				showPopupAlert("Deleted", `${displayName} was removed.`);
+			} catch (e: any) {
+				showPopupAlert("Delete failed", e?.message ?? "Could not delete this user.");
+			}
+		};
+
+		if (Platform.OS === "web" && typeof window !== "undefined") {
+			const confirmed = window.confirm(`${title}\n\n${message}`);
+			if (confirmed) {
+				void runDelete();
+			}
+			return;
+		}
+
+		Alert.alert(title, message, [
+			{ text: "Cancel", style: "cancel" },
+			{ text: "Delete", style: "destructive", onPress: () => void runDelete() },
+		]);
+	};
+
 	return {
 		activeTab,
 		setActiveTab,
@@ -229,6 +257,7 @@ export function useAdminLogic() {
 		setDraftValue,
 		saveCadetField,
 		saveCadetJob,
+		confirmDeleteCadet,
 		allCadetNames,
 		getJobCadet,
 		handleJobSelect,
