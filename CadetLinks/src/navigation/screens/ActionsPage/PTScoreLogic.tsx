@@ -1,11 +1,15 @@
 import { useState, useCallback } from "react";
 import { Alert } from "react-native";
-import { ref, update } from "firebase/database";
-import { db } from "../../../firebase/config";
-import { loadAttendanceToolsData } from "../../../firebase/dbController";
+import {
+  loadAttendanceToolsData,
+  savePTScores,
+} from "../../../firebase/dbController";
+import { globals } from "../../../firebase/dbController";
 import type { AttendanceCadetItem } from "../../../firebase/dbController";
 
 export function usePTScoreLogic() {
+  const { ptScores: ptScoresByCadet } = globals();
+
   const [modalVisible, setModalVisible]             = useState(false);
   const [allCadets, setAllCadets]                   = useState<AttendanceCadetItem[]>([]);
   const [loading, setLoading]                       = useState(false);
@@ -64,7 +68,7 @@ export function usePTScoreLogic() {
   // ── Validate format ───────────────────────────────────────────────────────
 
   /**
-   * Validates that a score string is a valid number in roughly 00.0 format.
+   * Validates that a score string is a valid number between 0–100.
    * Accepts whole numbers (e.g. "85") and decimals (e.g. "85.5").
    * Returns the parsed float or null if invalid.
    */
@@ -79,19 +83,19 @@ export function usePTScoreLogic() {
   // ── Submit ────────────────────────────────────────────────────────────────
 
   const submit = useCallback(async () => {
-    // Build valid entries only
-    const validEntries: Array<{ cadet: AttendanceCadetItem; score: number }> = [];
+    // Build valid entries only — skip blanks, flag invalid values.
+    const validEntries: Array<{ cadetKey: string; score: number }> = [];
     const invalidNames: string[] = [];
 
     for (const cadet of allCadets) {
       const raw = scores[cadet.cadetKey] ?? "";
-      if (raw.trim() === "") continue; // skip blank — not an error
+      if (raw.trim() === "") continue; // blank = skip, not an error
 
       const score = parseScore(raw);
       if (score === null) {
         invalidNames.push(cadet.fullName);
       } else {
-        validEntries.push({ cadet, score });
+        validEntries.push({ cadetKey: cadet.cadetKey, score });
       }
     }
 
@@ -118,16 +122,12 @@ export function usePTScoreLogic() {
           onPress: async () => {
             setSaving(true);
             try {
-              // Write to cadets/<cadetKey>/ptScore  (top-level field on the cadet profile)
-              // This is what profile.lastPTScore reads in the Profile screen.
-              const updates: Record<string, string> = {};
-              for (const { cadet, score } of validEntries) {
-                // Format as "00.0" string for display consistency
-                const formatted = score.toFixed(1);
-                updates[`cadets/${cadet.cadetKey}/lastPTScore`] = formatted;
-              }
+              // Delegate all Firebase writes to dbController.savePTScores.
+              // That function appends a timestamped entry under
+              //   cadets/{cadetKey}/ptScores/{timestamp}
+              // AND updates cadets/{cadetKey}/lastPTScore for quick display.
+              await savePTScores(validEntries);
 
-              await update(ref(db), updates);
               Alert.alert(
                 "Success",
                 `PT scores saved for ${validEntries.length} cadet(s).`
@@ -159,5 +159,7 @@ export function usePTScoreLogic() {
     selectFlight,
     saving,
     submit,
+    /** Pass-through so the modal can render per-cadet score history. */
+    ptScoresByCadet,
   };
 }
