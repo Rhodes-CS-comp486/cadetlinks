@@ -702,6 +702,34 @@ export const updateCadetJobAssignment = async (cadetKey: string, job: string) =>
   await updateCadetField(cadetKey, "job", job);
 };
 
+export const deleteCadetUser = async (cadetKey: string) => {
+  const cadetSnap = await get(ref(db, `cadets/${cadetKey}`));
+  const cadet = (cadetSnap.val() as CadetProfile | null) ?? null;
+
+  const updates: Record<string, null> = {
+    [`cadets/${cadetKey}`]: null,
+  };
+
+  if (cadet) {
+    const classYearKey = sanitizeIndexKey(String(cadet.classYear ?? "").trim());
+    const flightKey = sanitizeIndexKey(String(cadet.flight ?? "").trim());
+
+    if (classYearKey) {
+      updates[`indexes/classYear/${classYearKey}/${cadetKey}`] = null;
+    }
+    if (flightKey) {
+      updates[`indexes/flight/${flightKey}/${cadetKey}`] = null;
+    }
+  }
+
+  /*
+  TODO : need to be able to add person as app admin which needs to be done in FB
+  That way we admin can also delete other peoples accounts. rn in just sets everything to NULL
+  */
+
+  await update(ref(db), updates);
+};
+
 export const updateAttendanceCell = async (
   bucket: "PT" | "LLAB" | "RMP",
   date: string,

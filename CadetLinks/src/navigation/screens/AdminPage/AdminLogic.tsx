@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert } from "react-native";
-import { globals, initializeGlobals, updateCadetField, updateCadetJobAssignment } from "../../../firebase/dbController";
+import { Alert, Platform } from "react-native";
+import { deleteCadetUser, globals, initializeGlobals, updateCadetField, updateCadetJobAssignment } from "../../../firebase/dbController";
 import type { CadetProfile } from "../../../assets/types";
 
 export type AdminTab = "cadets" | "jobs";
@@ -50,6 +50,43 @@ export const JOB_POSITIONS = [
 	"Recruiting Officer",
 	"Community Service Officer",
 ] as const;
+
+const isValidEmail = (value: string) => {
+	const trimmed = value.trim();
+	if (!trimmed) return true;
+	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+};
+
+const isValidPhoneNumber = (value: string) => {
+	const trimmed = value.trim();
+	if (!trimmed) return true;
+
+	const digitsOnly = trimmed.replace(/\D/g, "");
+	if (digitsOnly.length === 10) return true;
+	if (digitsOnly.length === 11 && digitsOnly.startsWith("1")) return true;
+	return false;
+};
+
+const showPopupAlert = (title: string, message: string) => {
+	if (Platform.OS === "web" && typeof window !== "undefined") {
+		window.alert(`${title}\n\n${message}`);
+		return;
+	}
+	Alert.alert(title, message);
+};
+
+const getPromotedYear = (classYear: string): string | null => {
+	if (classYear === "100" || classYear === "150") return "200";
+	if (classYear === "200" || classYear === "250") return "300";
+	if (classYear === "300") return "400";
+	return null;
+};
+
+const getPromotedRank = (rank: string): string | null => {
+	if (rank === "C/4C") return "C/3C";
+	if (rank === "C/3C") return "C/2C";
+	return null;
+};
 
 export function useAdminLogic() {
 	const globalState = globals();
@@ -161,11 +198,29 @@ export function useAdminLogic() {
 		value: string,
 		draftKey: string
 	) => {
+		if (fieldPath === "contact/schoolEmail" || fieldPath === "contact/personalEmail") {
+			if (!isValidEmail(value)) {
+				showPopupAlert("Invalid email", "Please enter a valid email address.");
+				clearDraft(draftKey);
+				return false;
+			}
+		}
+
+		if (fieldPath === "contact/cellPhone") {
+			if (!isValidPhoneNumber(value)) {
+				showPopupAlert("Invalid phone number", "Please enter a valid 10-digit phone number.");
+				clearDraft(draftKey);
+				return false;
+			}
+		}
+
 		try {
 			await updateCadetField(cadetKey, fieldPath, value);
 			clearDraft(draftKey);
+			return true;
 		} catch (e: any) {
 			Alert.alert("Save failed", e?.message ?? "Could not update cadet field.");
+			return false;
 		}
 	};
 
@@ -178,6 +233,105 @@ export function useAdminLogic() {
 		}
 	};
 
+	const confirmDeleteCadet = (cadetKey: string, fullName: string) => {
+		const displayName = fullName.trim() || cadetKey;
+		const title = "Delete User";
+		const message = `Are you sure you want to delete ${displayName}? This cannot be undone.`;
+
+		const runDelete = async () => {
+			try {
+				await deleteCadetUser(cadetKey);
+				showPopupAlert("Deleted", `${displayName} was removed.`);
+			} catch (e: any) {
+				showPopupAlert("Delete failed", e?.message ?? "Could not delete this user.");
+			}
+		};
+
+		if (Platform.OS === "web" && typeof window !== "undefined") {
+			const confirmed = window.confirm(`${title}\n\n${message}`);
+			if (confirmed) {
+				void runDelete();
+			}
+			return;
+		}
+
+		Alert.alert(title, message, [
+			{ text: "Cancel", style: "cancel" },
+			{ text: "Delete", style: "destructive", onPress: () => void runDelete() },
+		]);
+	};
+
+	const runBatchPromotion = async (deleteFourHundredCadetKeys: string[]) => {
+		const deleteSet = new Set(deleteFourHundredCadetKeys);
+		let deletedCount = 0;
+		let yearPromotedCount = 0;
+		let rankPromotedCount = 0;
+		let forcedPocFlightCount = 0;
+		let failureCount = 0;
+
+		for (const { cadetKey, profile } of cadetRows) {
+			const currentYear = String(profile.classYear ?? "").trim();
+			const currentRank = String(profile.cadetRank ?? "").trim();
+			const currentFlight = String(profile.flight ?? "").trim();
+
+			try {
+				if (currentYear === "400" && deleteSet.has(cadetKey)) {
+					await deleteCadetUser(cadetKey);
+					deletedCount += 1;
+					continue;
+				}
+
+				const nextYear = getPromotedYear(currentYear);
+				if (nextYear && nextYear !== currentYear) {
+					await updateCadetField(cadetKey, "classYear", nextYear);
+					yearPromotedCount += 1;
+				}
+
+				const nextRank = getPromotedRank(currentRank);
+				if (nextRank && nextRank !== currentRank) {
+					await updateCadetField(cadetKey, "cadetRank", nextRank);
+					rankPromotedCount += 1;
+				}
+
+				if (currentRank === "C/3C" && currentFlight !== "POC") {
+					await updateCadetField(cadetKey, "flight", "POC");
+					forcedPocFlightCount += 1;
+				}
+			} catch {
+				failureCount += 1;
+			}
+		}
+
+		showPopupAlert(
+			"Batch promotion complete",
+			[
+				`Years promoted: ${yearPromotedCount}`,
+				`Ranks promoted: ${rankPromotedCount}`,
+				`Flights set to POC: ${forcedPocFlightCount}`,
+				`Deleted 400-level cadets: ${deletedCount}`,
+				`Failed updates: ${failureCount}`,
+			].join("\n")
+		);
+	};
+
+	const confirmBatchPromotion = (deleteFourHundredCadetKeys: string[]) => {
+		const title = "Run Batch Promotions";
+		const message = "Confirm batch promotions and 400-level deletions?";
+
+		if (Platform.OS === "web" && typeof window !== "undefined") {
+			const confirmed = window.confirm(`${title}\n\n${message}`);
+			if (confirmed) {
+				void runBatchPromotion(deleteFourHundredCadetKeys);
+			}
+			return;
+		}
+
+		Alert.alert(title, message, [
+			{ text: "Cancel", style: "cancel" },
+			{ text: "Run", onPress: () => void runBatchPromotion(deleteFourHundredCadetKeys) },
+		]);
+	};
+
 	return {
 		activeTab,
 		setActiveTab,
@@ -187,6 +341,8 @@ export function useAdminLogic() {
 		setDraftValue,
 		saveCadetField,
 		saveCadetJob,
+		confirmBatchPromotion,
+		confirmDeleteCadet,
 		allCadetNames,
 		getJobCadet,
 		handleJobSelect,
