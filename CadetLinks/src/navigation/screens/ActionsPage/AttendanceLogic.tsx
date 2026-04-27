@@ -146,18 +146,20 @@ export function useAttendanceLogic() {
     await clearAttendanceForEventGlobal(eventId, todayEvents);
   }
 
-  const submitAttendance = async () => {
+  const onSubmitAttendance = async () => {
     if (!selectedEventId) {
       Alert.alert("Select an event", "Please choose today's event first.");
       return;
     }
 
     try {
+      console.log("Saving attendance with overrides:", attendanceOverrides);
       setSavingAttendance(true);
       await saveAttendanceForEvent(selectedEventId, attendanceOverrides);
       setAttendanceModalVisible(false);
       Alert.alert("Success", "Attendance was saved.");
     } catch (e: any) {
+      console.error(" Error saving attendance:", e);
       Alert.alert("Could not save attendance", e?.message ?? "Unknown error.");
     } finally {
       setSavingAttendance(false);
@@ -222,7 +224,8 @@ export function useAttendanceLogic() {
       toggleFlightDropdown,
       setCadetStatus,
       getCadetStatus,
-      submitAttendance,
+      onSubmitAttendance,
+      submitAttendance: onSubmitAttendance,
       clearSelectedAttendance,
     }),
     [
