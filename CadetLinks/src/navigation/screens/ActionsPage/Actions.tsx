@@ -168,7 +168,7 @@ export function Actions(): React.ReactElement {
         savingAttendance={attendance.savingAttendance}
         clearingAttendance={attendance.clearingAttendance}
         onClearAttendance={attendance.clearSelectedAttendance}
-        onSubmitAttendance={attendance.submitAttendance}
+        onSubmitAttendance={attendance.onSubmitAttendance}
       />
 
       {/* DOCUMENT UPLOADING MODAL */}
