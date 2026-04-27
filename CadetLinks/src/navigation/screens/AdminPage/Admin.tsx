@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { ScreenLayout } from "../../Components/ScreenLayout";
 import { CADET_FIELDS, JOB_SHEET_FIELDS, useAdminLogic, type AdminTab } from "./AdminLogic";
-import { generalStyles as styles } from "../../../styles/GeneralStyles";
+import { adminStyles as styles } from "../../../styles/AdminStyles";
 import { DropdownPicker } from "../ActionsPage/Components/DropdownPicker";
 import { JOBS } from "../../../assets/constants";
 
