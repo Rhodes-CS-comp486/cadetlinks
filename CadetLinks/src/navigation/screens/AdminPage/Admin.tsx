@@ -10,6 +10,8 @@ import { ScreenLayout } from "../../Components/ScreenLayout";
 import { CADET_FIELDS, JOB_POSITIONS, useAdminLogic, type AdminTab } from "./AdminLogic";
 import { generalStyles as styles } from "../../../styles/GeneralStyles";
 import { CadetAutocomplete } from "./CadetAutocomplete";
+import { DropdownPicker } from "../ActionsPage/Components/DropdownPicker";
+import { FLIGHTS, RANKS, YEARS } from "../../../assets/constants";
 
 export function AdminPage() {
 	const {
@@ -49,6 +51,32 @@ export function AdminPage() {
 						{CADET_FIELDS.map((field) => {
 							const key = getDraftKey("cadet", row.cadetKey, String(field.key));
 							const value = getDraftValue(key, field.getValue(row.profile));
+							const fieldPath = field.path;
+							const options =
+								fieldPath === "cadetRank"
+									? RANKS
+									: fieldPath === "classYear"
+										? YEARS
+										: fieldPath === "flight"
+											? FLIGHTS
+											: null;
+
+							if (options && fieldPath) {
+								return (
+									<View key={field.key} style={styles.adminEditCell}>
+										<DropdownPicker
+											label=""
+											options={options}
+											value={value}
+											onSelect={(selected) => {
+												setDraftValue(key, selected);
+												void saveCadetField(row.cadetKey, fieldPath, selected, key);
+											}}
+										/>
+									</View>
+								);
+							}
+
 							return (
 								<TextInput
 									key={field.key}

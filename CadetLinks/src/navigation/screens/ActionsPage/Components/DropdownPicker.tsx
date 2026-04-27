@@ -14,6 +14,7 @@ export function DropdownPicker({
 }: DropdownPickerProps) {
   const [open, setOpen] = useState(false);
   const safeValue = typeof value === "string" ? value : "";
+  const isCompact = !label;
   const safeOptions = Array.isArray(options)
     ? options.filter((opt): opt is string => typeof opt === "string")
     : [];
@@ -23,11 +24,14 @@ export function DropdownPicker({
       {label ? <Text style={styles.fieldLabel}>{label}</Text> : null}
 
       <Pressable
-        style={genStyles.dropDownBox}
+        style={[
+          genStyles.dropDownBox,
+          isCompact && { marginBottom: 0, minHeight: 32, height: 32 },
+        ]}
         onPress={() => setOpen((o) => !o)}
       >
         <Text>
-          {safeValue || `Select ${label}`}
+          {safeValue || (label ? `Select ${label}` : "Select")}
         </Text>
         <Ionicons name={open ? "chevron-up" : "chevron-down"} size={16} color="#9AA3B2" />
       </Pressable>
