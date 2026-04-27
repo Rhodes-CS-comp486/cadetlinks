@@ -17,9 +17,24 @@ import { actionStyles as styles } from "../../../../styles/ActionStyles";
 import { eventsStyles } from "../../../../styles/EventStyles";
 import { DropdownPicker } from "./DropdownPicker";
 
+const rankForYear = (year: string): string => {
+  if (year === "250") return "C/3C";
+  if (year === "100" || year === "150") return "C/4C";
+  return "";
+};
+
 export function CreateAccountModal({
   visible, onClose, form, updateField, updatePhone, saving, onSubmit,
 }: CreateAccountModalProps) {
+
+  const handleYearSelect = (year: string) => {
+    updateField("classYear", year);
+    const autoRank = rankForYear(year);
+    if (autoRank) {
+      updateField("cadetRank", autoRank);
+    }
+  };
+
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView
@@ -64,18 +79,20 @@ export function CreateAccountModal({
                 onChangeText={(v) => updateField("firstName", v)}
               />
 
+              {/* Class Year first — sets rank automatically */}
+              <DropdownPicker
+                label="Class Year"
+                options={INTRO_YEARS}
+                value={form.classYear}
+                onSelect={handleYearSelect}
+              />
+
+              {/* Rank shown after year, pre-filled but still editable */}
               <DropdownPicker
                 label="Cadet Rank"
                 options={INTRO_RANKS}
                 value={form.cadetRank}
                 onSelect={(v) => updateField("cadetRank", v)}
-              />
-
-              <DropdownPicker
-                label="Class Year"
-                options={INTRO_YEARS}
-                value={form.classYear}
-                onSelect={(v) => updateField("classYear", v)}
               />
 
               <DropdownPicker
