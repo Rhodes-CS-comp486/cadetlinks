@@ -11,7 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { ScreenLayout } from "../../Components/ScreenLayout";
 import { CADET_FIELDS, JOB_POSITIONS, useAdminLogic, type AdminTab } from "./AdminLogic";
-import { generalStyles as styles } from "../../../styles/GeneralStyles";
+import { adminStyles as styles } from "../../../styles/AdminStyles";
 import { CadetAutocomplete } from "./CadetAutocomplete";
 import { DropdownPicker } from "../ActionsPage/Components/DropdownPicker";
 import { FLIGHTS, RANKS, YEARS } from "../../../assets/constants";
