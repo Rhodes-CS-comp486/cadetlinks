@@ -5,16 +5,94 @@ import { StyleSheet } from "react-native";
 export const adminStyles = StyleSheet.create({
     ...generalStyles, //inherit general styles for container and others
 
-adminSubtitle: {
+    adminSubtitle: {
         color: colors.muted,
         fontSize: 13,
         marginBottom: 4,
     },
     adminTabRow: {
         flexDirection: "row",
+        alignItems: "center",
         gap: 8,
         marginTop: 8,
         marginBottom: 12,
+    },
+    adminTabRowSpacer: {
+        flex: 1,
+    },
+    adminPromotionRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 10,
+        marginBottom: 10,
+        flexWrap: "wrap",
+    },
+    adminPromotionToggleGroup: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+    },
+    adminPromotionToggleText: {
+        color: colors.text,
+        fontSize: 12,
+        fontWeight: "600",
+    },
+    adminPromotionButton: {
+        backgroundColor: "#2563EB",
+        borderRadius: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+    },
+    adminPromotionButtonText: {
+        color: "#FFFFFF",
+        fontSize: 12,
+        fontWeight: "700",
+    },
+    adminPromotionModalList: {
+        maxHeight: 320,
+        marginTop: 8,
+        marginBottom: 12,
+    },
+    adminPromotionModalListContent: {
+        gap: 8,
+    },
+    adminPromotionModalItem: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: 10,
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        backgroundColor: colors.card,
+    },
+    adminPromotionModalItemText: {
+        color: colors.text,
+        fontSize: 12,
+        fontWeight: "600",
+        flexShrink: 1,
+        marginRight: 8,
+    },
+    adminPromotionModalActions: {
+        flexDirection: "row",
+        justifyContent: "flex-end",
+        alignItems: "center",
+        gap: 10,
+    },
+    adminPromotionModalCancelButton: {
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        backgroundColor: colors.card,
+    },
+    adminPromotionModalCancelText: {
+        color: colors.text,
+        fontSize: 12,
+        fontWeight: "700",
     },
     adminTabButton: {
         paddingVertical: 10,
@@ -41,7 +119,7 @@ adminSubtitle: {
         borderWidth: 1,
         borderColor: colors.border,
         borderRadius: 12,
-        overflow: "hidden",
+        overflow: "visible",
         backgroundColor: colors.card,
     },
     adminSheetHeaderRow: {
@@ -55,6 +133,14 @@ adminSubtitle: {
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
     },
+    adminSheetRowOpen: {
+        zIndex: 3000,
+        elevation: 3000,
+        position: "relative",
+    },
+    adminSheetContentContainer: {
+        paddingBottom: 12,
+    },
     adminHeaderCell: {
         width: 150,
         paddingHorizontal: 10,
@@ -63,13 +149,15 @@ adminSubtitle: {
         fontWeight: "700",
         fontSize: 12,
     },
+    adminHeaderCellWide: {
+        width: 240,
+    },
     adminReadCell: {
         width: 150,
         paddingHorizontal: 10,
         paddingVertical: 12,
         color: colors.text,
         fontSize: 12,
-        height: 50,
     },
     adminEditCell: {
         width: 150,
@@ -79,6 +167,79 @@ adminSubtitle: {
         fontSize: 12,
         borderLeftWidth: 1,
         borderLeftColor: colors.border,
+    },
+    adminContactCell: {
+        width: 150,
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        borderLeftWidth: 1,
+        borderLeftColor: colors.border,
+        justifyContent: "center",
+        position: "relative",
+    },
+    adminContactCellWide: {
+        width: 240,
+    },
+    adminContactCellReadMode: {
+        backgroundColor: colors.card,
+    },
+    adminContactCellEditMode: {
+        backgroundColor: colors.background,
+        borderColor: colors.accent,
+        borderWidth: 1,
+    },
+    adminCellActionButton: {
+        position: "absolute",
+        top: 2,
+        right: 4,
+        zIndex: 2,
+        padding: 4,
+    },
+    adminCellActionButtonEditMode: {
+        backgroundColor: colors.accent,
+        borderRadius: 10,
+    },
+    adminContactCellText: {
+        color: colors.text,
+        fontSize: 12,
+        paddingRight: 18,
+        minHeight: 20,
+        paddingTop: 8,
+    },
+    adminContactCellInput: {
+        color: colors.text,
+        fontSize: 12,
+        paddingRight: 18,
+        minHeight: 20,
+        paddingTop: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.accent,
+    },
+    adminRowActionHeader: {
+        width: 78,
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        color: colors.text,
+        fontWeight: "700",
+        fontSize: 12,
+        textAlign: "center",
+        borderLeftWidth: 1,
+        borderLeftColor: colors.border,
+    },
+    adminRowActionCell: {
+        width: 78,
+        alignItems: "center",
+        justifyContent: "center",
+        borderLeftWidth: 1,
+        borderLeftColor: colors.border,
+    },
+    adminDeleteButton: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "rgba(255, 107, 107, 0.12)",
     },
     adminEditCellWide: {
         width: 230,
@@ -100,6 +261,44 @@ adminSubtitle: {
     },
     adminKeyCol: {
         width: 230,
+    },
+    adminJobTitleCell: {
+        width: 210,
+        paddingHorizontal: 10,
+        paddingVertical: 12,
+        color: colors.text,
+        fontWeight: "600",
+        fontSize: 12,
+    },
+    adminCadetCellWrapper: {
+        flex: 1,
+        borderLeftWidth: 1,
+        borderLeftColor: colors.border,
+    },
+    adminCadetInput: {
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        color: colors.text,
+        fontSize: 12,
+        minWidth: 200,
+    },
+    adminAutocompleteWrapper: {
+        flex: 1,
+    },
+    adminSuggestionList: {
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+        backgroundColor: colors.background,
+    },
+    adminSuggestionItem: {
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+    },
+    adminSuggestionText: {
+        color: colors.text,
+        fontSize: 12,
     },
     attendanceToolbarRow: {
         flexDirection: "row",
