@@ -720,6 +720,9 @@ export const deleteCadetUser = async (cadetKey: string) => {
     if (flightKey) {
       updates[`indexes/flight/${flightKey}/${cadetKey}`] = null;
     }
+    if( jobKey){
+      updates[`indexes/permissions/${jobKey}/${cadetKey}`] = null;
+    }
   }
 
   /*
