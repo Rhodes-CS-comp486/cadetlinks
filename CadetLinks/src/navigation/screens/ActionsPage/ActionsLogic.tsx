@@ -136,7 +136,26 @@ export function useActionsLogic() {
       fullName, jobText, permissionText,
       anyVisibleActions, navigation,
     }),
-    [cadetKey, profile, loading, error, permissionNames,
-     isAdmin, canTakeAttendance, canUploadFiles, actions, ptScore]
+    [
+      cadetKey,
+      profile,
+      loading,
+      error,
+      permissionNames,
+      isAdmin,
+      canTakeAttendance,
+      canUploadFiles,
+      actions,
+      onPressAction,
+      attendance,
+      documentUploading,
+      createAccount,
+      fullName,
+      jobText,
+      permissionText,
+      anyVisibleActions,
+      navigation,
+      ptScore
+    ]
   );
 }

@@ -48,10 +48,12 @@ export function Events(): React.ReactElement {
         <Calendar
           style={styles.calendar}
           theme={calendarTheme}
+          markingType='multi-dot'
           onDayPress={(day) => setSelectedDate(day.dateString)}
           markedDates={{
             ...markedDates,
             [selectedDate]: {
+              ...(markedDates[selectedDate] ?? {}),
               selected: true,
               selectedColor: colors.accent,
             },

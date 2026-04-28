@@ -7,7 +7,8 @@ import { generalStyles as styles } from "../../styles/GeneralStyles";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { signOut } from "firebase/auth";
 import { auth } from "../../firebase/config";
-import { teardownGlobals } from "../../firebase/dbController";
+import { teardownGlobals, globals } from "../../firebase/dbController";
+import { PERMISSIONS } from "../../assets/constants";
 
 export function BaseScreenLayout({
   children, 
@@ -20,6 +21,9 @@ export function BaseScreenLayout({
 }) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  const globalState = globals();
+  const canViewAdminPage = globalState.permissionsMap.get(PERMISSIONS.ADMIN) ?? false;
+  const canViewAttendance = globalState.permissionsMap.get(PERMISSIONS.ATTENDANCE_EDITING) ?? false;
 
   const [menuOpen, setMenuOpen] = React.useState(false);
 
@@ -39,7 +43,12 @@ export function BaseScreenLayout({
 };
 
   const menuItems = [
-  { label: "Profile Search", onPress: () => navigation.navigate("Search") },
+  ...(canViewAdminPage
+    ? [{ label: "Admin", onPress: () => navigation.navigate("Admin") }]
+    : []),
+  ...(canViewAttendance
+    ? [{ label: "Attendance", onPress: () => navigation.navigate("Attendance") }]
+    : []),
   { label: "Quick Links", onPress: () => navigation.navigate("QuickLinks") },
   { label: "Logout", onPress: () => handleLogout() },
   ];
@@ -59,10 +68,12 @@ export function BaseScreenLayout({
       <View style={[styles.header_container, { paddingTop: insets.top + 10 }]}>
         <View style={styles.header_row}>
           {leftNode}
-          <Text>
-            <Text style={[styles.header_text, styles.titleCadet]}>Cadet</Text>
-            <Text style={[styles.header_text, styles.titleLinks]}>Links</Text>
-          </Text>
+          <Pressable onPress={() => navigation.navigate("HomeTabs")}>
+            <Text>
+              <Text style={[styles.header_text, styles.titleCadet]}>Cadet</Text>
+              <Text style={[styles.header_text, styles.titleLinks]}>Links</Text>
+            </Text>
+          </Pressable>
           <Pressable onPress={() => setMenuOpen(!menuOpen)} style={styles.header_button}>
             <Ionicons name="menu-outline" size={26} color="white" />
           </Pressable>

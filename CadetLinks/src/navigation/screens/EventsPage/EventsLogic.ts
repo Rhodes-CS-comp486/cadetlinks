@@ -58,11 +58,30 @@ export function useEvents() {
     setRsvpStatus(globalState.userRsvpStatusByEvent);
   }, [globalState.userRsvpStatusByEvent]);
 
-  const markedDates = allEvents.reduce((acc: any, event) => {
-    const dateKey = formatDate(event.date);
-    acc[dateKey] = { marked: true, dotColor: 'blue' };
-    return acc;
-  }, {});
+  const getEventDotColor = (title: string): string => {
+    const normalized = title.trim().toLowerCase();
+    if (normalized === 'pt') return 'red';
+    if (normalized === 'llab') return 'orange';
+    if (normalized === 'rmp') return 'purple';
+    if (normalized.includes('honor guard')) return '#4A90D9';
+    if (normalized === 'community service') return 'green';
+    if (normalized === 'morale') return 'yellow';
+    if (normalized === 'recruiting') return 'pink';
+    return 'gray';
+  };
+
+  const markedDates = useMemo(() => {
+    return allEvents.reduce((acc: Record<string, { dots: { key: string; color: string }[] }>, event) => {
+      const dateKey = formatDate(event.date);
+      const dot = { key: event.id, color: getEventDotColor(event.title) };
+      if (acc[dateKey]) {
+        acc[dateKey].dots.push(dot);
+      } else {
+        acc[dateKey] = { dots: [dot] };
+      }
+      return acc;
+    }, {});
+  }, [allEvents]);
 
   const eventsForSelectedDate = useMemo(() => {
     return allEvents
