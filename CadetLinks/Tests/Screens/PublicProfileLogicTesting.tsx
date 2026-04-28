@@ -1,32 +1,28 @@
 import { act, renderHook, waitFor } from '@testing-library/react-native';
-import * as firebaseDatabase from 'firebase/database';
 import { usePublicProfileLogic, PublicCadetProfile } from '../../src/navigation/screens/SearchPage/PublicProfileLogic';
 
-type Snapshot = {
-	exists: () => boolean;
-	val: () => unknown;
+
+const mockInitializeGlobals = jest.fn(() => Promise.resolve());
+const mockGetProfileByCadetKey = jest.fn();
+const mockGlobalState = {
+	isInitialized: true,
+	isInitializing: false,
+	cadetsByKey: {} as Record<string, PublicCadetProfile>,
 };
 
-const getResponses: Record<string, { exists: boolean; value?: unknown }> = {};
-
-jest.mock('../../src/firebase/config', () => ({
-	db: { mockedDb: true },
-}));
-
-jest.mock('firebase/database', () => ({
-	ref: jest.fn((_db: unknown, path: string) => ({ path })),
-	get: jest.fn((refObj: { path: string }) => {
-		const response = getResponses[refObj.path] || { exists: false, value: undefined };
-		return Promise.resolve({
-			exists: () => response.exists,
-			val: () => response.value,
-		} as Snapshot);
-	}),
+jest.mock('../../src/firebase/globals', () => ({
+	globals: () => mockGlobalState,
+	initializeGlobals: () => mockInitializeGlobals(),
+	getProfileByCadetKey: (cadetKey: string) => mockGetProfileByCadetKey(cadetKey),
 }));
 
 describe('usePublicProfileLogic', () => {
 	beforeEach(() => {
-		Object.keys(getResponses).forEach((key) => delete getResponses[key]);
+		mockGlobalState.isInitialized = true;
+		mockGlobalState.isInitializing = false;
+		mockGlobalState.cadetsByKey = {};
+		mockGetProfileByCadetKey.mockReset();
+		mockInitializeGlobals.mockClear();
 		jest.clearAllMocks();
 		jest.spyOn(console, 'error').mockImplementation(jest.fn());
 	});
@@ -58,10 +54,7 @@ describe('usePublicProfileLogic', () => {
 			},
 		};
 
-		getResponses[`cadets/${cadetKey}`] = {
-			exists: true,
-			value: mockProfile,
-		};
+		mockGetProfileByCadetKey.mockResolvedValueOnce(mockProfile);
 
 		const { result } = renderHook(() => usePublicProfileLogic(cadetKey));
 
@@ -76,17 +69,12 @@ describe('usePublicProfileLogic', () => {
 
 		expect(result.current.profile).toEqual(mockProfile);
 		expect(result.current.profileError).toBe(null);
-		expect(firebaseDatabase.ref).toHaveBeenCalledWith(
-			expect.any(Object),
-			`cadets/${cadetKey}`
-		);
+		expect(mockGetProfileByCadetKey).toHaveBeenCalledWith(cadetKey);
 	});
 
 	it('handles profile not found case', async () => {
 		const cadetKey = 'nonexistent_cadet';
-		getResponses[`cadets/${cadetKey}`] = {
-			exists: false,
-		};
+		mockGetProfileByCadetKey.mockResolvedValueOnce(null);
 
 		const { result } = renderHook(() => usePublicProfileLogic(cadetKey));
 
@@ -102,9 +90,7 @@ describe('usePublicProfileLogic', () => {
 
 	it('handles error when loading profile fails', async () => {
 		const cadetKey = 'error_cadet';
-		(firebaseDatabase.get as jest.Mock).mockRejectedValueOnce(
-			new Error('Firebase connection error')
-		);
+		mockGetProfileByCadetKey.mockRejectedValueOnce(new Error('Firebase connection error'));
 
 		const { result } = renderHook(() => usePublicProfileLogic(cadetKey));
 
@@ -131,9 +117,7 @@ describe('usePublicProfileLogic', () => {
 		};
 
 		// First call fails
-		(firebaseDatabase.get as jest.Mock).mockRejectedValueOnce(
-			new Error('Network error')
-		);
+		mockGetProfileByCadetKey.mockRejectedValueOnce(new Error('Network error'));
 
 		const { result, rerender } = renderHook(
 			({ cadetKey }: { cadetKey: string }) => usePublicProfileLogic(cadetKey),
@@ -149,19 +133,7 @@ describe('usePublicProfileLogic', () => {
 		expect(result.current.profileError).toBe('Could not load public profile.');
 
 		// Setup success response for second cadet
-		getResponses[`cadets/${cadetKey2}`] = {
-			exists: true,
-			value: mockProfile,
-		};
-		// Reset mock to remove the rejection
-		(firebaseDatabase.get as jest.Mock).mockClear();
-		(firebaseDatabase.get as jest.Mock).mockImplementation((refObj: { path: string }) => {
-			const response = getResponses[refObj.path] || { exists: false, value: undefined };
-			return Promise.resolve({
-				exists: () => response.exists,
-				val: () => response.value,
-			} as Snapshot);
-		});
+		mockGetProfileByCadetKey.mockResolvedValueOnce(mockProfile);
 
 		// Change to cadet with successful profile
 		await act(async () => {
@@ -183,10 +155,7 @@ describe('usePublicProfileLogic', () => {
 			// Only firstName, other fields are undefined
 		};
 
-		getResponses[`cadets/${cadetKey}`] = {
-			exists: true,
-			value: partialProfile,
-		};
+		mockGetProfileByCadetKey.mockResolvedValueOnce(partialProfile);
 
 		const { result } = renderHook(() => usePublicProfileLogic(cadetKey));
 
@@ -198,6 +167,27 @@ describe('usePublicProfileLogic', () => {
 		expect(result.current.profile?.firstName).toBe('Dave');
 		expect(result.current.profile?.lastName).toBeUndefined();
 		expect(result.current.profileError).toBe(null);
+	});
+
+	it('uses cached profile from globals without calling fallback fetch', async () => {
+		const cadetKey = 'cached_cadet';
+		const cachedProfile: PublicCadetProfile = {
+			firstName: 'Cached',
+			lastName: 'User',
+		};
+
+		mockGlobalState.cadetsByKey = {
+			[cadetKey]: cachedProfile,
+		};
+
+		const { result } = renderHook(() => usePublicProfileLogic(cadetKey));
+
+		await waitFor(() => {
+			expect(result.current.loadingProfile).toBe(false);
+		});
+
+		expect(result.current.profile).toEqual(cachedProfile);
+		expect(mockGetProfileByCadetKey).not.toHaveBeenCalled();
 	});
 
 	// it('maintains stable return object with useMemo', async () => {

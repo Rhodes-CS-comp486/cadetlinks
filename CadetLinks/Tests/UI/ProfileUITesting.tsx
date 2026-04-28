@@ -77,7 +77,6 @@ describe('Profile UI', () => {
 		expect(getByText(/Job:\s*Flight Commander/)).toBeTruthy();
 		expect(getByText(/Class Year:\s*2026/)).toBeTruthy();
 		expect(getByText(/School Email:\s*john\.doe@memphis\.edu/)).toBeTruthy();
-		expect(getByText(/Direct Supervisor:\s*Capt Smith/)).toBeTruthy();
 		expect(getByText(/Last PT Score:\s*95/)).toBeTruthy();
 
 		expect(getByText('PT Attendance')).toBeTruthy();
@@ -279,7 +278,6 @@ describe('Profile UI', () => {
 		expect(getByText(/Job:\s*—/)).toBeTruthy();
 		expect(getByText(/Class Year:\s*—/)).toBeTruthy();
 		expect(getByText(/School Email:\s*—/)).toBeTruthy();
-		expect(getByText(/Direct Supervisor:\s*—/)).toBeTruthy();
 		expect(getByText(/Last PT Score:\s*—/)).toBeTruthy();
 
 		fireEvent.press(getByText('Public'));

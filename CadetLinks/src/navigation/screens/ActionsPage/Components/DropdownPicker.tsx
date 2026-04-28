@@ -20,7 +20,7 @@ export function DropdownPicker({
 
   return (
     <View style={[styles.dropdownWrapper, open && styles.dropdownWrapperOpen]}>
-      <Text style={styles.fieldLabel}>{label}</Text>
+      {label ? <Text style={styles.fieldLabel}>{label}</Text> : null}
 
       <Pressable
         style={genStyles.dropDownBox}

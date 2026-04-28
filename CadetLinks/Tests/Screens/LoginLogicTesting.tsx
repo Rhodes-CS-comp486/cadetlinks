@@ -41,6 +41,12 @@ jest.mock('firebase/database', () => ({
 	}),
 }));
 
+jest.mock('../../src/firebase/globals', () => ({
+	initializeGlobals: jest.fn(() => Promise.resolve()),
+	deriveCadetKeyFromEmail: (email: string) =>
+		email.trim().toLowerCase().replace(/@/g, '_').replace(/\./g, '_').replace(/-/g, '_'),
+}));
+
 describe('useLoginLogic', () => {
 	beforeEach(() => {
 		Object.keys(getResponses).forEach((key) => delete getResponses[key]);

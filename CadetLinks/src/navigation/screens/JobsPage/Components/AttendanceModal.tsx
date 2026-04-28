@@ -115,44 +115,56 @@ export function AttendanceModal({
                   </Text>
                 </View>
 
-                <View style={{ flexDirection: "row", position: "relative" }}>
-                  <Text style={styles.fieldLabel}>Cadets</Text>
-
-                  <Text style={[styles.fieldLabel, { marginLeft: 40 }]}>
-                    Flight:
-                  </Text>
-
+                <Text style={styles.fieldLabel}>Filter by Flight</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.flightFilterRow}
+                  style={{ marginBottom: 12 }}
+                >
                   <Pressable
-                    onPress={onToggleFlightDropdown}
                     style={[
-                      styles.dropdownButton,
-                      { height: 50, justifyContent: "center" },
+                      styles.flightChip,
+                      selectedFlight === "All" && styles.flightChipActive,
                     ]}
+                    onPress={() => onSelectFlight("All")}
                   >
-                    <Text style={styles.dropdownButtonText}>
-                      {selectedFlight ? selectedFlight : "All"}
+                    <Text
+                      style={[
+                        styles.flightChipText,
+                        selectedFlight === "All" && styles.flightChipTextActive,
+                      ]}
+                    >
+                      All
                     </Text>
                   </Pressable>
 
-                  {flightDropdownOpen ? (
-                    <View style={styles.dropdownMenu}>
-                      {(["All", "POC", "Alpha", "Bravo"] as const).map(
-                        (flightName) => (
-                          <Pressable
-                            key={flightName}
-                            onPress={() => onSelectFlight(flightName)}
-                            style={styles.dropdownItem}
-                          >
-                            <Text style={styles.dropdownItemTitle}>
-                              {flightName}
-                            </Text>
-                          </Pressable>
-                        )
-                      )}
-                    </View>
-                  ) : null}
-                </View>
+                  {(["POC", "Alpha", "Bravo"] as const).map((flightName) => {
+                    const isActive = selectedFlight === flightName;
 
+                    return (
+                      <Pressable
+                        key={flightName}
+                        style={[
+                          styles.flightChip,
+                          isActive && styles.flightChipActive,
+                        ]}
+                        onPress={() => onSelectFlight(isActive ? "All" : flightName)}
+                      >
+                        <Text
+                          style={[
+                            styles.flightChipText,
+                            isActive && styles.flightChipTextActive,
+                          ]}
+                        >
+                          {flightName}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+
+                <Text style={styles.fieldLabel}>Cadets</Text>
                 <View style={styles.cadetListCard}>
                   {filteredCadets.map((cadet, index) => {
                     const status = getCadetStatus(cadet.cadetKey);

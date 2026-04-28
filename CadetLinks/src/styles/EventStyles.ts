@@ -192,6 +192,27 @@ export const eventsStyles = StyleSheet.create({
     marginBottom: 15,
     backgroundColor: '#f9f9f9',
     fontSize: 16,
+
     // fontFamily: 'System',
   },
+  formInput: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#3A4357',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    marginBottom: 8,
+    color: colors.text,
+    fontSize: 14,
+  },
+  eventTypeToggleButton: {
+    flexDirection: "row",
+    backgroundColor: "#2A3140",
+    borderRadius: 14,
+    padding: 4,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#3A4357",                                                                                                     
+  }
 });

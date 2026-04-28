@@ -124,4 +124,43 @@ export const searchStyles = StyleSheet.create({
     fontWeight: "700",
     color: colors.text,
   },
+    /* FLIGHT FILTER */
+  filterLabel: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "600",
+    marginTop: 12,
+    marginBottom: 8,
+  },
+
+  flightFilterRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingBottom: 8,
+  },
+
+  flightChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginRight: 8,
+  },
+
+  flightChipActive: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
+
+  flightChipText: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "600",
+  },
+
+  flightChipTextActive: {
+    color: "#fff",
+  },
 });

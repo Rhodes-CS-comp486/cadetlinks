@@ -12,6 +12,17 @@ jest.mock('../../src/navigation/Components/ScreenLayout', () => ({
 	HomeScreenLayout: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
+jest.mock('react-native-gesture-handler', () => {
+	return {
+		TextInput: 'TextInput',
+	};
+});
+
+jest.mock('../../src/navigation/screens/EventsPage/Components/datePicker', () => {
+	const React = require('react');
+	return () => React.createElement(React.Fragment, null);
+});
+
 function buildHomeLogicState(overrides: Partial<any> = {}) {
 	return {
 		cadetPermissionsMap: new Map<string, boolean>(),
@@ -20,7 +31,24 @@ function buildHomeLogicState(overrides: Partial<any> = {}) {
 			{ id: 'a1', title: 'LLAB Uniform', body: 'OCPs required this Thursday.' },
 			{ id: 'a2', title: 'PT Location Change', body: 'Meet at gym instead of track.' },
 		],
+		newAnnouncement: {
+			id: '',
+			title: '',
+			body: '',
+			importance: 'Low',
+			retirementDate: new Date('2026-04-20T00:00:00.000Z'),
+		},
+		setNewAnnouncement: jest.fn(),
 		upcomingEvents: [],
+		addAnnouncementModalVisible: false,
+		handleAddAnnouncement: jest.fn(),
+		handleConfirmAddAnnouncement: jest.fn(),
+		handleCancelAddAnnouncement: jest.fn(),
+		deleteAnnouncementModalVisible: false,
+		handleDeleteAnnouncement: jest.fn(),
+		handleConfirmDeleteAnnouncement: jest.fn(),
+		handleCancelDeleteAnnouncement: jest.fn(),
+		selectedAnnouncementId: '',
 		navigation: { navigate: jest.fn() },
 		...overrides,
 	};

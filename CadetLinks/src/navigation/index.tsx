@@ -1,17 +1,17 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { HeaderButton, Text } from '@react-navigation/elements';
-import { createStaticNavigation, StaticParamList } from '@react-navigation/native';
+import { createStaticNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Image } from 'react-native';
 import { HomePage } from './screens/HomePage/Home';
 import { Login } from "./screens/LoginPage/Login";
 import { Profile } from './screens/ProfilePage/Profile';
-import { Jobs } from './screens/JobsPage/Jobs';
-import { Settings } from './screens/Settings';
+import { Actions } from './screens/ActionsPage/Actions';
 import { Events } from './screens/EventsPage/EventScreen';
 import { NotFound } from './screens/NotFound';
-import { Search } from "./screens/SearchPage/Search";
+import { AdminPage } from './screens/AdminPage/Admin';
+import { AttendancePage } from './screens/AttendancePage/Attendance';
 import { PublicProfile } from "./screens/SearchPage/PublicProfiles";
+import { QuickLinks } from "./screens/QuickLinks";
 import { DarkColors as colors } from '../styles/colors';
 
 import calendar from '../assets/calendar.png';
@@ -37,7 +37,7 @@ const HomeTabs = createBottomTabNavigator({
     },
     tabBarActiveTintColor: '#FFFFFF',
     tabBarInactiveTintColor: '#9AA3B2',
-    },
+  },
   screens: {
     Home: {
       screen: HomePage,
@@ -55,10 +55,10 @@ const HomeTabs = createBottomTabNavigator({
         ...createTabIcon(calendar),
       },
     },
-    Jobs: {
-      screen: Jobs,
+    Actions: {
+      screen: Actions,
       options: {
-        title: "Jobs",
+        title: "Actions",
         headerShown: false,
         tabBarIcon: ({ color, size }) => (
           <Image
@@ -69,12 +69,11 @@ const HomeTabs = createBottomTabNavigator({
         ),
       },
     },
-    
     Profile: {
       screen: Profile,
       options: {
         title: 'Profile',
-        headerShown:false,
+        headerShown: false,
         ...createTabIcon(profile),
       },
     },
@@ -94,28 +93,31 @@ const RootStack = createNativeStackNavigator({
         headerShown: false,
       },
     },
-    Settings: {
-      screen: Settings,
-      options: ({ navigation }) => ({
-        presentation: "modal",
-        headerRight: () => (
-          <HeaderButton onPress={navigation.goBack}>
-            <Text>Close</Text>
-          </HeaderButton>
-        ),
-      }),
-    },
-    Search: {
-      screen: Search,
+    Admin: {
+      screen: AdminPage,
       options: {
-        title: "Profile Search",
+        title: "Admin",
         headerShown: false,
       },
+    },
+    Attendance: {
+      screen: AttendancePage,
+      options: {
+        title: "Attendance",
+        headerShown: false,
+      }
     },
     PublicProfile: {
       screen: PublicProfile,
       options: {
         title: "Public Profile",
+        headerShown: false,
+      },
+    },
+    QuickLinks: {
+      screen: QuickLinks,
+      options: {
+        title: "Quick Links",
         headerShown: false,
       },
     },
@@ -132,12 +134,14 @@ const RootStack = createNativeStackNavigator({
 });
 
 export const Navigation = createStaticNavigation(RootStack);
+
 export type RootStackParamList = {
   Login: undefined;
   HomeTabs: undefined;
-  Settings: undefined;
-  Search: undefined;
+  Admin: undefined;
+  Attendance: undefined;
   PublicProfile: { cadetKey: string };
+  QuickLinks: undefined;
   ChangePassword: undefined;
   NotFound: undefined;
 };

@@ -24,6 +24,15 @@ export default function TimePicker({
 }: TimePickerProps) {
     const [show, setShow] = useState(false);
 
+    const handlePress = () => {
+        if (Platform.OS === 'ios') {
+            setShow((prev) => !prev);
+            return;
+        }
+
+        setShow(true);
+    };
+
     const formatTime = (date: Date) =>
         date.toLocaleTimeString([], {
             hour: '2-digit',
@@ -69,7 +78,7 @@ export default function TimePicker({
         <View>
             <Pressable
                 style={styles.scrollWheelIOS}
-                onPress={() => setShow(true)}
+                onPress={handlePress}
             >
                 <Text>
                     {value ? formatTime(value) : placeholder}
@@ -81,6 +90,7 @@ export default function TimePicker({
                     value={value ?? new Date()}
                     mode="time"
                     display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    textColor={Platform.OS === 'ios' ? 'white' : undefined}
                     onChange={(
                         event: DateTimePickerEvent,
                         selectedDate?: Date

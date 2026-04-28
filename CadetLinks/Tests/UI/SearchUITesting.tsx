@@ -29,6 +29,9 @@ function buildSearchState(overrides: Partial<any> = {}) {
 	return {
 		query: '',
 		setQuery: jest.fn(),
+		selectedFlight: '',
+		setSelectedFlight: jest.fn(),
+		flightOptions: ['POC'],
 		filteredCadets: [
 			{
 				cadetKey: 'cadet_1',
@@ -130,7 +133,7 @@ describe('Search UI', () => {
 		mockUseSearchLogic.mockReturnValue(state);
 
 		const { getByPlaceholderText, getByText } = render(<Search />);
-		const input = getByPlaceholderText('Search by name, rank, job, flight...');
+		const input = getByPlaceholderText('Search by name or job....');
 
 		fireEvent.changeText(input, 'gray');
 		expect(state.setQuery).toHaveBeenCalledWith('gray');

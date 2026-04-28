@@ -1,10 +1,10 @@
 import { useNavigation } from "@react-navigation/native";
-import {PERMISSIONS} from "./constants";
+import { PERMISSIONS } from "./constants";
 import type {
-  AttendanceStatus,
+  AttendanceStatus as AttendanceLogicStatus,
   CadetListItem,
   EventItem,
-} from "../navigation/screens/JobsPage/AttendanceLogic";
+} from "../navigation/screens/ActionsPage/AttendanceLogic";
 
 export type UploadDocsModalProps = {
   visible: boolean;
@@ -40,8 +40,8 @@ export type AttendanceModalProps = {
   flightDropdownOpen: boolean;
   onSelectFlight: (flightName: string) => void;
   allCadets: CadetListItem[];
-  getCadetStatus: (cadetKey: string) => AttendanceStatus;
-  setCadetStatus: (cadetKey: string, status: AttendanceStatus) => void;
+  getCadetStatus: (cadetKey: string) => AttendanceLogicStatus;
+  setCadetStatus: (cadetKey: string, status: AttendanceLogicStatus) => void;
   savingAttendance: boolean;
   clearingAttendance: boolean;
   onClearAttendance: () => void;
@@ -73,14 +73,14 @@ export type CadetProfile = {
   };
 };
 
-type JobsActionId =
+type ActionId =
 | typeof PERMISSIONS.ATTENDANCE_EDITING
 | typeof PERMISSIONS.FILE_UPLOADING
 | typeof PERMISSIONS.EVENT_MAKING
-| typeof PERMISSIONS.CREATE_ACCOUNTS;
+| typeof PERMISSIONS.ADMIN;
 
-export type JobsAction = {
-  id: JobsActionId;
+export type Action = {
+  id: ActionId;
   title: string;
   subtitle: string;
   routeHint?: string;
@@ -88,3 +88,114 @@ export type JobsAction = {
 };
 
 export type NavAny = ReturnType<typeof useNavigation<any>>;
+
+export type Announcement = {
+  id: string;
+  title: string;
+  body: string;
+  importance: string;
+  retirementDate: Date;
+};
+
+export type UploadedDocument = {
+  dbKey: string;
+  displayName: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedAt: string;
+  downloadURL: string;
+  storagePath: string;
+  uploadedBy: string;
+};
+
+export type AttendanceStatus = "P" | "A" | "L";
+export type AttendanceRecordStatus = "P" | "A" | "E" | "L" | "." | "MP" | "ML" | "MA"; // Present, Absent, Excused, Late, Not Recorded, Mandatory Present, Mandatory Late, Mandatory Absent
+export type AttendanceSubtree = Record<string, Record<string, { status?: AttendanceRecordStatus }>>;
+
+export type AttendanceEventItem = {
+  id: string;
+  eventName?: string;
+  date?: string;
+  time?: string;
+};
+
+export type AttendanceCadetItem = {
+  cadetKey: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  attendanceKey: string;
+  flight?: string;
+};
+
+export type StoreDomainErrors = {
+  profile?: string;
+  permissions?: string;
+  events?: string;
+  announcements?: string;
+  rsvps?: string;
+  cadets?: string;
+  documents?: string;
+  attendance?: string;
+};
+
+export type GlobalFirebaseState = {
+  isInitialized: boolean;
+  isInitializing: boolean;
+  cadetKey: string | null;
+  profile: CadetProfile | null;
+  permissionsMap: Map<string, boolean>;
+  events: Event[];
+  announcements: Announcement[];
+  userRsvpEventIds: Set<string>;
+  userRsvpStatusByEvent: Record<string, boolean>;
+  rsvpCadetKeysByEvent: Record<string, string[]>;
+  cadetsByKey: Record<string, CadetProfile>;
+  uploadedDocuments: UploadedDocument[];
+  attendancePT: AttendanceSubtree;
+  attendanceLLAB: AttendanceSubtree;
+  attendanceRMP: AttendanceSubtree;
+  errors: StoreDomainErrors;
+  lastUpdated: Record<string, number | null>;
+};
+
+export type UploadDocumentInput = {
+  displayName: string;
+  mimeType: string;
+  sizeBytes: number;
+  uri: string;
+  originalFileName: string;
+};
+
+export interface CreateAccountForm {
+  classYear: string;
+  lastName: string;
+  firstName: string;
+  cellPhone: string;
+  schoolEmail: string;
+  personalEmail: string;
+  cadetRank: string;
+  flight: string;
+  job:string;
+}
+
+export interface DropdownPickerProps {
+  label: string;
+  options: string[];
+  value: string;
+  onSelect: (v: string) => void;
+}
+
+export interface CreateAccountModalProps {
+  visible: boolean;
+  onClose: () => void;
+  form: CreateAccountForm;
+  updateField: <K extends keyof CreateAccountForm>(
+    k: K,
+    v: CreateAccountForm[K]
+  ) => void;
+  updatePhone: (raw: string) => void;
+  saving: boolean;
+  onSubmit: () => void;
+}

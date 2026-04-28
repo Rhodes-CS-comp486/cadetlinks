@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { onValue, ref } from "firebase/database";
-import { db } from "../../../firebase/config";
+import { globals, initializeGlobals } from "../../../firebase/dbController";
 
 export type SearchCadetProfile = {
   cadetKey: string;
@@ -20,101 +18,102 @@ export type SearchCadetProfile = {
   };
 };
 
-function matchesQuery(cadet: SearchCadetProfile, query: string) { // checks if the cadet matches the search query by looking for the query as a substring in their name, rank, job, flight, class year, or school email. case-insensitive
+function matchesQuery(cadet: SearchCadetProfile, query: string) {
   const q = query.trim().toLowerCase();
   if (!q) return true;
 
-  const fullName = `${cadet.firstName ?? ""} ${cadet.lastName ?? ""}`.toLowerCase();
+  const fullName =
+    `${cadet.firstName ?? ""} ${cadet.lastName ?? ""}`.toLowerCase();
 
-  return (
+  return ( // checks if the query matches the full name, first name, last name, or job of the cadet.
     fullName.includes(q) ||
     (cadet.firstName ?? "").toLowerCase().includes(q) ||
     (cadet.lastName ?? "").toLowerCase().includes(q) ||
-    (cadet.cadetRank ?? "").toLowerCase().includes(q) ||
-    (cadet.job ?? "").toLowerCase().includes(q) ||
-    (cadet.flight ?? "").toLowerCase().includes(q) ||
-    String(cadet.classYear ?? "").includes(q) ||
-    (cadet.contact?.schoolEmail ?? "").toLowerCase().includes(q)
+    (cadet.job ?? "").toLowerCase().includes(q)
   );
 }
 
+function matchesFlight(cadet: SearchCadetProfile, selectedFlight: string) {
+  if (!selectedFlight) return true;
+
+  return (cadet.flight ?? "").toLowerCase() === selectedFlight.toLowerCase();
+}
+
 export function useSearchLogic() {
+  const globalState = globals();
   const [query, setQuery] = useState("");
-  const [allCadets, setAllCadets] = useState<SearchCadetProfile[]>([]);
-  const [loadingCadets, setLoadingCadets] = useState(true);
-  const [searchError, setSearchError] = useState<string | null>(null);
+  const [selectedFlight, setSelectedFlight] = useState("");
 
   useEffect(() => {
-    let unsubscribeCadets: (() => void) | null = null;
+    if (!globalState.isInitialized && !globalState.isInitializing) {
+      void initializeGlobals();
+    }
+  }, [globalState.isInitialized, globalState.isInitializing]);
 
-    const load = async () => {
-      setLoadingCadets(true);
-      setSearchError(null);
+  const allCadets = useMemo(() => {
+    const currentCadetKey = globalState.cadetKey;
+    const cadetsData = globalState.cadetsByKey;
 
-      try {
-        const currentCadetKey = await AsyncStorage.getItem("currentCadetKey");
-        const cadetsRef = ref(db, "cadets");
+    return Object.entries(cadetsData)
+      .map(([cadetKey, value]) => {
+        const cadet = value as Omit<SearchCadetProfile, "cadetKey">;
+        return {
+          cadetKey,
+          ...cadet,
+        };
+      })
+      .filter((cadet) => cadet.cadetKey !== currentCadetKey)
+      .sort((a, b) => {
+        const aLast = (a.lastName ?? "").toLowerCase();
+        const bLast = (b.lastName ?? "").toLowerCase();
+        if (aLast !== bLast) return aLast.localeCompare(bLast);
 
-        unsubscribeCadets = onValue( // listen in real-time to the "cadets" subtree in FB to get the list of cadets for searching, excluding the current user. sort them alphabetically by last name then first name.
-          cadetsRef,
-          (snapshot) => {
-            const cadetsData = snapshot.val() ?? {};
+        const aFirst = (a.firstName ?? "").toLowerCase();
+        const bFirst = (b.firstName ?? "").toLowerCase();
+        return aFirst.localeCompare(bFirst);
+      });
+  }, [globalState.cadetsByKey, globalState.cadetKey]);
 
-            const cadetList: SearchCadetProfile[] = Object.entries(cadetsData)
-              .map(([cadetKey, value]) => {
-                const cadet = value as Omit<SearchCadetProfile, "cadetKey">;
-                return {
-                  cadetKey,
-                  ...cadet,
-                };
-              })
-              .filter((cadet) => cadet.cadetKey !== currentCadetKey)
-              .sort((a, b) => {
-                const aLast = (a.lastName ?? "").toLowerCase();
-                const bLast = (b.lastName ?? "").toLowerCase();
-                if (aLast !== bLast) return aLast.localeCompare(bLast);
+  const flightOptions = useMemo(() => {
+    const uniqueFlights = Array.from(
+      new Set(
+        allCadets
+          .map((cadet) => (cadet.flight ?? "").trim())
+          .filter((flight) => flight.length > 0)
+      )
+    );
 
-                const aFirst = (a.firstName ?? "").toLowerCase();
-                const bFirst = (b.firstName ?? "").toLowerCase();
-                return aFirst.localeCompare(bFirst);
-              });
-
-            setAllCadets(cadetList);
-            setLoadingCadets(false);
-            setSearchError(null);
-          },
-          (error) => {
-            console.error("❌ Error loading cadets:", error);
-            setSearchError("Could not load cadets.");
-            setLoadingCadets(false);
-          }
-        );
-      } catch (error) {
-        console.error("❌ Error starting search:", error);
-        setSearchError("Could not start search.");
-        setLoadingCadets(false);
-      }
-    };
-
-    load();
-
-    return () => {
-      if (unsubscribeCadets) unsubscribeCadets();
-    };
-  }, []);
+    return uniqueFlights.sort((a, b) => a.localeCompare(b));
+  }, [allCadets]);
 
   const filteredCadets = useMemo(() => {
-    return allCadets.filter((cadet) => matchesQuery(cadet, query));
-  }, [allCadets, query]);
+    return allCadets.filter(
+      (cadet) =>
+        matchesQuery(cadet, query) && matchesFlight(cadet, selectedFlight)
+    );
+  }, [allCadets, query, selectedFlight]);
+
+  const loadingCadets = globalState.isInitializing || !globalState.isInitialized;
+  const searchError = globalState.errors.cadets ?? null;
 
   return useMemo(
     () => ({
       query,
       setQuery,
+      selectedFlight,
+      setSelectedFlight,
+      flightOptions,
       filteredCadets,
       loadingCadets,
       searchError,
     }),
-    [query, filteredCadets, loadingCadets, searchError]
+    [
+      query,
+      selectedFlight,
+      flightOptions,
+      filteredCadets,
+      loadingCadets,
+      searchError,
+    ]
   );
 }

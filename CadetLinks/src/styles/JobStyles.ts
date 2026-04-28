@@ -289,4 +289,33 @@ export const jobStyles = StyleSheet.create({
     flexOne: {
         flex: 1,
     },
+    flightFilterRow: {
+  paddingRight: 8,
+  gap: 8,
+},
+
+flightChip: {
+  backgroundColor: "#111B2E",
+  borderWidth: 1,
+  borderColor: "#243041",
+  borderRadius: 999,
+  paddingHorizontal: 14,
+  paddingVertical: 8,
+  marginRight: 8,
+},
+
+flightChipActive: {
+  backgroundColor: "#FB9E50",
+  borderColor: "#FB9E50",
+},
+
+flightChipText: {
+  color: "white",
+  fontSize: 14,
+  fontWeight: "600",
+},
+
+flightChipTextActive: {
+  color: "#0B1220",
+},
 });

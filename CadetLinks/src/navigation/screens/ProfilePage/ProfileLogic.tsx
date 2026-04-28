@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ref, get, onValue } from "firebase/database"; // added onValue for real-time updates
+import { globals, initializeGlobals } from "../../../firebase/dbController";
+import { ref, update } from "firebase/database";
 import { db } from "../../../firebase/config";
 
 // USER INFO STRUCTURE (from FB)
@@ -20,10 +20,13 @@ export type CadetProfile = {
 
   directSupervisor?: string;
   lastPTScore?: string;
+
+  bio?: string;
+  photoUrl?: string;
 };
 
 // ATTENDANCE STATUS
-type AttendanceStatus = "P" | "A" | "E" | "L" | ".";
+type AttendanceStatus = "P" | "A" | "E" | "L" | "." | "MP" | "ML" | "MA"; // Present, Absent, Excused, Late, Not Recorded, Mandatory Present, Mandatory Late, Mandatory Absent
 
 // attendance subtree: date -> cadetKey -> { status }
 type AttendanceSubtree = Record<
@@ -31,17 +34,14 @@ type AttendanceSubtree = Record<
   Record<string, { status?: AttendanceStatus }>
 >;
 
-// normalizing strings to match FB keys (for attendance lookup)
-function normalizeLlabKey(input: string) {
-  return input.toLowerCase().replace(/[^a-z0-9]/g, "");
-}
-
 function normalizePTKey(input: string) {
   return input.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
 // returns cadet attendance counts for PT or LLAB
-function countAttendance(tree: AttendanceSubtree, cadetId: string) {
+function countAttendance(tree: AttendanceSubtree | undefined, cadetId: string) {
+  if (!tree) return { attended: 0, missed: 0, excused: 0, late: 0 };
+
   let p = 0;
   let a = 0;
   let e = 0;
@@ -60,149 +60,90 @@ function countAttendance(tree: AttendanceSubtree, cadetId: string) {
   return { attended: p, missed: a, excused: e, late: l };
 }
 
+// RMP has additional "Mandatory" attendance statuses, so we need a separate counting function
+function countRMPAttendance(tree: AttendanceSubtree | undefined, cadetId: string) {
+  if (!tree) return { attended: 0, missed: 0, excused: 0, late: 0 };
+
+  let p = 0;
+  let a = 0;
+  let e = 0;
+  let l = 0;
+
+  for (const date of Object.keys(tree)) {
+    const status = tree?.[date]?.[cadetId]?.status;
+    if (!status || status === ".") continue;
+
+    if (status === "P" || status === "MP") p++;
+    else if (status === "A" || status === "MA") a++;
+    else if (status === "E") e++;
+    else if (status === "L" || status === "ML") l++;
+  }
+
+  return { attended: p, missed: a, excused: e, late: l };
+}
+
 export function useProfileLogic() {
-  const [cadetKey, setCadetKey] = useState<string | null>(null);
+  const globalState = globals();
+  const globalProfile = globalState.profile;
+  const cadetKey = globalState.cadetKey;
 
-  // ---- Firebase profile state ----
-  const [profile, setProfile] = useState<CadetProfile | null>(null);
-  const [loadingProfile, setLoadingProfile] = useState(true);
-  const [profileError, setProfileError] = useState<string | null>(null);
+  const profile = (globalProfile as CadetProfile | null) ?? null;
+  const loadingProfile = globalState.isInitializing;
+  const profileError = !cadetKey ? "No user is logged in." : globalState.errors.profile ?? null;
 
-  // ---- Firebase attendance state ----
-  const [loadingAttendance, setLoadingAttendance] = useState(true);
-  const [attendanceError, setAttendanceError] = useState<string | null>(null);
+  const attendanceError = !cadetKey ? "No user is logged in." : globalState.errors.attendance ?? null;
+  const loadingAttendance =
+    globalState.isInitializing ||
+    (!globalState.lastUpdated.attendance && !attendanceError);
 
-  // PT counts
-  const [ptAttended, setPtAttended] = useState(0);
-  const [ptMissed, setPtMissed] = useState(0);
-  const [ptExcused, setPtExcused] = useState(0);
-  const [ptLate, setPtLate] = useState(0);
+  const [bioDraft, setBioDraft] = useState(""); // is user typing
+  const [savingBio, setSavingBio] = useState(false); // is user saving
+  const [bioMessage, setBioMessage] = useState<string | null>(null); // did it successfully save
 
-  // LLAB counts
-  const [llabAttended, setLlabAttended] = useState(0);
-  const [llabMissed, setLlabMissed] = useState(0);
-  const [llabExcused, setLlabExcused] = useState(0);
-  const [llabLate, setLlabLate] = useState(0);
+  useEffect(() => { // loads in fb data on app start
+    if (!globalState.isInitialized && !globalState.isInitializing) {
+      void initializeGlobals();
+    }
+  }, [globalState.isInitialized, globalState.isInitializing]);
 
-  useEffect(() => {
-    let unsubscribePT: (() => void) | null = null;
-    let unsubscribeLLAB: (() => void) | null = null;
+  useEffect(() => { // when profile loads, set bioDraft to current bio (or empty string if no bio)
+    setBioDraft(profile?.bio ?? "");
+  }, [profile?.bio]);
 
-    const load = async () => {
-      setLoadingProfile(true);
-      setProfileError(null);
+  const attendanceLookupKey = profile?.lastName // look up attendance by normalized last name if possible, otherwise fall back to cadetKey
+    ? normalizePTKey(profile.lastName)
+    : cadetKey ?? "";
 
-      setLoadingAttendance(true);
-      setAttendanceError(null);
+  const ptCounts = useMemo( // calculate PT attendance counts
+    () => countAttendance(globalState.attendancePT, attendanceLookupKey),
+    [globalState.attendancePT, attendanceLookupKey]
+  );
 
-      try {
-        const key = await AsyncStorage.getItem("currentCadetKey");
-        setCadetKey(key);
+  const llabCounts = useMemo( // calculate LLAB attendance counts
+    () => countAttendance(globalState.attendanceLLAB, attendanceLookupKey),
+    [globalState.attendanceLLAB, attendanceLookupKey]
+  );
 
-        if (!key) {
-          setProfile(null);
-          setProfileError("No user is logged in.");
+  const rmpCounts = useMemo( // calculate RMP attendance counts
+    () => countRMPAttendance(globalState.attendanceRMP, attendanceLookupKey),
+    [globalState.attendanceRMP, attendanceLookupKey]
+  );
 
-          setPtAttended(0);
-          setPtMissed(0);
-          setPtExcused(0);
-          setPtLate(0);
+  // extract counts for easier use later
+  const ptAttended = ptCounts.attended;
+  const ptMissed = ptCounts.missed;
+  const ptExcused = ptCounts.excused;
+  const ptLate = ptCounts.late;
 
-          setLlabAttended(0);
-          setLlabMissed(0);
-          setLlabExcused(0);
-          setLlabLate(0);
+  const llabAttended = llabCounts.attended;
+  const llabMissed = llabCounts.missed;
+  const llabExcused = llabCounts.excused;
+  const llabLate = llabCounts.late;
 
-          setAttendanceError("No user is logged in.");
-          setLoadingProfile(false);
-          setLoadingAttendance(false);
-          return;
-        }
-
-        // 1) Load profile first
-        const profileRef = ref(db, `cadets/${key}`);
-        const profileSnap = await get(profileRef);
-
-        let profileVal: CadetProfile | null = null;
-
-        if (profileSnap.exists()) {
-          profileVal = profileSnap.val();
-          setProfile(profileVal);
-        } else {
-          setProfile(null);
-          setProfileError("No profile found for this user.");
-        }
-
-        // figure out the keys used in attendance
-        const ptKey =
-          profileVal?.lastName ? normalizePTKey(profileVal.lastName) : key;
-
-        const llabKey =
-          profileVal?.lastName ? normalizeLlabKey(profileVal.lastName) : key;
-
-        // listens for PT attendance in real time
-        const ptRef = ref(db, "attendance/PT"); 
-        unsubscribePT = onValue( // listens for changes in PT attendance and updates counts
-          ptRef,
-          (snapshot) => {
-            const ptData = (snapshot.val() ?? {}) as AttendanceSubtree;
-            const ptCounts = countAttendance(ptData, ptKey);
-
-            setPtAttended(ptCounts.attended);
-            setPtMissed(ptCounts.missed);
-            setPtExcused(ptCounts.excused);
-            setPtLate(ptCounts.late);
-
-            setAttendanceError(null);
-            setLoadingAttendance(false);
-          },
-          (error) => {
-            console.error("❌ Error listening to PT attendance:", error);
-            setAttendanceError("Could not load PT attendance.");
-            setLoadingAttendance(false);
-          }
-        );
-
-        // listens for LLAB attendance in real time
-        const llabRef = ref(db, "attendance/LLAB");
-        unsubscribeLLAB = onValue(
-          llabRef,
-          (snapshot) => {
-            const llabData = (snapshot.val() ?? {}) as AttendanceSubtree;
-            const llabCounts = countAttendance(llabData, llabKey);
-
-            setLlabAttended(llabCounts.attended);
-            setLlabMissed(llabCounts.missed);
-            setLlabExcused(llabCounts.excused);
-            setLlabLate(llabCounts.late);
-
-            setAttendanceError(null);
-            setLoadingAttendance(false);
-          },
-          (error) => {
-            console.error("❌ Error listening to LLAB attendance:", error);
-            setAttendanceError("Could not load LLAB attendance.");
-            setLoadingAttendance(false);
-          }
-        );
-      } catch (error) {
-        console.error("❌ Error reading profile/attendance (Profile):", error);
-        console.log(error);
-        setProfileError("Could not load profile.");
-        setAttendanceError("Could not load attendance.");
-        setLoadingAttendance(false);
-      } finally {
-        setLoadingProfile(false);
-      }
-    };
-
-    load();
-
-    return () => {
-      if (unsubscribePT) unsubscribePT();
-      if (unsubscribeLLAB) unsubscribeLLAB();
-    };
-  }, []);
+  const rmpAttended = rmpCounts.attended;
+  const rmpMissed = rmpCounts.missed;
+  const rmpExcused = rmpCounts.excused;
+  const rmpLate = rmpCounts.late;
 
   // --- PT attendance percentage (excused doesn't count toward missed) ---
   const ptCountedTotal = ptAttended + ptMissed + ptLate;
@@ -219,6 +160,42 @@ export function useProfileLogic() {
       ? 0
       : Math.round(((llabAttended + llabLate / 2) / llabCountedTotal) * 100);
   const llabInGoodStanding = llabAttendancePercent >= 90;
+
+  // --- RMP attendance percentage (excused doesn't count toward missed) ---
+  const rmpCountedTotal = rmpAttended + rmpMissed + rmpLate;
+  const rmpAttendancePercent =
+    rmpCountedTotal === 0
+      ? 0
+      : Math.round(((rmpAttended + rmpLate / 2) / rmpCountedTotal) * 100);
+  const rmpInGoodStanding = rmpAttendancePercent >= 90;
+
+  async function handleSaveBio() {
+    if (!cadetKey) {
+      setBioMessage("No user is logged in.");
+      return false;
+    }
+
+    setSavingBio(true);
+    setBioMessage(null);
+
+    // writes to FB under the cadet's name
+    try {
+      await update(ref(db, `cadets/${cadetKey}`), {
+        bio: bioDraft.trim(),
+      });
+
+      await initializeGlobals();
+      setBioMessage("Bio saved!");
+      return true;
+    } 
+    catch (error) {
+      console.error("❌ Error saving bio:", error);
+      setBioMessage("Could not save bio.");
+      return false;
+    } finally {
+      setSavingBio(false);
+    }
+  }
 
   return useMemo(
     () => ({
@@ -244,6 +221,19 @@ export function useProfileLogic() {
       llabLate,
       llabAttendancePercent,
       llabInGoodStanding,
+
+      rmpAttended,
+      rmpMissed,
+      rmpExcused,
+      rmpLate,
+      rmpAttendancePercent,
+      rmpInGoodStanding,
+
+      bioDraft,
+      setBioDraft,
+      savingBio,
+      bioMessage,
+      handleSaveBio,
     }),
     [
       cadetKey,
@@ -266,6 +256,17 @@ export function useProfileLogic() {
       llabLate,
       llabAttendancePercent,
       llabInGoodStanding,
+
+      rmpAttended,
+      rmpMissed,
+      rmpExcused,
+      rmpLate,
+      rmpAttendancePercent,
+      rmpInGoodStanding,
+
+      bioDraft,
+      savingBio,
+      bioMessage,
     ]
   );
 }

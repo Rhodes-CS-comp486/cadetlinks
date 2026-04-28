@@ -1,5 +1,6 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Calendar } from 'react-native-calendars';
 import { eventsStyles as styles, calendarTheme } from '../../../styles/EventStyles';
 import { useEvents } from './EventsLogic';
@@ -7,8 +8,7 @@ import TimePicker from './Components/timePicker';
 import DatePicker from './Components/datePicker';
 import { DarkColors as colors } from '../../../styles/colors';
 import { ScreenLayout } from '../../Components/ScreenLayout';
-import { PERMISSIONS } from '../../../assets/constants';
-import { useHomeLogic } from '../HomePage/HomeLogic';
+import Checkbox from 'expo-checkbox';
 
 export function Events(): React.ReactElement {
   const {
@@ -21,6 +21,8 @@ export function Events(): React.ReactElement {
     allEvents,
     newEvent,
     setNewEvent,
+    selectedOptions,
+    setSelectedOptions,
     markedDates,
     eventsForSelectedDate,
     handleEventPress,
@@ -29,10 +31,14 @@ export function Events(): React.ReactElement {
     handleAddEvent,
     handleConfirmAddEvent,
     handleCancelAddEvent,
-    getLabelTextAndStyle
+    handleDeleteEvent,
+    canDeleteEvent,
+    canManageEvents,
+    getLabelTextAndStyle,
+    eventConfig,
+    rsvpList,
+    
   } = useEvents();
-
-  const{cadetPermissionsMap} = useHomeLogic();
 
   return (
     <ScreenLayout>
@@ -42,10 +48,12 @@ export function Events(): React.ReactElement {
         <Calendar
           style={styles.calendar}
           theme={calendarTheme}
+          markingType='multi-dot'
           onDayPress={(day) => setSelectedDate(day.dateString)}
           markedDates={{
             ...markedDates,
             [selectedDate]: {
+              ...(markedDates[selectedDate] ?? {}),
               selected: true,
               selectedColor: colors.accent,
             },
@@ -79,6 +87,16 @@ export function Events(): React.ReactElement {
                         {labelText}
                       </Text>
                     </View>
+
+                    {canManageEvents && canDeleteEvent(event) && (
+                      <Pressable
+                        onPress={() => handleDeleteEvent(event)}
+                        style={{ marginLeft: 12 }}
+                        hitSlop={8}
+                      >
+                        <Ionicons name="trash-outline" size={20} color="red" />
+                      </Pressable>
+                    )}
                   </TouchableOpacity>
                 );
               })}
@@ -94,7 +112,7 @@ export function Events(): React.ReactElement {
         )}
 
         {/* Add Event Button */}
-        {cadetPermissionsMap.get(PERMISSIONS.EVENT_MAKING) && (
+        {canManageEvents && (
           <TouchableOpacity
             style={styles.addEventButton}
             onPress={handleAddEvent}
@@ -137,7 +155,16 @@ export function Events(): React.ReactElement {
                   <Text style={styles.modalLabel}>Description:</Text>
                   <Text style={styles.modalText}>{selectedEvent.description}</Text>
 
-                  {selectedEvent.type === 'RSVP' && rsvpStatus[selectedEvent.id] === undefined && (
+                  {selectedEvent.type === 'RSVP' && (
+                    <View>
+                      <Text style={styles.modalLabel}> RSVP List </Text>
+                      <Text style={styles.modalText}>{rsvpList[selectedEvent.id]?.join(', ') || 'No RSVPs yet'}</Text>
+                    </View>
+                  )
+                  }
+
+                  {selectedEvent.type === 'RSVP' && (
+
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
                       <TouchableOpacity
                         onPress={() => handleRSVP(selectedEvent.id, true)}
@@ -153,7 +180,9 @@ export function Events(): React.ReactElement {
                         <Text style={styles.declineButton}>Decline</Text>
                       </TouchableOpacity>
                     </View>
-                  )}
+                  )
+                  }
+
                 </ScrollView>
               )}
             </View>
@@ -167,138 +196,173 @@ export function Events(): React.ReactElement {
           visible={addEventsModalVisible}
           onRequestClose={handleCancelAddEvent}
         >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
 
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={handleCancelAddEvent}
-              >
-                <Text style={styles.closeButtonText}>✕</Text>
-              </TouchableOpacity>
-
-              <ScrollView>
-                <Text style={styles.modalTitle}>Add New Event</Text>
-
-                {/* Title */}
-                <TextInput
-                  value={newEvent.title}
-                  onChangeText={(text) => setNewEvent({ ...newEvent, title: text })}
-                  placeholder='Enter Event Title'
-                  placeholderTextColor={styles.inputBox.color}
-                  style={[ styles.inputBox ]}
-                />
-
-                <DatePicker
-                  value={newEvent.date}
-                  onChange={(date) =>
-                    setNewEvent({ ...newEvent, date })
-                  }
-                />
-
-                <TimePicker
-                  value={newEvent.time}
-                  onChange={(date) =>
-                    setNewEvent({ ...newEvent, time: date })
-                  }
-                />
-
-                {/* Location */}
-                <TextInput
-                  value={newEvent.location}
-                  onChangeText={(text) => setNewEvent({ ...newEvent, location: text })}
-                  placeholder='Enter Location'
-                  placeholderTextColor={styles.inputBox.color}
-                  style={[ styles.inputBox ]}
-                />
-
-                {/* Description */}
-                <TextInput
-                  value={newEvent.description}
-                  onChangeText={(text) => setNewEvent({ ...newEvent, description: text })}
-                  multiline
-                  placeholder='Enter Event Description'
-                  placeholderTextColor={styles.inputBox.color}
-                  style={[ styles.inputBox, { height: 80 } ]}
-                />
-
-                {/* NEW TOGGLE */}
-                <Text style={styles.modalLabel}>Event Type:</Text>
-
-                <View
-                  style={{
-                    flexDirection: "row",
-                    backgroundColor: "#2A3140",
-                    borderRadius: 14,
-                    padding: 4,
-                    marginBottom: 14,
-                    borderWidth: 1,
-                    borderColor: "#3A4357",
-                  }}
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={handleCancelAddEvent}
                 >
-                  <Pressable
-                    onPress={() => setNewEvent({ ...newEvent, type: "RSVP" })}
-                    style={{
-                      flex: 1,
-                      paddingVertical: 12,
-                      borderRadius: 10,
-                      alignItems: "center",
-                      backgroundColor:
-                        newEvent.type === "RSVP" ? "#4A5568" : "transparent",
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: newEvent.type === "RSVP" ? "white" : "#C9D1D9",
-                        fontWeight: newEvent.type === "RSVP" ? "700" : "600",
-                      }}
+                  <Text style={styles.closeButtonText}>✕</Text>
+                </TouchableOpacity>
+
+                <ScrollView>
+                  <Text style={styles.modalTitle}>Add New Event</Text>
+
+                  {/* Title */}
+                  {eventConfig.mode === 'fixed' ? (
+                    <TextInput value={newEvent.title} editable={false} style={styles.inputBox} />
+                  ) : eventConfig.mode === 'checkbox' ? (
+                    <>
+                      {eventConfig.options?.map((option) => (
+                        <View key={option} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                          <Checkbox
+                            value={selectedOptions.includes(option)}
+                            onValueChange={(checked) => {
+                              if (checked) {
+                                setSelectedOptions([option]);
+                              } else {
+                                setSelectedOptions(prev => prev.filter(o => o !== option));
+                              }
+                            }}
+                          />
+                          <Text style={{ color: 'white', marginLeft: 8 }}>{option}</Text>
+                        </View>
+                      ))}
+                    </>
+                  ) : (
+                    <TextInput
+                      value={newEvent.title}
+                      onChangeText={(text) => setNewEvent({ ...newEvent, title: text })}
+                      placeholder='Enter Event Title'
+                      placeholderTextColor={styles.inputBox.color}
+                      style={[styles.inputBox]}
+                      editable={true}
+                    />
+                  )}
+
+                  <DatePicker
+                    value={newEvent.date}
+                    onChange={(date) =>
+                      setNewEvent({ ...newEvent, date })
+                    }
+                  />
+
+                  <TimePicker
+                    value={newEvent.time}
+                    onChange={(date) =>
+                      setNewEvent({ ...newEvent, time: date })
+                    }
+                  />
+
+                  {/* Location */}
+                  <TextInput
+                    value={newEvent.location}
+                    onChangeText={(text) => setNewEvent({ ...newEvent, location: text })}
+                    placeholder='Enter Location'
+                    placeholderTextColor={styles.inputBox.color}
+                    style={[styles.inputBox]}
+                  />
+
+                  {/* Description */}
+                  <TextInput
+                    value={newEvent.description}
+                    onChangeText={(text) => setNewEvent({ ...newEvent, description: text })}
+                    multiline
+                    placeholder='Enter Event Description'
+                    placeholderTextColor={styles.inputBox.color}
+                    style={[styles.inputBox, { height: 80 }]}
+                  />
+
+                  {/* MANDATORY OR RSVP TOGGLE */}
+                  <Text style={styles.modalLabel}>Event Type:</Text>
+
+                  {eventConfig.type === 'either' ? (
+                    <View style={styles.eventTypeToggleButton}>
+                      {['RSVP', 'Mandatory'].map((typeOption) => {
+                        const isActive = newEvent.type === typeOption;
+
+                        return (
+                          <Pressable
+                            key={typeOption}
+                            onPress={() => setNewEvent({ ...newEvent, type: typeOption as '' | 'RSVP' | 'Mandatory' })}
+                            style={{
+                              flex: 1,
+                              paddingVertical: 12,
+                              borderRadius: 10,
+                              alignItems: "center",
+                              backgroundColor:
+                                isActive ? "#FB9E50" : "transparent",
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: "white",
+                                fontWeight: "600",
+                              }}
+                            >
+                              {typeOption}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  ) : (<View style={styles.eventTypeToggleButton}>
+                    {['RSVP', 'Mandatory'].map((typeOption) => {
+                      const isFixed = eventConfig.type !== 'either';
+                      const isActive = newEvent.type === typeOption;
+                      const isDisabled = isFixed && !isActive;
+
+                      return (
+                        <View
+                          key={typeOption}
+                          style={{
+                            flex: 1,
+                            paddingVertical: 12,
+                            borderRadius: 10,
+                            alignItems: "center",
+                            backgroundColor:
+                              isDisabled ? "transparent" : "#FB9E50",
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: "white",
+                              fontWeight: "600",
+                            }}
+                          >
+                            {typeOption}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>)}
+
+                  {/* Buttons */}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
+                    <TouchableOpacity
+                      style={styles.confirmButton}
+                      onPress={handleConfirmAddEvent}
                     >
-                      RSVP
-                    </Text>
-                  </Pressable>
+                      <Text style={styles.text}>Confirm</Text>
+                    </TouchableOpacity>
 
-                  <Pressable
-                    onPress={() => setNewEvent({ ...newEvent, type: "Mandatory" })}
-                    style={{
-                      flex: 1,
-                      paddingVertical: 12,
-                      borderRadius: 10,
-                      alignItems: "center",
-                      backgroundColor:
-                        newEvent.type === "Mandatory" ? "#4A5568" : "transparent",
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: newEvent.type === "Mandatory" ? "white" : "#C9D1D9",
-                        fontWeight: newEvent.type === "Mandatory" ? "700" : "600",
-                      }}
+                    <TouchableOpacity
+                      onPress={handleCancelAddEvent}
+                      style={styles.declineButton}
                     >
-                      Mandatory
-                    </Text>
-                  </Pressable>
-                </View>
+                      <Text style={styles.text}>Cancel</Text>
+                    </TouchableOpacity>
+                  </View>
 
-                {/* Buttons */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
-                  <TouchableOpacity
-                    style={styles.confirmButton}
-                    onPress={handleConfirmAddEvent}
-                  >
-                    <Text style={styles.text}>Confirm</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={handleCancelAddEvent}
-                    style={styles.declineButton}
-                  >
-                    <Text style={styles.text}>Cancel</Text>
-                  </TouchableOpacity>
-                </View>
-
-              </ScrollView>
+                </ScrollView>
+              </View>
             </View>
-          </View>
+          </KeyboardAvoidingView>
         </Modal>
 
       </View>

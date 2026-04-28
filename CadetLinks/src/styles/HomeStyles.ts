@@ -9,7 +9,7 @@ export const homeStyles = StyleSheet.create({
         backgroundColor: colors.overlay,
         borderRadius: 18,
         padding: 15,
-        height: '35%',
+        height: '50%',
     },
     announcementCard: {
         backgroundColor: colors.background,
@@ -56,7 +56,7 @@ export const homeStyles = StyleSheet.create({
         backgroundColor: colors.overlay,
         borderRadius: 18,
         padding: 15,
-        height: '60%',
+        height: '45%',
         marginTop: '5%',
     },
     eventCard: {

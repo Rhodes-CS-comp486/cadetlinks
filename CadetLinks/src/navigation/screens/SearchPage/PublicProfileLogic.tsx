@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { get, ref } from "firebase/database";
-import { db } from "../../../firebase/config";
+import { getProfileByCadetKey, globals, initializeGlobals } from "../../../firebase/dbController";
 
 export type PublicCadetProfile = { // only public info for search results/profile page
   firstName?: string;
@@ -16,9 +15,16 @@ export type PublicCadetProfile = { // only public info for search results/profil
 };
 
 export function usePublicProfileLogic(cadetKey: string) { // takes cadetKey to load that cadet's public profile info
+  const globalState = globals();
   const [profile, setProfile] = useState<PublicCadetProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!globalState.isInitialized && !globalState.isInitializing) {
+      void initializeGlobals();
+    }
+  }, [globalState.isInitialized, globalState.isInitializing]);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -26,11 +32,16 @@ export function usePublicProfileLogic(cadetKey: string) { // takes cadetKey to l
       setProfileError(null);
 
       try {
-        const profileRef = ref(db, `cadets/${cadetKey}`); // load the cadet's profile from the "cadets" subtree in FB using their cadetKey
-        const snap = await get(profileRef);
+        const cachedProfile = globalState.cadetsByKey[cadetKey];
+        if (cachedProfile) {
+          setProfile(cachedProfile as PublicCadetProfile);
+          setLoadingProfile(false);
+          return;
+        }
 
-        if (snap.exists()) { // if profile exists, set it. otherwise show "no profile found" error. if there's a problem with the request, show "could not load profile" error.
-          setProfile(snap.val());
+        const loadedProfile = await getProfileByCadetKey(cadetKey);
+        if (loadedProfile) {
+          setProfile(loadedProfile as PublicCadetProfile);
         } else {
           setProfile(null);
           setProfileError("No profile found for this cadet.");
@@ -43,8 +54,8 @@ export function usePublicProfileLogic(cadetKey: string) { // takes cadetKey to l
       }
     };
 
-    loadProfile();
-  }, [cadetKey]);
+    void loadProfile();
+  }, [cadetKey, globalState.cadetsByKey]);
 
   return useMemo(
     () => ({
