@@ -1,15 +1,9 @@
 import { useState, useCallback } from "react";
 import { Alert } from "react-native";
-import {
-  loadAttendanceToolsData,
-  savePTScores,
-} from "../../../firebase/dbController";
-import { globals } from "../../../firebase/dbController";
+import { loadAttendanceToolsData, savePTScores } from "../../../firebase/dbController";
 import type { AttendanceCadetItem } from "../../../firebase/dbController";
 
 export function usePTScoreLogic() {
-  const { ptScores: ptScoresByCadet } = globals();
-
   const [modalVisible, setModalVisible]             = useState(false);
   const [allCadets, setAllCadets]                   = useState<AttendanceCadetItem[]>([]);
   const [loading, setLoading]                       = useState(false);
@@ -29,6 +23,7 @@ export function usePTScoreLogic() {
 
     try {
       const { cadets } = await loadAttendanceToolsData();
+      console.log("PTScoreLogic: loaded", cadets.length, "cadets");
       setAllCadets(cadets);
     } catch (err) {
       console.error("PTScoreLogic: failed to load cadets", err);
@@ -65,44 +60,28 @@ export function usePTScoreLogic() {
     setFlightDropdownOpen(false);
   }, []);
 
-  // ── Validate format ───────────────────────────────────────────────────────
-
-  /**
-   * Validates that a score string is a valid number between 0–100.
-   * Accepts whole numbers (e.g. "85") and decimals (e.g. "85.5").
-   * Returns the parsed float or null if invalid.
-   */
-  const parseScore = (raw: string): number | null => {
-    const trimmed = raw.trim();
-    if (trimmed === "") return null;
-    const numeric = parseFloat(trimmed);
-    if (isNaN(numeric) || numeric < 0 || numeric > 100) return null;
-    return numeric;
-  };
-
   // ── Submit ────────────────────────────────────────────────────────────────
 
   const submit = useCallback(async () => {
-    // Build valid entries only — skip blanks, flag invalid values.
-    const validEntries: Array<{ cadetKey: string; score: number }> = [];
     const invalidNames: string[] = [];
+    const validEntries: Array<{ cadetKey: string; score: number }> = [];
 
     for (const cadet of allCadets) {
-      const raw = scores[cadet.cadetKey] ?? "";
-      if (raw.trim() === "") continue; // blank = skip, not an error
+      const raw = (scores[cadet.cadetKey] ?? "").trim();
+      if (raw === "") continue;
 
-      const score = parseScore(raw);
-      if (score === null) {
+      const numeric = parseFloat(raw);
+      if (isNaN(numeric) || numeric < 0 || numeric > 100) {
         invalidNames.push(cadet.fullName);
       } else {
-        validEntries.push({ cadetKey: cadet.cadetKey, score });
+        validEntries.push({ cadetKey: cadet.cadetKey, score: numeric });
       }
     }
 
     if (invalidNames.length > 0) {
       Alert.alert(
         "Invalid Scores",
-        `The following cadets have invalid scores (must be 0–100):\n\n${invalidNames.join(", ")}\n\nPlease correct them before saving.`
+        `These cadets have invalid scores (must be 0–100):\n\n${invalidNames.join(", ")}\n\nPlease correct them before saving.`
       );
       return;
     }
@@ -112,37 +91,24 @@ export function usePTScoreLogic() {
       return;
     }
 
-    Alert.alert(
-      "Confirm Save",
-      `Save PT scores for ${validEntries.length} cadet(s)?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Save",
-          onPress: async () => {
-            setSaving(true);
-            try {
-              // Delegate all Firebase writes to dbController.savePTScores.
-              // That function appends a timestamped entry under
-              //   cadets/{cadetKey}/ptScores/{timestamp}
-              // AND updates cadets/{cadetKey}/lastPTScore for quick display.
-              await savePTScores(validEntries);
-
-              Alert.alert(
-                "Success",
-                `PT scores saved for ${validEntries.length} cadet(s).`
-              );
-              closeModal();
-            } catch (err) {
-              console.error("PTScoreLogic: save failed", err);
-              Alert.alert("Error", "Failed to save scores. Please try again.");
-            } finally {
-              setSaving(false);
-            }
-          },
-        },
-      ]
-    );
+    // Save directly without a nested confirmation Alert — nested Alerts inside
+    // Modals can be swallowed on some React Native / Expo versions.
+    setSaving(true);
+    try {
+      console.log("PTScoreLogic: calling savePTScores with", validEntries.length, "entries");
+      await savePTScores(validEntries);
+      console.log("PTScoreLogic: save succeeded");
+      closeModal();
+      // Show success after modal is closed so it is not blocked by the overlay
+      setTimeout(() => {
+        Alert.alert("Success", `PT scores saved for ${validEntries.length} cadet(s).`);
+      }, 300);
+    } catch (err) {
+      console.error("PTScoreLogic: savePTScores threw:", err);
+      Alert.alert("Error", "Failed to save scores. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   }, [allCadets, scores, closeModal]);
 
   return {
@@ -159,7 +125,5 @@ export function usePTScoreLogic() {
     selectFlight,
     saving,
     submit,
-    /** Pass-through so the modal can render per-cadet score history. */
-    ptScoresByCadet,
   };
 }

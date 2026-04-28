@@ -22,7 +22,6 @@ import {
   ATTENDANCE_EDITING_PERMISSION,
   EVENT_MAKING_PERMISSION,
   FILE_UPLOADING_PERMISSION,
-  PT_SCORE_EDITING_PERMISSION,
   TEMP_PASSWORD,
 } from "../assets/constants";
 import type {
@@ -62,7 +61,6 @@ export const PERMISSIONS = {
   EVENT_MAKING: EVENT_MAKING_PERMISSION,
   FILE_UPLOADING: FILE_UPLOADING_PERMISSION,
   ATTENDANCE_EDITING: ATTENDANCE_EDITING_PERMISSION,
-  PT_SCORE_EDITING: PT_SCORE_EDITING_PERMISSION,
   ADMIN: ADMIN_PERMISSIONS,
 };
 
@@ -74,7 +72,6 @@ const defaultPermissionsMap = () =>
     [PERMISSIONS.EVENT_MAKING, false],
     [PERMISSIONS.FILE_UPLOADING, false],
     [PERMISSIONS.ATTENDANCE_EDITING, false],
-    [PERMISSIONS.PT_SCORE_EDITING, false], 
     [PERMISSIONS.ADMIN, false],
   ]);
 
@@ -561,6 +558,7 @@ const startAttendanceListeners = () => {
   addListener(unsubscribeRMP);
 };
 
+
 /**
  * Attach a realtime listener to the ptScores subtree across all cadets.
  *
@@ -575,6 +573,8 @@ const startAttendanceListeners = () => {
  * assembles a PTScoresSubtree map in the store.
  */
 const startPTScoresListener = () => {
+  // We listen to the entire cadets node and extract ptScores from each child.
+  // This avoids N separate listeners while still reacting to every write.
   const cadetsRef = ref(db, "cadets");
   const unsubscribe = onValue(
     cadetsRef,
@@ -886,37 +886,35 @@ export const clearAttendanceForEvent = async (
 /**
  * Save PT scores for a batch of cadets.
  *
- * For each cadet this appends a new timestamped entry to their PT Scores file
- * and updates the flat lastPTScore field for quick profile display.
+ * For each cadet this writes TWO locations atomically:
+ *   1. cadets/{cadetKey}/ptScores/latestPT  — structured entry for history/store
+ *   2. cadets/{cadetKey}/lastPTScore        — flat string for quick profile display
  *
- * Firebase paths written (atomic multi-location update):
- *   cadets/{cadetKey}/ptScores/pt_{timestamp} → PTScoreEntry  (history file)
- *   cadets/{cadetKey}/lastPTScore             → "85.5"        (profile display)
- *
- * The recordKey uses epoch ms so entries sort chronologically and never collide.
- * The realtime listener (startPTScoresListener) picks up the ptScores change
- * and updates the store's ptScores map reactively.
+ * The realtime listener (startPTScoresListener) picks up change (1) and updates
+ * the store's `ptScores` map, which ProfileLogic reads reactively.
+ * Change (2) keeps the profile card's "Last PT Score" field in sync via the
+ * existing startCadetsListener / startProfileListener.
  */
 export const savePTScores = async (
   entries: Array<{ cadetKey: string; score: number }>
 ) => {
   if (entries.length === 0) return;
 
-  const now = new Date();
-  const recordedAt = now.toISOString();
-  const recordKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const recordedAt = new Date().toISOString();
   const updates: Record<string, any> = {};
 
   for (const { cadetKey, score } of entries) {
-    const formatted = score.toFixed(1);
+    const formatted = score.toFixed(1); // "85.5"
 
-    // Append a new dated entry to the cadet's PT Scores history file.
-    updates[`cadets/${cadetKey}/ptScores/${recordKey}`] = {
+    // Structured history entry (readable by store + ProfileLogic)
+   const now = new Date();
+   const dateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+   updates[`cadets/${cadetKey}/ptScores/${dateKey}`] = {
       score,
       recordedAt,
     } satisfies PTScoreEntry;
 
-    // Keep the flat convenience field in sync for quick profile display.
+    // Flat convenience field (readable by Profile screen directly)
     updates[`cadets/${cadetKey}/lastPTScore`] = formatted;
   }
 

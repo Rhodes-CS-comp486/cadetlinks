@@ -167,6 +167,8 @@ export const generalStyles = StyleSheet.create({
         borderTopRightRadius: 16,
         padding: 20,
         maxHeight: '85%',
+        flexShrink:1,
+        flex:1,
     },
     modalTitle: {
         fontSize: 24,

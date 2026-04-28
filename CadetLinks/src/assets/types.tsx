@@ -81,8 +81,7 @@ type ActionId =
   | typeof PERMISSIONS.ATTENDANCE_EDITING
   | typeof PERMISSIONS.FILE_UPLOADING
   | typeof PERMISSIONS.EVENT_MAKING
-  | typeof PERMISSIONS.ADMIN
-
+  | typeof PERMISSIONS.ADMIN;
 
 export type Action = {
   id: ActionId;
@@ -253,6 +252,18 @@ export interface CreateAccountModalProps {
   onSubmit: () => void;
 }
 
+export function usePTScoreLogic() {
+  const [modalVisible, setModalVisible]             = useState(false);
+  const [allCadets, setAllCadets]                   = useState<AttendanceCadetItem[]>([]);
+  const [loading, setLoading]                       = useState(false);
+  const [scores, setScores]                         = useState<Record<string, string>>({});
+  const [selectedFlight, setSelectedFlight]         = useState<string | null>(null);
+  const [flightDropdownOpen, setFlightDropdownOpen] = useState(false);
+  const [saving, setSaving]                         = useState(false);
+
+}
+
+
 export interface PTScoreModalProps {
   visible: boolean;
   onRequestClose: () => void;
@@ -266,6 +277,4 @@ export interface PTScoreModalProps {
   onSelectFlight: (flight: string) => void;
   saving: boolean;
   onSubmit: () => void;
-  /** Full PT score history for every cadet, sourced from globals().ptScores. */
-  ptScoresByCadet?: PTScoresSubtree;
 }
