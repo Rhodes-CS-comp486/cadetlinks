@@ -713,6 +713,7 @@ export const deleteCadetUser = async (cadetKey: string) => {
   if (cadet) {
     const classYearKey = sanitizeIndexKey(String(cadet.classYear ?? "").trim());
     const flightKey = sanitizeIndexKey(String(cadet.flight ?? "").trim());
+    const jobKey = sanitizeIndexKey(String(cadet.job ?? "").trim());
 
     if (classYearKey) {
       updates[`indexes/classYear/${classYearKey}/${cadetKey}`] = null;
