@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { generalStyles as g } from "../../../../styles/GeneralStyles";
-import { AttendanceCadetItem } from "../../../../firebase/dbController";
 import { PTScoreModalProps } from "../../../../assets/types";
 
 export function PTScoreModal({
@@ -154,7 +153,7 @@ export function PTScoreModal({
                   onSubmit();
                 }}
                 disabled={saving}
-                style={[g.confirmButton, saving && s.buttonDisabled, { backgroundColor: "red" }]}
+                style={[g.confirmButton, saving && s.buttonDisabled, { backgroundColor: "orange" }]}
               >
                 {saving ? (
                   <ActivityIndicator color="white" />
