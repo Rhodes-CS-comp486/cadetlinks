@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ScreenLayout } from "../../Components/ScreenLayout";
-import { generalStyles as styles } from "../../../styles/GeneralStyles";
+import { adminStyles as styles } from "../../../styles/AdminStyles";
 import { NativeSyntheticEvent, NativeScrollEvent, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useAttendancePageLogic, type AttendanceBucket } from "./AttendanceLogic";
 import {
@@ -218,6 +218,7 @@ export function AttendancePage() {
                                     ref={frozenColumnScrollRef}
                                     scrollEventThrottle={16}
                                     onScroll={(event) => syncVerticalScroll("frozen", gridScrollRef, event)}
+                                    showsVerticalScrollIndicator={false}
                                 >
                                     {matrixRows.map((row) => (
                                         <View key={row.cadetKey} style={styles.adminSheetRow}>
