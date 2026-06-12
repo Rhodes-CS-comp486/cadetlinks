@@ -22,9 +22,13 @@ export function AttendanceModal({
   onSelectEvent,
   markedAbsentCount,
   markedLateCount,
+<<<<<<< HEAD
+  selectedFlight,
+=======
   onToggleFlightDropdown,
   selectedFlight,
   flightDropdownOpen,
+>>>>>>> main
   onSelectFlight,
   allCadets,
   getCadetStatus,
@@ -115,6 +119,43 @@ export function AttendanceModal({
                   </Text>
                 </View>
 
+<<<<<<< HEAD
+                <Text style={styles.fieldLabel}>Cadets</Text>
+
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.flightChipsRow}
+                  style={styles.flightChipsScroll}
+                >
+                  {["All", "POC", "Alpha", "Bravo"].map((flightName) => {
+                    const isActive =
+                      flightName === "All"
+                        ? !selectedFlight
+                        : selectedFlight === flightName;
+
+                    return (
+                      <Pressable
+                        key={flightName}
+                        style={[
+                          styles.flightChip,
+                          isActive && styles.flightChipActive,
+                        ]}
+                        onPress={() => onSelectFlight(flightName)}
+                      >
+                        <Text
+                          style={[
+                            styles.flightChipText,
+                            isActive && styles.flightChipTextActive,
+                          ]}
+                        >
+                          {flightName}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+=======
                 <View style={{ flexDirection: "row", position: "relative" }}>
                   <Text style={styles.fieldLabel}>Cadets</Text>
 
@@ -152,6 +193,7 @@ export function AttendanceModal({
                     </View>
                   ) : null}
                 </View>
+>>>>>>> main
 
                 <View style={styles.cadetListCard}>
                   {filteredCadets.map((cadet, index) => {

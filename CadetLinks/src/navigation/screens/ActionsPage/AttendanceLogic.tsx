@@ -1,10 +1,16 @@
 import { useMemo, useState } from "react";
 import { Alert } from "react-native";
+<<<<<<< HEAD
+import { ref, get, update, remove } from "firebase/database";
+import { db } from "../../../firebase/config";
+import type { CadetProfile } from "../../../assets/types";
+=======
 import {
   clearAttendanceForEvent as clearAttendanceForEventGlobal,
   loadAttendanceToolsData,
   saveAttendanceForEvent as saveAttendanceForEventGlobal,
 } from "../../../firebase/dbController";
+>>>>>>> main
 
 export type EventItem = {
   id: string;
@@ -29,6 +35,30 @@ export type AttendanceStatus = "P" | "A" | "L";
 
 type AttendanceOverrides = Record<string, AttendanceStatus>;
 
+<<<<<<< HEAD
+function normalizeAttendanceKey(input: string) {
+  return input.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function getTodayString() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function inferAttendanceBucket(eventName?: string): "PT" | "LLAB" | null {
+  const name = (eventName ?? "").toLowerCase();
+
+  if (name.includes("pt")) return "PT";
+  if (name.includes("llab") || name.includes("lab")) return "LLAB";
+
+  return null;
+}
+
+=======
+>>>>>>> main
 export function useAttendanceLogic() {
   const [todayEvents, setTodayEvents] = useState<EventItem[]>([]);
   const [allCadets, setAllCadets] = useState<CadetListItem[]>([]);
@@ -36,7 +66,10 @@ export function useAttendanceLogic() {
   const [attendanceModalVisible, setAttendanceModalVisible] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string>("");
   const [eventDropdownOpen, setEventDropdownOpen] = useState(false);
+<<<<<<< HEAD
+=======
   const [flightDropdownOpen, setFlightDropdownOpen] = useState(false);
+>>>>>>> main
   const [selectedFlight, setSelectedFlight] = useState<string | undefined>(undefined);
   const [savingAttendance, setSavingAttendance] = useState(false);
   const [clearingAttendance, setClearingAttendance] = useState(false);
@@ -86,9 +119,53 @@ export function useAttendanceLogic() {
     setLoadingAttendanceTools(true);
 
     try {
+<<<<<<< HEAD
+      const today = getTodayString();
+
+      const eventsRef = ref(db, "events");
+      const eventsSnap = await get(eventsRef);
+      const eventsData = (eventsSnap.val() ?? {}) as Record<string, EventItem>;
+
+      const todaysEvents = Object.entries(eventsData)
+        .map(([id, value]) => {
+          const { id: _ignoredId, ...rest } = value;
+          return {
+            id,
+            ...rest,
+          };
+        })
+        .filter((event) => event.date === today && !!event.eventName)
+        .sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
+
+      setTodayEvents(todaysEvents);
+
+      const cadetsRef = ref(db, "cadets");
+      const cadetsSnap = await get(cadetsRef);
+      const cadetsData = (cadetsSnap.val() ?? {}) as Record<string, CadetProfile>;
+
+      const cadetList = Object.entries(cadetsData)
+        .map(([key, value]) => {
+          const firstName = value.firstName ?? "";
+          const lastName = value.lastName ?? "";
+          const fullName = `${firstName} ${lastName}`.trim() || key;
+
+          return {
+            cadetKey: key,
+            firstName,
+            lastName,
+            fullName,
+            attendanceKey: normalizeAttendanceKey(lastName || key),
+            flight: value.flight,
+          };
+        })
+        .sort((a, b) => a.lastName.localeCompare(b.lastName));
+
+      setAllCadets(cadetList);
+=======
       const { todayEvents: loadedEvents, cadets } = await loadAttendanceToolsData();
       setTodayEvents(loadedEvents);
       setAllCadets(cadets as CadetListItem[]);
+>>>>>>> main
     } catch (e) {
       console.error("❌ Error loading attendance modal data:", e);
       throw e;
@@ -101,11 +178,18 @@ export function useAttendanceLogic() {
     try {
       await loadAttendanceModalData();
       setAttendanceModalVisible(true);
+<<<<<<< HEAD
+
+      // DO NOT reset these here,
+      // so the modal keeps its previous selections when reopened
+      setEventDropdownOpen(false);
+=======
       setSelectedEventId("");
       setSelectedFlight(undefined);
       setAttendanceOverrides({});
       setEventDropdownOpen(false);
       setFlightDropdownOpen(false);
+>>>>>>> main
     } catch {
       Alert.alert("Error", "Could not load attendance tools.");
     }
@@ -114,8 +198,12 @@ export function useAttendanceLogic() {
   const closeAttendanceModal = () => {
     setAttendanceModalVisible(false);
     setEventDropdownOpen(false);
+<<<<<<< HEAD
+    };
+=======
     setFlightDropdownOpen(false);
   };
+>>>>>>> main
 
   const toggleEventDropdown = () => {
     setEventDropdownOpen((prev) => !prev);
@@ -126,6 +214,11 @@ export function useAttendanceLogic() {
     setEventDropdownOpen(false);
   };
 
+<<<<<<< HEAD
+
+  const selectFlight = (flightName: string) => {
+    setSelectedFlight(flightName === "All" ? undefined : flightName);
+=======
   const toggleFlightDropdown = () => {
     setFlightDropdownOpen((prev) => !prev);
   };
@@ -133,12 +226,72 @@ export function useAttendanceLogic() {
   const selectFlight = (flightName: string) => {
     setSelectedFlight(flightName === "All" ? undefined : flightName);
     setFlightDropdownOpen(false);
+>>>>>>> main
   };
 
   async function saveAttendanceForEvent(
     eventId: string,
     overrides: AttendanceOverrides
   ) {
+<<<<<<< HEAD
+    const chosenEvent = todayEvents.find((event) => event.id === eventId);
+
+    if (!chosenEvent) {
+      throw new Error("Please select an event.");
+    }
+
+    const bucket = inferAttendanceBucket(chosenEvent.eventName);
+
+    if (!bucket) {
+      throw new Error(
+        'Could not tell whether this event is PT or LLAB. Add "PT" or "LLAB" to the event name, or add an attendanceType field.'
+      );
+    }
+
+    const date = chosenEvent.date;
+
+    if (!date) {
+      throw new Error("Selected event is missing a date.");
+    }
+
+    const updates: Record<string, { status: AttendanceStatus }> = {};
+
+    for (const cadet of allCadets) {
+      const chosenStatus = overrides[cadet.cadetKey] ?? "A";
+      updates[`attendance/${bucket}/${date}/${cadet.attendanceKey}`] = {
+        status: chosenStatus,
+      };
+    }
+
+    await update(ref(db), updates);
+  }
+
+  async function clearAttendanceForEvent(eventId: string) {
+    const chosenEvent = todayEvents.find((event) => event.id === eventId);
+
+    if (!chosenEvent) {
+      throw new Error("Please select an event.");
+    }
+
+    const bucket = inferAttendanceBucket(chosenEvent.eventName);
+
+    if (!bucket) {
+      throw new Error(
+        'Could not tell whether this event is PT or LLAB. Add "PT" or "LLAB" to the event name, or add an attendanceType field.'
+      );
+    }
+
+    const date = chosenEvent.date;
+
+    if (!date) {
+      throw new Error("Selected event is missing a date.");
+    }
+
+    await remove(ref(db, `attendance/${bucket}/${date}`));
+  }
+
+  const submitAttendance = async () => {
+=======
     await saveAttendanceForEventGlobal(eventId, todayEvents, allCadets, overrides);
   }
 
@@ -147,19 +300,26 @@ export function useAttendanceLogic() {
   }
 
   const onSubmitAttendance = async () => {
+>>>>>>> main
     if (!selectedEventId) {
       Alert.alert("Select an event", "Please choose today's event first.");
       return;
     }
 
     try {
+<<<<<<< HEAD
+=======
       console.log("Saving attendance with overrides:", attendanceOverrides);
+>>>>>>> main
       setSavingAttendance(true);
       await saveAttendanceForEvent(selectedEventId, attendanceOverrides);
       setAttendanceModalVisible(false);
       Alert.alert("Success", "Attendance was saved.");
     } catch (e: any) {
+<<<<<<< HEAD
+=======
       console.error(" Error saving attendance:", e);
+>>>>>>> main
       Alert.alert("Could not save attendance", e?.message ?? "Unknown error.");
     } finally {
       setSavingAttendance(false);
@@ -184,7 +344,16 @@ export function useAttendanceLogic() {
             try {
               setClearingAttendance(true);
               await clearAttendanceForEvent(selectedEventId);
+<<<<<<< HEAD
+
+              // reset local selections only when user intentionally clears
               setAttendanceOverrides({});
+              setSelectedEventId("");
+              setSelectedFlight(undefined);
+
+=======
+              setAttendanceOverrides({});
+>>>>>>> main
               setAttendanceModalVisible(false);
               Alert.alert("Cleared", "Attendance was cleared for that event.");
             } catch (e: any) {
@@ -218,6 +387,13 @@ export function useAttendanceLogic() {
       closeAttendanceModal,
       toggleEventDropdown,
       selectEvent,
+<<<<<<< HEAD
+      selectFlight,
+      selectedFlight,
+      setCadetStatus,
+      getCadetStatus,
+      submitAttendance,
+=======
       flightDropdownOpen,
       selectFlight,
       selectedFlight,
@@ -226,6 +402,7 @@ export function useAttendanceLogic() {
       getCadetStatus,
       onSubmitAttendance,
       submitAttendance: onSubmitAttendance,
+>>>>>>> main
       clearSelectedAttendance,
     }),
     [
@@ -237,7 +414,10 @@ export function useAttendanceLogic() {
       selectedEvent,
       eventDropdownOpen,
       selectedFlight,
+<<<<<<< HEAD
+=======
       flightDropdownOpen,
+>>>>>>> main
       savingAttendance,
       clearingAttendance,
       markedAbsentCount,

@@ -168,7 +168,11 @@ export function Actions(): React.ReactElement {
         savingAttendance={attendance.savingAttendance}
         clearingAttendance={attendance.clearingAttendance}
         onClearAttendance={attendance.clearSelectedAttendance}
+<<<<<<< HEAD
+        onSubmitAttendance={attendance.submitAttendance}
+=======
         onSubmitAttendance={attendance.onSubmitAttendance}
+>>>>>>> main
       />
 
       {/* DOCUMENT UPLOADING MODAL */}
