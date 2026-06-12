@@ -5,6 +5,7 @@ import type {
   CadetListItem,
   EventItem,
 } from "../navigation/screens/ActionsPage/AttendanceLogic";
+import { useState } from "react";
 
 export type UploadDocsModalProps = {
   visible: boolean;
@@ -13,7 +14,6 @@ export type UploadDocsModalProps = {
     name: string;
     mimeType: string;
     size: number;
-    //documentName: string; // custom name for the document
   } | null;
   isPickingDocument: boolean;
   isUploadingDocument: boolean;
@@ -49,13 +49,13 @@ export type AttendanceModalProps = {
 };
 
 export interface Event {
-  id: string
+  id: string;
   title: string;
   date: Date;
   time: Date;
   description: string;
   location: string;
-  type: '' | 'RSVP' | 'Mandatory';
+  type: "" | "RSVP" | "Mandatory";
 }
 
 export type CadetProfile = {
@@ -71,13 +71,17 @@ export type CadetProfile = {
     personalEmail?: string;
     cellPhone?: string;
   };
+  directSupervisor?: string;
+  lastPTScore?: string;
+  bio?: string;
+  photoUrl?: string;
 };
 
 type ActionId =
-| typeof PERMISSIONS.ATTENDANCE_EDITING
-| typeof PERMISSIONS.FILE_UPLOADING
-| typeof PERMISSIONS.EVENT_MAKING
-| typeof PERMISSIONS.ADMIN;
+  | typeof PERMISSIONS.ATTENDANCE_EDITING
+  | typeof PERMISSIONS.FILE_UPLOADING
+  | typeof PERMISSIONS.EVENT_MAKING
+  | typeof PERMISSIONS.ADMIN;
 
 export type Action = {
   id: ActionId;
@@ -110,8 +114,19 @@ export type UploadedDocument = {
 };
 
 export type AttendanceStatus = "P" | "A" | "L";
-export type AttendanceRecordStatus = "P" | "A" | "E" | "L" | "." | "MP" | "ML" | "MA"; // Present, Absent, Excused, Late, Not Recorded, Mandatory Present, Mandatory Late, Mandatory Absent
-export type AttendanceSubtree = Record<string, Record<string, { status?: AttendanceRecordStatus }>>;
+export type AttendanceRecordStatus =
+  | "P"
+  | "A"
+  | "E"
+  | "L"
+  | "."
+  | "MP"
+  | "ML"
+  | "MA";
+export type AttendanceSubtree = Record<
+  string,
+  Record<string, { status?: AttendanceRecordStatus }>
+>;
 
 export type AttendanceEventItem = {
   id: string;
@@ -129,6 +144,29 @@ export type AttendanceCadetItem = {
   flight?: string;
 };
 
+/**
+ * The absencesAllowed node in Firebase.
+ *
+ * Firebase path:
+ *   absencesAllowed/PT   → number  (max unexcused PT absences)
+ *   absencesAllowed/LLAB → number  (max unexcused LLAB absences)
+ *   absencesAllowed/RMP  → number  (max unexcused RMP absences)
+ *
+ * A value of 0 means the node hasn't been set yet (safe default).
+ */
+export type AbsencesAllowed = {
+  PT: number;
+  LLAB: number;
+  RMP: number;
+};
+
+/** Default when the Firebase node doesn't exist yet. */
+export const DEFAULT_ABSENCES_ALLOWED: AbsencesAllowed = {
+  PT: 0,
+  LLAB: 0,
+  RMP: 0,
+};
+
 export type StoreDomainErrors = {
   profile?: string;
   permissions?: string;
@@ -138,7 +176,19 @@ export type StoreDomainErrors = {
   cadets?: string;
   documents?: string;
   attendance?: string;
+  ptScores?: string;
+  absencesAllowed?: string;
 };
+
+export type PTScoreEntry = {
+  score: number;
+  recordedAt: string;
+};
+
+export type PTScoresSubtree = Record<
+  string,
+  Record<string, PTScoreEntry>
+>;
 
 export type GlobalFirebaseState = {
   isInitialized: boolean;
@@ -156,6 +206,8 @@ export type GlobalFirebaseState = {
   attendancePT: AttendanceSubtree;
   attendanceLLAB: AttendanceSubtree;
   attendanceRMP: AttendanceSubtree;
+  ptScores: PTScoresSubtree;
+  absencesAllowed: AbsencesAllowed;
   errors: StoreDomainErrors;
   lastUpdated: Record<string, number | null>;
 };
@@ -177,7 +229,7 @@ export interface CreateAccountForm {
   personalEmail: string;
   cadetRank: string;
   flight: string;
-  job:string;
+  job: string;
 }
 
 export interface DropdownPickerProps {
@@ -196,6 +248,33 @@ export interface CreateAccountModalProps {
     v: CreateAccountForm[K]
   ) => void;
   updatePhone: (raw: string) => void;
+  saving: boolean;
+  onSubmit: () => void;
+}
+
+export function usePTScoreLogic() {
+  const [modalVisible, setModalVisible]             = useState(false);
+  const [allCadets, setAllCadets]                   = useState<AttendanceCadetItem[]>([]);
+  const [loading, setLoading]                       = useState(false);
+  const [scores, setScores]                         = useState<Record<string, string>>({});
+  const [selectedFlight, setSelectedFlight]         = useState<string | null>(null);
+  const [flightDropdownOpen, setFlightDropdownOpen] = useState(false);
+  const [saving, setSaving]                         = useState(false);
+
+}
+
+
+export interface PTScoreModalProps {
+  visible: boolean;
+  onRequestClose: () => void;
+  loading: boolean;
+  allCadets: AttendanceCadetItem[];
+  scores: Record<string, string>;
+  onScoreChange: (cadetKey: string, value: string) => void;
+  selectedFlight: string | null;
+  flightDropdownOpen: boolean;
+  onToggleFlightDropdown: () => void;
+  onSelectFlight: (flight: string) => void;
   saving: boolean;
   onSubmit: () => void;
 }

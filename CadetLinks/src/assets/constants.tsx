@@ -1,12 +1,15 @@
+// strings that are used in multiple places across the app
 export const EVENT_MAKING_PERMISSION = "Event Making";
 export const FILE_UPLOADING_PERMISSION = "File Uploading";
 export const ATTENDANCE_EDITING_PERMISSION = "Attendance Editing";
 export const ADMIN_PERMISSIONS = "Admin";
+export const PT_SCORE_EDITING_PERMISSION = "PT Score Editing";
 
 export const PERMISSIONS = {
 	EVENT_MAKING: EVENT_MAKING_PERMISSION,
 	FILE_UPLOADING: FILE_UPLOADING_PERMISSION,
 	ATTENDANCE_EDITING: ATTENDANCE_EDITING_PERMISSION,
+    PT_SCORE_EDITING: PT_SCORE_EDITING_PERMISSION,  
 	ADMIN: ADMIN_PERMISSIONS,
 };
 

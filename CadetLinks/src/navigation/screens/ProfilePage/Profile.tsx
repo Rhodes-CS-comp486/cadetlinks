@@ -18,18 +18,20 @@ import { DarkColors as colors } from "../../../styles/colors";
 
 import { useProfileLogic } from "./ProfileLogic";
 import { useSearchLogic } from "../SearchPage/SearchLogic";
+import { globals } from "../../../firebase/dbController";
 import type { RootStackParamList } from "../../index";
 
 export function Profile(): React.ReactElement {
-  const [profileView, setProfileView] = useState<"myProfile" | "search">("myProfile"); // toggle between "my profile" and "search" views
-  const [isEditingBio, setIsEditingBio] = useState(false); // is user editing bio right now
-  const [showBioMenu, setShowBioMenu] = useState(false); // is the 3-dot menu open
+  const [profileView, setProfileView] = useState<"myProfile" | "search">("myProfile");
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [showBioMenu, setShowBioMenu] = useState(false);
 
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
+  const { cadetKey, ptScores } = globals();
+
   const {
-    cadetKey,
     profile,
     loadingProfile,
     profileError,
@@ -67,6 +69,18 @@ export function Profile(): React.ReactElement {
     loadingCadets,
     searchError,
   } = useSearchLogic();
+
+  // Derive the most recent PT score from the history collection.
+  // Keys are "YYYY-MM-DD" so lexicographic sort gives us chronological order.
+  const latestPTScore = (() => {
+    if (!cadetKey) return null;
+    const history = ptScores[cadetKey];
+    if (!history) return null;
+    const keys = Object.keys(history).sort();
+    if (keys.length === 0) return null;
+    const latest = history[keys[keys.length - 1]];
+    return latest ? latest.score.toFixed(1) : null;
+  })();
 
   function getAttendanceColor(percent: number) {
     if (percent >= 90) return "good";
@@ -186,7 +200,7 @@ export function Profile(): React.ReactElement {
 
                     <Text style={pStyles.userinfo_sub}>
                       <Text style={pStyles.label_bold}>Last PT Score: </Text>
-                      {profile.lastPTScore ?? "—"}
+                      {latestPTScore ?? "—"}
                     </Text>
                   </>
                 )}
